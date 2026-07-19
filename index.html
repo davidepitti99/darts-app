@@ -208,12 +208,19 @@ function sigmaDependence(m, key) {
   return { drift, regions, nSigmas: pts.length };
 }
 
-// Drift severity colour: small = green, medium = orange, large = red.
+// Severity colours (shared scale). Drift (mm): small=green, medium=orange,
+// large=red. Regions (count): 1=green, 2-3=orange, 4+=red.
 const DRIFT_SMALL_MM = 40, DRIFT_LARGE_MM = 100;
+const C_GREEN = '#44bb44', C_ORANGE = '#ff9f1a', C_RED = '#ff5555';
 function driftColor(drift) {
-  if (drift < DRIFT_SMALL_MM) return '#44bb44';
-  if (drift < DRIFT_LARGE_MM) return '#ff9f1a';
-  return '#ff5555';
+  if (drift < DRIFT_SMALL_MM) return C_GREEN;
+  if (drift < DRIFT_LARGE_MM) return C_ORANGE;
+  return C_RED;
+}
+function regionColor(n) {
+  if (n <= 1) return C_GREEN;
+  if (n <= 3) return C_ORANGE;
+  return C_RED;
 }
 
 function buildModeToggle() {
@@ -283,11 +290,15 @@ function update() {
     + '<div class="row"><span class="k">Expected turns to finish:</span> ' + et.toFixed(3) + '</div>';
   const dep = sigmaDependence(m, score + ',' + darts);
   if (dep) {
-    html += '<div class="row" style="color:' + driftColor(dep.drift) + '">'
-      + 'Aim &sigma;-sensitivity: '
-      + 'drift ' + dep.drift.toFixed(0) + ' mm, '
-      + dep.regions + ' region' + (dep.regions === 1 ? '' : 's')
-      + ' across ' + dep.nSigmas + ' &sigma;</div>';
+    html += '<div class="row"><span class="k">Aim &sigma;-sensitivity across '
+      + dep.nSigmas + ' &sigma;:</span></div>'
+      + '<div class="row">'
+      + '<span style="color:' + driftColor(dep.drift) + '">drift '
+      + dep.drift.toFixed(0) + ' mm</span>'
+      + '<span class="k"> &middot; </span>'
+      + '<span style="color:' + regionColor(dep.regions) + '">'
+      + dep.regions + ' region' + (dep.regions === 1 ? '' : 's') + ' visited</span>'
+      + '</div>';
   }
   elInfo.innerHTML = html;
 }
