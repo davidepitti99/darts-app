@@ -49,7 +49,8 @@
     margin-top: 14px; background: var(--panel); border-radius: 12px; padding: 16px;
     line-height: 1.5; font-size: 14px;
   }
-  .info .aim { font-size: 26px; font-weight: 800; color: var(--accent); }
+  .info .aim { font-size: 26px; font-weight: 800; color: var(--accent); line-height: 1.2; }
+  .info .aim .next { color: #fff; font-size: 17px; font-weight: 700; margin-left: 0.35em; }
   .info .row { color: #cfcfcf; margin-top: 8px; }
   .info .warn { color: #ff8a8a; }
   .k { color: #8f8f8f; }
@@ -298,18 +299,7 @@ function hitContinuation(policy, score, dartsLeft) {
 }
 
 function formatHitPath(steps) {
-  const lines = [];
-  for (let i = 0; i < steps.length; i++) {
-    const [_s, _d, aim, nxt, outcome] = steps[i];
-    if (outcome === 'checkout') { lines.push('If hit \u2192 checkout'); break; }
-    if (outcome === 'bust') { lines.push('If hit \u2192 bust'); break; }
-    if (outcome === 'end_turn') { lines.push('If hit \u2192 ' + nxt + ' (turn ends)'); break; }
-    if (i + 1 < steps.length)
-      lines.push('If hit \u2192 ' + nxt + ', Aim: ' + steps[i + 1][2]);
-    else
-      lines.push('If hit \u2192 ' + nxt);
-  }
-  return lines;
+  return steps.map(s => s[2]);
 }
 
 function update() {
@@ -333,12 +323,13 @@ function update() {
     return;
   }
   const [aim, x, y, et] = entry;
-  const steps = hitContinuation(policy, score, darts);
-  const aimClean = steps.length ? steps[0][2] : (aim.endsWith('*') ? aim.slice(0, -1) : aim);
+  const aims = formatHitPath(hitContinuation(policy, score, darts));
+  const aimClean = aims.length ? aims[0] : (aim.endsWith('*') ? aim.slice(0, -1) : aim);
   drawAim(x, y, sigma);
-  let html = '<div class="aim">Aim: ' + aimClean + '</div>';
-  for (const line of formatHitPath(steps))
-    html += '<div class="row">' + line + '</div>';
+  let html = '<div class="aim">Aim: ' + aimClean;
+  for (let i = 1; i < aims.length; i++)
+    html += '<span class="next">' + aims[i] + '</span>';
+  html += '</div>';
   html += '<div class="row"><span class="k">Expected turns to finish:</span> ' + et.toFixed(3) + '</div>';
   const dep = sigmaDependence(m, score + ',' + darts);
   if (dep) {
