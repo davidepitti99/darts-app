@@ -264,6 +264,37 @@ function selectMode(key) {
   update();
 }
 
+function nearestScoringLabel(x, y) {
+  let bestD = Infinity, best = 'S20';
+  function consider(cx, cy, lab) {
+    const d = (cx - x) * (cx - x) + (cy - y) * (cy - y);
+    if (d < bestD) { bestD = d; best = lab; }
+  }
+  consider(0, 0, 'Bull');
+  for (let i = 0; i < 20; i++) {
+    const th = i * SECTOR;
+    const sx = Math.sin(th), sy = Math.cos(th);
+    const val = SECTORS[i];
+    const rSb = (BULL_RADIUS + OUTER_BULL_RADIUS) / 2;
+    consider(rSb * sx, rSb * sy, '25');
+    const beds = [
+      [(OUTER_BULL_RADIUS + TRIPLE_INNER) / 2, 'S' + val],
+      [(TRIPLE_INNER + TRIPLE_OUTER) / 2, 'T' + val],
+      [(TRIPLE_OUTER + DOUBLE_INNER) / 2, 'S' + val],
+      [(DOUBLE_INNER + DOUBLE_OUTER) / 2, 'D' + val],
+    ];
+    for (const [r, lab] of beds) consider(r * sx, r * sy, lab);
+  }
+  return best;
+}
+
+function displayAim(label, x, y) {
+  const lab = label.replace(/\*$/, '').trim();
+  if (lab === 'Miss' || lab === 'M')
+    return nearestScoringLabel(x, y) + ' (miss)';
+  return lab;
+}
+
 function aimPoints(label) {
   const lab = label.replace(/\*$/, '').trim();
   if (lab === 'Miss' || lab === 'M') return [0, false];
@@ -298,8 +329,11 @@ function hitContinuation(policy, score, dartsLeft) {
   return steps;
 }
 
-function formatHitPath(steps) {
-  return steps.map(s => s[2]);
+function formatHitPath(policy, steps) {
+  return steps.map(([s, d, aim]) => {
+    const e = policy[s + ',' + d];
+    return e ? displayAim(e[0], e[1], e[2]) : aim;
+  });
 }
 
 function update() {
@@ -323,12 +357,12 @@ function update() {
     return;
   }
   const [aim, x, y, et] = entry;
-  const aims = formatHitPath(hitContinuation(policy, score, darts));
-  const aimClean = aims.length ? aims[0] : (aim.endsWith('*') ? aim.slice(0, -1) : aim);
+  const aims = formatHitPath(policy, hitContinuation(policy, score, darts));
+  const aimClean = aims.length ? aims[0] : displayAim(aim, x, y);
   drawAim(x, y, sigma);
   let html = '<div class="aim">Aim: ' + aimClean;
   for (let i = 1; i < aims.length; i++)
-    html += '<span class="next">' + aims[i] + '</span>';
+    html += '<span class="next"> ' + aims[i] + '</span>';
   html += '</div>';
   html += '<div class="row"><span class="k">Expected turns to finish:</span> ' + et.toFixed(3) + '</div>';
   const dep = sigmaDependence(m, score + ',' + darts);
