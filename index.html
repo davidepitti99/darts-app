@@ -263,6 +263,55 @@ function selectMode(key) {
   update();
 }
 
+function aimPoints(label) {
+  const lab = label.replace(/\*$/, '').trim();
+  if (lab === 'Miss' || lab === 'M') return [0, false];
+  if (lab.startsWith('Bull')) {
+    if (lab.indexOf('25') >= 0) return [25, false];
+    return [50, true];
+  }
+  const kind = lab.charAt(0), n = parseInt(lab.slice(1), 10);
+  if (!Number.isFinite(n)) return [0, false];
+  if (kind === 'T') return [n * 3, false];
+  if (kind === 'D') return [n * 2, true];
+  if (kind === 'S') return [n, false];
+  return [0, false];
+}
+
+function hitContinuation(policy, score, dartsLeft) {
+  const steps = [];
+  let s = score, d = dartsLeft;
+  while (d >= 1) {
+    const entry = policy[s + ',' + d];
+    if (!entry) break;
+    const aim = entry[0];
+    const clean = aim.replace(/\*$/, '');
+    const [pts, isDbl] = aimPoints(aim);
+    const nxt = s - pts;
+    if (nxt === 0 && isDbl) { steps.push([s, d, clean, 0, 'checkout']); break; }
+    if (nxt < 0 || nxt === 0) { steps.push([s, d, clean, null, 'bust']); break; }
+    if (d === 1) { steps.push([s, d, clean, nxt, 'end_turn']); break; }
+    steps.push([s, d, clean, nxt, 'continue']);
+    s = nxt; d = d - 1;
+  }
+  return steps;
+}
+
+function formatHitPath(steps) {
+  const lines = [];
+  for (let i = 0; i < steps.length; i++) {
+    const [_s, _d, aim, nxt, outcome] = steps[i];
+    if (outcome === 'checkout') { lines.push('If hit \u2192 checkout'); break; }
+    if (outcome === 'bust') { lines.push('If hit \u2192 bust'); break; }
+    if (outcome === 'end_turn') { lines.push('If hit \u2192 ' + nxt + ' (turn ends)'); break; }
+    if (i + 1 < steps.length)
+      lines.push('If hit \u2192 ' + nxt + ', Aim: ' + steps[i + 1][2]);
+    else
+      lines.push('If hit \u2192 ' + nxt);
+  }
+  return lines;
+}
+
 function update() {
   drawBoard();
   const m = mode();
@@ -284,11 +333,13 @@ function update() {
     return;
   }
   const [aim, x, y, et] = entry;
-  const aimClean = aim.endsWith('*') ? aim.slice(0, -1) : aim;
+  const steps = hitContinuation(policy, score, darts);
+  const aimClean = steps.length ? steps[0][2] : (aim.endsWith('*') ? aim.slice(0, -1) : aim);
   drawAim(x, y, sigma);
-  let html =
-    '<div class="aim">Aim: ' + aimClean + '</div>'
-    + '<div class="row"><span class="k">Expected turns to finish:</span> ' + et.toFixed(3) + '</div>';
+  let html = '<div class="aim">Aim: ' + aimClean + '</div>';
+  for (const line of formatHitPath(steps))
+    html += '<div class="row">' + line + '</div>';
+  html += '<div class="row"><span class="k">Expected turns to finish:</span> ' + et.toFixed(3) + '</div>';
   const dep = sigmaDependence(m, score + ',' + darts);
   if (dep) {
     html += '<div class="row"><span class="k">Aim &sigma;-sensitivity across '
