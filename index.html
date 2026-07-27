@@ -171,11 +171,31 @@
   }
   .fit-result .sub { color: #b9b9b9; font-size: 13px; margin-top: 6px; }
   .fit-list {
-    max-height: 160px; overflow-y: auto; background: var(--panel);
-    border-radius: 12px; padding: 8px 12px; font-size: 13px; color: #cfcfcf;
+    max-height: 220px; overflow-y: auto; background: var(--panel);
+    border-radius: 12px; padding: 8px; font-size: 13px; color: #cfcfcf;
     margin-top: 8px; font-variant-numeric: tabular-nums;
   }
-  .fit-list .empty { color: var(--mute); }
+  .fit-list .empty { color: var(--mute); padding: 8px; }
+  .fit-list .fit-row {
+    display: grid; grid-template-columns: 28px 1fr 1fr 36px; gap: 6px;
+    align-items: center; margin-bottom: 6px;
+  }
+  .fit-list .fit-row .idx { color: var(--mute); text-align: right; font-size: 12px; }
+  .fit-list .fit-row input {
+    background: var(--field); color: #fff; border: 1px solid #555;
+    border-radius: 8px; padding: 8px 6px; font-size: 14px; width: 100%;
+  }
+  .fit-list .fit-row input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .fit-list .fit-row input.bad { border-color: #ff5555; }
+  .fit-list .fit-row .del {
+    background: #3a2a2a; color: #ff8a8a; border: 1px solid #555;
+    border-radius: 8px; padding: 8px 0; font-size: 14px; font-weight: 700;
+    cursor: pointer;
+  }
+  .fit-list .hdr {
+    display: grid; grid-template-columns: 28px 1fr 1fr 36px; gap: 6px;
+    font-size: 11px; color: var(--mute); margin-bottom: 4px; padding: 0 2px;
+  }
   .fit-actions {
     display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px;
   }
@@ -1238,12 +1258,13 @@ function drawGeneralChart(fit, cssW, cssH) {
   fitCtx.fillText('Landing cloud — general Gaussian', cx, cssH - 8);
 }
 
-function renderFit() {
+function refreshFitSummary() {
   const fit = fitCurrent();
   if (!fit) {
     elFitSigma.textContent = '—';
-    elFitDetail.textContent = 'Add throws to estimate σ (angle optional)';
-    elFitList.innerHTML = '<div class="empty">No throws yet</div>';
+    elFitDetail.textContent = fitThrows.length
+      ? 'Fix invalid rows to estimate σ'
+      : 'Add throws to estimate σ (angle optional)';
   } else if (fit.mode === 'general') {
     elFitSigma.textContent = 'σ₁ ' + fit.sigma1.toFixed(1)
       + ' · σ₂ ' + fit.sigma2.toFixed(1) + ' mm';
@@ -1252,9 +1273,6 @@ function renderFit() {
       + ' · n=' + fit.n
       + ' · policy σ ' + nearestPolicySigma(fit.sigmaEq) + ' mm'
       + ' · 95% within ~' + fit.r95.toFixed(0) + ' mm';
-    elFitList.innerHTML = fitThrows.map((t, i) =>
-      '<div>' + (i + 1) + '. r=' + t.r.toFixed(1) + ' mm, θ='
-      + t.theta.toFixed(1) + '°</div>').join('');
   } else {
     elFitSigma.textContent = 'σ ' + fit.sigma.toFixed(1) + ' mm';
     const missingAng = fitThrows.some(t => t.theta === null || t.theta === undefined);
@@ -1263,13 +1281,85 @@ function renderFit() {
       + ' · n=' + fit.n
       + ' · 95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
       + ' · policy σ ' + nearestPolicySigma(fit.sigma) + ' mm';
-    elFitList.innerHTML = fitThrows.map((t, i) =>
-      '<div>' + (i + 1) + '. r=' + t.r.toFixed(1) + ' mm'
-      + (t.theta !== null && t.theta !== undefined
-          ? ', θ=' + t.theta.toFixed(1) + '°' : ' (no angle)')
-      + '</div>').join('');
   }
   drawFitChart(fit);
+}
+
+function parseThrowFields(rRaw, aRaw) {
+  const r = parseFloat(rRaw);
+  if (!Number.isFinite(r) || r < 0 || r > FIT_R_MAX)
+    return { ok: false, err: 'Distance must be 0–' + FIT_R_MAX + ' mm' };
+  let theta = null;
+  const rawA = (aRaw || '').trim();
+  if (rawA !== '') {
+    const a = parseFloat(rawA);
+    if (!Number.isFinite(a) || a < 0 || a > 360)
+      return { ok: false, err: 'Angle must be 0–360°' };
+    theta = a === 360 ? 0 : a;
+  }
+  return { ok: true, r, theta };
+}
+
+function renderFitList() {
+  if (!fitThrows.length) {
+    elFitList.innerHTML = '<div class="empty">No throws yet — tap a row later to edit</div>';
+    return;
+  }
+  let html = '<div class="hdr"><span>#</span><span>Distance (mm)</span>'
+    + '<span>Angle °</span><span></span></div>';
+  fitThrows.forEach((t, i) => {
+    html += '<div class="fit-row" data-i="' + i + '">'
+      + '<span class="idx">' + (i + 1) + '</span>'
+      + '<input class="fit-r" type="number" inputmode="decimal" min="0" max="'
+      + FIT_R_MAX + '" step="0.1" value="' + t.r + '">'
+      + '<input class="fit-a" type="number" inputmode="decimal" min="0" max="360" step="0.1" '
+      + 'placeholder="—" value="'
+      + (t.theta !== null && t.theta !== undefined ? t.theta : '') + '">'
+      + '<button type="button" class="del" title="Delete" data-del="' + i + '">×</button>'
+      + '</div>';
+  });
+  elFitList.innerHTML = html;
+
+  elFitList.querySelectorAll('.fit-row').forEach(row => {
+    const i = parseInt(row.dataset.i, 10);
+    const rIn = row.querySelector('.fit-r');
+    const aIn = row.querySelector('.fit-a');
+    const commit = () => {
+      const parsed = parseThrowFields(rIn.value, aIn.value);
+      if (!parsed.ok) {
+        rIn.classList.toggle('bad', true);
+        aIn.classList.toggle('bad', true);
+        showFitError(parsed.err + ' (throw #' + (i + 1) + ')');
+        return;
+      }
+      rIn.classList.remove('bad');
+      aIn.classList.remove('bad');
+      showFitError('');
+      fitThrows[i] = { r: parsed.r, theta: parsed.theta };
+      refreshFitSummary();
+    };
+    rIn.addEventListener('change', commit);
+    aIn.addEventListener('change', commit);
+    rIn.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); rIn.blur(); }
+    });
+    aIn.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); aIn.blur(); }
+    });
+  });
+  elFitList.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.del, 10);
+      fitThrows.splice(i, 1);
+      showFitError('');
+      renderFit();
+    });
+  });
+}
+
+function renderFit() {
+  refreshFitSummary();
+  renderFitList();
 }
 
 function showFitError(msg) {
@@ -1283,31 +1373,13 @@ function showFitError(msg) {
 }
 
 function addFitThrow() {
-  const r = parseFloat(elFitRadius.value);
-  if (!Number.isFinite(r)) {
-    showFitError('Enter a distance in mm.');
+  const parsed = parseThrowFields(elFitRadius.value, elFitAngle.value);
+  if (!parsed.ok) {
+    showFitError(parsed.err);
     return;
-  }
-  if (r < 0 || r > FIT_R_MAX) {
-    showFitError('Distance must be between 0 and ' + FIT_R_MAX + ' mm (board outer edge).');
-    return;
-  }
-  let theta = null;
-  const rawA = elFitAngle.value.trim();
-  if (rawA !== '') {
-    const a = parseFloat(rawA);
-    if (!Number.isFinite(a)) {
-      showFitError('Angle must be a number.');
-      return;
-    }
-    if (a < 0 || a > 360) {
-      showFitError('Angle must be between 0 and 360 degrees.');
-      return;
-    }
-    theta = a === 360 ? 0 : a;
   }
   showFitError('');
-  fitThrows.push({ r, theta });
+  fitThrows.push({ r: parsed.r, theta: parsed.theta });
   elFitRadius.value = '';
   elFitAngle.value = '';
   elFitRadius.focus();
