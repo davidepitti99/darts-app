@@ -820,7 +820,7 @@ function shapeSigmaEq(shape) {
 }
 
 /** Snap to the precomputed grid (σ1≥σ2, |σ1−σ2|≤5; φ=0 if σ1=σ2 else step 20°). */
-function snapAnisoShape(shape) {
+function snapPolicyShape(shape) {
   let s1 = Math.round(shape.sigma1);
   let s2 = Math.round(shape.sigma2);
   let phi = Number.isFinite(shape.phiDeg) ? shape.phiDeg : 0;
@@ -842,46 +842,46 @@ function snapAnisoShape(shape) {
 }
 
 // On-demand policies: policies/{mode}/s{s1}_s{s2}_p{phi}.json
-const anisoCache = Object.create(null);   // key -> policy object | false (404)
-const anisoInflight = Object.create(null);
-let anisoStatus = '';
+const policyCache = Object.create(null);   // key -> policy object | false (404)
+const policyInflight = Object.create(null);
+let policyStatus = '';
 
-function anisoCacheKey(modeKey, s1, s2, phi) {
+function policyCacheKey(modeKey, s1, s2, phi) {
   return modeKey + '|s' + s1 + '_s' + s2 + '_p' + phi;
 }
-function anisoUrl(modeKey, s1, s2, phi) {
+function policyUrl(modeKey, s1, s2, phi) {
   return 'policies/' + modeKey + '/s' + s1 + '_s' + s2 + '_p' + phi + '.json';
 }
 
 /** Return cached policy or null; kick off fetch if needed. */
-function resolveAnisoPolicy(modeKey, shape) {
-  const snap = snapAnisoShape(shape);
-  const key = anisoCacheKey(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg);
-  if (Object.prototype.hasOwnProperty.call(anisoCache, key)) {
-    const data = anisoCache[key];
+function resolvePolicy(modeKey, shape) {
+  const snap = snapPolicyShape(shape);
+  const key = policyCacheKey(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg);
+  if (Object.prototype.hasOwnProperty.call(policyCache, key)) {
+    const data = policyCache[key];
     if (data) return { policy: data, snap, status: 'ready' };
     return { policy: null, snap, status: 'missing' };
   }
-  if (!anisoInflight[key]) {
+  if (!policyInflight[key]) {
     const label = (snap.sigma1 === snap.sigma2)
       ? ('σ=' + snap.sigma1 + ' mm')
       : ('σ₁=' + snap.sigma1 + ' σ₂=' + snap.sigma2 + ' φ=' + snap.phiDeg + '°');
-    anisoStatus = 'Loading aim table (' + label + ')…';
-    anisoInflight[key] = fetch(anisoUrl(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg))
+    policyStatus = 'Loading aim table (' + label + ')…';
+    policyInflight[key] = fetch(policyUrl(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg))
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
       .then(data => {
-        anisoCache[key] = data;
-        delete anisoInflight[key];
-        anisoStatus = '';
+        policyCache[key] = data;
+        delete policyInflight[key];
+        policyStatus = '';
         render();
       })
       .catch(() => {
-        anisoCache[key] = false;
-        delete anisoInflight[key];
-        anisoStatus = 'Aim table not available for ' + label + ' yet';
+        policyCache[key] = false;
+        delete policyInflight[key];
+        policyStatus = 'Aim table not available for ' + label + ' yet';
         render();
       });
   }
@@ -896,16 +896,19 @@ function setPlayerShape(idx, shapeOrNull) {
     el1.value = ''; el2.value = ''; elp.value = '';
     return;
   }
-  el1.value = String(Math.round(shapeOrNull.sigma1 * 10) / 10);
-  el2.value = String(Math.round(shapeOrNull.sigma2 * 10) / 10);
-  elp.value = String(Math.round((shapeOrNull.phiDeg || 0) * 10) / 10);
+  el1.value = String(Math.round(shapeOrNull.sigma1));
+  el2.value = String(Math.round(shapeOrNull.sigma2));
+  elp.value = String(Math.round(shapeOrNull.phiDeg || 0));
 }
 
 function syncPolicyFromShape(idx) {
   const shape = playerShape(idx);
   if (!shape) return;
+  const snap = snapPolicyShape(shape);
+  setPlayerShape(idx, snap);
   const el = idx === 0 ? elSigma0 : elSigma1;
-  el.value = String(nearestPolicySigma(shapeSigmaEq(shape)));
+  el.value = String(snap.sigma1 === snap.sigma2 ? snap.sigma1
+    : nearestPolicySigma(shapeSigmaEq(snap)));
 }
 
 function selectMode(key) {
@@ -1019,7 +1022,7 @@ function render() {
   const shape = playerShape(match.current);
   // Always on-demand: simple σ → sσ_sσ_p0; complex → snapped (σ1,σ2,φ).
   const shapeForPolicy = shape || { sigma1: sigma, sigma2: sigma, phiDeg: 0 };
-  const resolved = resolveAnisoPolicy(m.key, shapeForPolicy);
+  const resolved = resolvePolicy(m.key, shapeForPolicy);
   const policy = resolved.policy || {};
   let aimSource;
   if (shape) {
@@ -1059,8 +1062,8 @@ function render() {
     + ' · dart ' + dartN + '/3 · ' + darts + ' left · visit ' + match.visitPoints
     + ' · ' + aimSource
     + '</div>';
-  if (anisoStatus)
-    html += '<div class="row warn">' + anisoStatus + '</div>';
+  if (policyStatus)
+    html += '<div class="row warn">' + policyStatus + '</div>';
 
   if (!entry) {
     if (!resolved.policy && resolved.status !== 'loading')
@@ -1389,16 +1392,22 @@ function refreshFitSummary() {
     elFitDetail.textContent =
       'φ=' + fit.phiDeg.toFixed(0) + '° · σ_eq=' + fit.sigmaEq.toFixed(1) + ' mm'
       + ' · n=' + fit.n
-      + ' · policy σ ' + nearestPolicySigma(fit.sigmaEq) + ' mm'
+      + ' · policy ' + (() => {
+          const s = snapPolicyShape({
+            sigma1: fit.sigma1, sigma2: fit.sigma2, phiDeg: fit.phiDeg,
+          });
+          return 's' + s.sigma1 + '_s' + s.sigma2 + '_p' + s.phiDeg;
+        })()
       + ' · 95% within ~' + fit.r95.toFixed(0) + ' mm';
   } else {
     elFitSigma.textContent = 'σ ' + fit.sigma.toFixed(1) + ' mm';
     const missingAng = fitThrows.some(t => t.theta === null || t.theta === undefined);
+    const s = nearestPolicySigma(fit.sigma);
     elFitDetail.textContent =
       'isotropic' + (missingAng ? ' (add angles on every throw for σ₁/σ₂)' : '')
       + ' · n=' + fit.n
       + ' · 95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
-      + ' · policy σ ' + nearestPolicySigma(fit.sigma) + ' mm';
+      + ' · policy s' + s + '_s' + s + '_p0';
   }
   drawFitChart(fit);
 }
@@ -1507,17 +1516,20 @@ function addFitThrow() {
 function applyFitToPlayer(idx) {
   const fit = fitCurrent();
   if (!fit) return;
-  const snapped = nearestPolicySigma(fit.sigmaEq || fit.sigma);
   const el = idx === 0 ? elSigma0 : elSigma1;
-  el.value = String(snapped);
   if (fit.mode === 'general') {
-    setSigmaMode(idx, 'complex', { keepValues: true });
-    setPlayerShape(idx, {
+    const snap = snapPolicyShape({
       sigma1: fit.sigma1, sigma2: fit.sigma2, phiDeg: fit.phiDeg,
     });
+    setSigmaMode(idx, 'complex', { keepValues: true });
+    setPlayerShape(idx, snap);
+    el.value = String(snap.sigma1 === snap.sigma2 ? snap.sigma1
+      : nearestPolicySigma(shapeSigmaEq(snap)));
   } else {
+    const s = nearestPolicySigma(fit.sigma);
     setSigmaMode(idx, 'simple', { keepValues: true });
     setPlayerShape(idx, null);
+    el.value = String(s);
   }
   showPage('score');
   render();
