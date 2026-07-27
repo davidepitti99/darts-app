@@ -66,10 +66,22 @@
     font-size: 42px; font-weight: 800; line-height: 1.05; margin: 4px 0;
   }
   .card .meta { font-size: 11px; color: var(--mute); margin-bottom: 6px; }
+  .card .acc-toggle {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px;
+  }
+  .card .acc-toggle button {
+    background: var(--field); color: #cfcfcf; border: 1px solid #555;
+    border-radius: 8px; padding: 6px 4px; font-size: 11px; font-weight: 600;
+    cursor: pointer;
+  }
+  .card .acc-toggle button.active {
+    background: var(--accent); color: #1a1a1a; border-color: var(--accent);
+  }
   .card .sigma-row {
     display: flex; align-items: center; justify-content: center; gap: 6px;
-    margin-top: 2px;
+    margin-top: 6px;
   }
+  .card .sigma-row.hidden, .card .shape-row.hidden { display: none; }
   .card .sigma-row label { font-size: 11px; color: var(--mute); white-space: nowrap; }
   .card .sigma-row select {
     flex: 1; max-width: 110px; padding: 6px 8px; font-size: 13px;
@@ -197,8 +209,9 @@
     font-size: 11px; color: var(--mute); margin-bottom: 4px; padding: 0 2px;
   }
   .fit-actions {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
   }
+  .fit-actions.single { grid-template-columns: 1fr; }
   #fitChart { width: 100%; height: auto; display: block; border-radius: 12px;
               background: #141414; margin-top: 10px; }
 </style>
@@ -219,22 +232,26 @@
       <input class="name" id="name0" value="Player 1" maxlength="16">
       <div class="rem" id="rem0">501</div>
       <div class="meta" id="meta0">Legs 0</div>
-      <div class="sigma-row">
+      <div class="acc-toggle" data-player="0">
+        <button type="button" class="active" data-mode="simple">Simple σ</button>
+        <button type="button" data-mode="complex">σ₁ σ₂ φ</button>
+      </div>
+      <div class="sigma-row" id="simpleRow0">
         <label for="sigma0">σ</label>
         <select id="sigma0"></select>
       </div>
-      <div class="shape-row">
+      <div class="shape-row hidden" id="complexRow0">
         <div class="mini">
           <label for="s1_0">σ₁</label>
-          <input id="s1_0" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="opt.">
+          <input id="s1_0" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="—">
         </div>
         <div class="mini">
           <label for="s2_0">σ₂</label>
-          <input id="s2_0" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="opt.">
+          <input id="s2_0" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="—">
         </div>
         <div class="mini">
           <label for="phi_0">φ°</label>
-          <input id="phi_0" type="number" inputmode="decimal" min="0" max="180" step="0.1" placeholder="opt.">
+          <input id="phi_0" type="number" inputmode="decimal" min="0" max="180" step="0.1" placeholder="—">
         </div>
       </div>
     </div>
@@ -242,22 +259,26 @@
       <input class="name" id="name1" value="Player 2" maxlength="16">
       <div class="rem" id="rem1">501</div>
       <div class="meta" id="meta1">Legs 0</div>
-      <div class="sigma-row">
+      <div class="acc-toggle" data-player="1">
+        <button type="button" class="active" data-mode="simple">Simple σ</button>
+        <button type="button" data-mode="complex">σ₁ σ₂ φ</button>
+      </div>
+      <div class="sigma-row" id="simpleRow1">
         <label for="sigma1">σ</label>
         <select id="sigma1"></select>
       </div>
-      <div class="shape-row">
+      <div class="shape-row hidden" id="complexRow1">
         <div class="mini">
           <label for="s1_1">σ₁</label>
-          <input id="s1_1" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="opt.">
+          <input id="s1_1" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="—">
         </div>
         <div class="mini">
           <label for="s2_1">σ₂</label>
-          <input id="s2_1" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="opt.">
+          <input id="s2_1" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="—">
         </div>
         <div class="mini">
           <label for="phi_1">φ°</label>
-          <input id="phi_1" type="number" inputmode="decimal" min="0" max="180" step="0.1" placeholder="opt.">
+          <input id="phi_1" type="number" inputmode="decimal" min="0" max="180" step="0.1" placeholder="—">
         </div>
       </div>
     </div>
@@ -284,9 +305,8 @@
     <div class="fit-help">
       Aim at the <b>bull</b>. Enter each dart’s <b>distance</b> from the centre (mm).
       Optionally add the <b>angle</b> (degrees from the top / 20, clockwise) for a
-      full tilted Gaussian (σ₁, σ₂, φ). Distance-only uses a simple isotropic σ.
-      Policies use one σ (σ<sub>eq</sub>); optional σ₁/σ₂/φ on the scorekeeper
-      draw the tilted aim rings.
+      tilted Gaussian (σ₁, σ₂, φ). Distance-only → simple isotropic σ.
+      Apply sets that player’s scorekeeper mode (Simple or σ₁ σ₂ φ).
     </div>
     <div class="fit-entry" style="grid-template-columns:1fr 1fr auto">
       <input id="fitRadius" type="number" inputmode="decimal" min="0" max="170" step="0.1"
@@ -302,12 +322,11 @@
     </div>
     <canvas id="fitChart" width="800" height="400"></canvas>
     <div class="fit-list" id="fitList"><div class="empty">No throws yet</div></div>
-    <div class="fit-actions">
-      <button type="button" id="fitUndo">Undo last</button>
+    <div class="fit-actions single">
       <button type="button" id="fitClear">Clear</button>
-      <button type="button" class="primary" id="fitApply0">Use for P1</button>
     </div>
-    <div class="fit-actions" style="grid-template-columns:1fr">
+    <div class="fit-actions">
+      <button type="button" class="primary" id="fitApply0">Use for Player 1</button>
       <button type="button" class="primary" id="fitApply1">Use for Player 2</button>
     </div>
   </div><!-- /pageFit -->
@@ -762,15 +781,35 @@ function activeSigma() {
   return parseInt(el.value, 10);
 }
 
-/** Optional tilted Gaussian for player idx, or null if isotropic-only. */
+/** Per-player accuracy UI: 'simple' (one σ) or 'complex' (σ₁, σ₂, φ). */
+const sigmaMode = ['simple', 'simple'];
+
+function setSigmaMode(idx, mode, opts) {
+  const clearOther = !(opts && opts.keepValues);
+  sigmaMode[idx] = mode === 'complex' ? 'complex' : 'simple';
+  const simple = document.getElementById('simpleRow' + idx);
+  const complex = document.getElementById('complexRow' + idx);
+  simple.classList.toggle('hidden', sigmaMode[idx] === 'complex');
+  complex.classList.toggle('hidden', sigmaMode[idx] === 'simple');
+  const toggle = document.querySelector('.acc-toggle[data-player="' + idx + '"]');
+  if (toggle) {
+    for (const b of toggle.querySelectorAll('button'))
+      b.classList.toggle('active', b.dataset.mode === sigmaMode[idx]);
+  }
+  if (clearOther) {
+    if (sigmaMode[idx] === 'simple') setPlayerShape(idx, null);
+  }
+}
+
+/** Tilted Gaussian for player idx when in complex mode, else null. */
 function playerShape(idx) {
+  if (sigmaMode[idx] !== 'complex') return null;
   const s1 = parseFloat(document.getElementById('s1_' + idx).value);
   const s2 = parseFloat(document.getElementById('s2_' + idx).value);
   let phi = parseFloat(document.getElementById('phi_' + idx).value);
   if (!(s1 > 0) || !(s2 > 0)) return null;
   if (!Number.isFinite(phi)) phi = 0;
   if (phi < 0 || phi > 180) phi = ((phi % 180) + 180) % 180;
-  // Keep σ1 as major for drawing consistency
   if (s1 >= s2) return { sigma1: s1, sigma2: s2, phiDeg: phi };
   return { sigma1: s2, sigma2: s1, phiDeg: (phi + 90) % 180 };
 }
@@ -983,19 +1022,21 @@ document.getElementById('btnMatch').addEventListener('click', () => {
   match = newMatch(m.start_score, m.double_in, names());
   render();
 });
-elSigma0.addEventListener('change', () => {
-  // Manual isotropic override clears optional shape for that player.
-  setPlayerShape(0, null);
-  render();
-});
-elSigma1.addEventListener('change', () => {
-  setPlayerShape(1, null);
-  render();
-});
+elSigma0.addEventListener('change', () => { render(); });
+elSigma1.addEventListener('change', () => { render(); });
 for (const id of ['s1_0','s2_0','phi_0','s1_1','s2_1','phi_1']) {
   document.getElementById(id).addEventListener('change', () => {
     const idx = id.endsWith('_0') ? 0 : 1;
     syncPolicyFromShape(idx);
+    render();
+  });
+}
+for (const toggle of document.querySelectorAll('.acc-toggle')) {
+  toggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    const idx = parseInt(toggle.dataset.player, 10);
+    setSigmaMode(idx, btn.dataset.mode);
     render();
   });
 }
@@ -1393,10 +1434,12 @@ function applyFitToPlayer(idx) {
   const el = idx === 0 ? elSigma0 : elSigma1;
   el.value = String(snapped);
   if (fit.mode === 'general') {
+    setSigmaMode(idx, 'complex', { keepValues: true });
     setPlayerShape(idx, {
       sigma1: fit.sigma1, sigma2: fit.sigma2, phiDeg: fit.phiDeg,
     });
   } else {
+    setSigmaMode(idx, 'simple', { keepValues: true });
     setPlayerShape(idx, null);
   }
   showPage('score');
@@ -1409,9 +1452,6 @@ elFitRadius.addEventListener('keydown', (e) => {
 });
 elFitAngle.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); addFitThrow(); }
-});
-document.getElementById('fitUndo').addEventListener('click', () => {
-  fitThrows.pop(); renderFit();
 });
 document.getElementById('fitClear').addEventListener('click', () => {
   fitThrows.length = 0; renderFit();
