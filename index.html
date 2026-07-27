@@ -306,7 +306,9 @@
       Aim at the <b>bull</b>. Enter each dart’s <b>distance</b> from the centre (mm).
       Optionally add the <b>angle</b> (degrees from the top / 20, clockwise) for a
       tilted Gaussian (σ₁, σ₂, φ). Distance-only → simple isotropic σ.
-      Apply sets that player’s scorekeeper mode (Simple or σ₁ σ₂ φ).
+      Apply sets that player’s scorekeeper mode. In σ₁ σ₂ φ mode the site
+      loads the matching anisotropic aim table on demand (snapped to 1 mm /
+      20°); until then it uses isotropic σ<sub>eq</sub>.
     </div>
     <div class="fit-entry" style="grid-template-columns:1fr 1fr auto">
       <input id="fitRadius" type="number" inputmode="decimal" min="0" max="170" step="0.1"
@@ -818,6 +820,72 @@ function shapeSigmaEq(shape) {
   return Math.sqrt(0.5 * (shape.sigma1 * shape.sigma1 + shape.sigma2 * shape.sigma2));
 }
 
+/** Snap to the precomputed anisotropic grid (σ1≥σ2, |σ1−σ2|≤5, φ step 20°). */
+function snapAnisoShape(shape) {
+  let s1 = Math.round(shape.sigma1);
+  let s2 = Math.round(shape.sigma2);
+  let phi = Number.isFinite(shape.phiDeg) ? shape.phiDeg : 0;
+  s1 = Math.max(1, Math.min(50, s1));
+  s2 = Math.max(1, Math.min(50, s2));
+  if (s2 > s1) {
+    const t = s1; s1 = s2; s2 = t;
+    phi = (phi + 90) % 180;
+  }
+  if (s1 - s2 > 5) s2 = Math.max(1, s1 - 5);
+  phi = ((phi % 180) + 180) % 180;
+  phi = Math.round(phi / 20) * 20;
+  if (phi >= 180) phi = 0;
+  return { sigma1: s1, sigma2: s2, phiDeg: phi, isotropic: s1 === s2 };
+}
+
+// On-demand anisotropic policies: policies/{mode}/s{s1}_s{s2}_p{phi}.json
+const anisoCache = Object.create(null);   // key -> policy object | false (404)
+const anisoInflight = Object.create(null);
+let anisoStatus = '';
+
+function anisoCacheKey(modeKey, s1, s2, phi) {
+  return modeKey + '|s' + s1 + '_s' + s2 + '_p' + phi;
+}
+function anisoUrl(modeKey, s1, s2, phi) {
+  return 'policies/' + modeKey + '/s' + s1 + '_s' + s2 + '_p' + phi + '.json';
+}
+
+/** Return cached aniso policy or null; kick off fetch if needed. */
+function resolveAnisoPolicy(modeKey, shape) {
+  const snap = snapAnisoShape(shape);
+  if (snap.isotropic) return { policy: null, snap, status: 'isotropic' };
+  const key = anisoCacheKey(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg);
+  if (Object.prototype.hasOwnProperty.call(anisoCache, key)) {
+    const data = anisoCache[key];
+    if (data) return { policy: data, snap, status: 'ready' };
+    return { policy: null, snap, status: 'missing' };
+  }
+  if (!anisoInflight[key]) {
+    anisoStatus = 'Loading anisotropic aim (σ₁=' + snap.sigma1
+      + ' σ₂=' + snap.sigma2 + ' φ=' + snap.phiDeg + '°)…';
+    anisoInflight[key] = fetch(anisoUrl(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg))
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(data => {
+        anisoCache[key] = data;
+        delete anisoInflight[key];
+        anisoStatus = '';
+        render();
+      })
+      .catch(() => {
+        anisoCache[key] = false;
+        delete anisoInflight[key];
+        anisoStatus = 'No anisotropic table for σ₁=' + snap.sigma1
+          + ' σ₂=' + snap.sigma2 + ' φ=' + snap.phiDeg
+          + '° — using isotropic σ_eq';
+        render();
+      });
+  }
+  return { policy: null, snap, status: 'loading' };
+}
+
 function setPlayerShape(idx, shapeOrNull) {
   const el1 = document.getElementById('s1_' + idx);
   const el2 = document.getElementById('s2_' + idx);
@@ -947,7 +1015,22 @@ function render() {
   const m = mode();
   const sigma = activeSigma();
   const shape = playerShape(match.current);
-  const policy = (DATA.policies[m.key] && DATA.policies[m.key][String(sigma)]) || {};
+  let policy = (DATA.policies[m.key] && DATA.policies[m.key][String(sigma)]) || {};
+  let aimSource = 'σ ' + sigma + ' mm';
+  if (shape) {
+    const resolved = resolveAnisoPolicy(m.key, shape);
+    if (resolved.policy) {
+      policy = resolved.policy;
+      aimSource = 'σ₁ ' + resolved.snap.sigma1
+        + ' σ₂ ' + resolved.snap.sigma2
+        + ' φ ' + resolved.snap.phiDeg + '°';
+    } else {
+      aimSource = 'σ₁ ' + shape.sigma1.toFixed(1)
+        + ' σ₂ ' + shape.sigma2.toFixed(1)
+        + ' φ ' + shape.phiDeg.toFixed(0) + '°'
+        + ' (σ_eq→' + sigma + ')';
+    }
+  }
 
   for (let i = 0; i < 2; i++) {
     const p = match.players[i];
@@ -974,13 +1057,10 @@ function render() {
   const entry = policy[score + ',' + darts];
   let html = '<div class="turn">' + match.players[match.current].name
     + ' · dart ' + dartN + '/3 · ' + darts + ' left · visit ' + match.visitPoints
-    + (shape
-        ? (' · σ₁ ' + shape.sigma1.toFixed(1)
-           + ' σ₂ ' + shape.sigma2.toFixed(1)
-           + ' φ ' + shape.phiDeg.toFixed(0) + '°'
-           + ' (σ_eq→' + sigma + ')')
-        : (' · σ ' + sigma + ' mm'))
+    + ' · ' + aimSource
     + '</div>';
+  if (anisoStatus)
+    html += '<div class="row warn">' + anisoStatus + '</div>';
 
   if (!entry) {
     html += '<div class="warn">No optimal aim for ' + score + ' with ' + darts + ' dart(s).</div>';
@@ -995,7 +1075,7 @@ function render() {
     html += '</div>';
     html += '<div class="row"><span class="k">Expected turns:</span> ' + et.toFixed(3) + '</div>';
     const dep = sigmaDependence(m, score + ',' + darts);
-    if (dep) {
+    if (dep && !shape) {
       html += '<div class="row"><span class="k">Aim &sigma;-sensitivity:</span> '
         + '<span style="color:' + driftColor(dep.drift) + '">drift ' + dep.drift.toFixed(0) + ' mm</span>'
         + '<span class="k"> · </span>'
