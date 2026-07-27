@@ -228,12 +228,13 @@
       Policies still use one σ — we apply the equivalent σ<sub>eq</sub>.
     </div>
     <div class="fit-entry" style="grid-template-columns:1fr 1fr auto">
-      <input id="fitRadius" type="number" inputmode="decimal" min="0" step="0.1"
-             placeholder="Distance (mm)">
-      <input id="fitAngle" type="number" inputmode="decimal" step="0.1"
-             placeholder="Angle ° (optional)">
+      <input id="fitRadius" type="number" inputmode="decimal" min="0" max="170" step="0.1"
+             placeholder="Distance 0–170 mm">
+      <input id="fitAngle" type="number" inputmode="decimal" min="0" max="360" step="0.1"
+             placeholder="Angle 0–360° (opt.)">
       <button type="button" class="primary" id="fitAdd">Add</button>
     </div>
+    <div class="fit-help" id="fitError" style="display:none;color:#ff8a8a;margin-top:0;margin-bottom:8px"></div>
     <div class="fit-result" id="fitResult">
       <div class="big" id="fitSigma">—</div>
       <div class="sub" id="fitDetail">Add throws to estimate σ</div>
@@ -904,8 +905,10 @@ const elFitAngle = document.getElementById('fitAngle');
 const elFitSigma = document.getElementById('fitSigma');
 const elFitDetail = document.getElementById('fitDetail');
 const elFitList = document.getElementById('fitList');
+const elFitError = document.getElementById('fitError');
 const fitCv = document.getElementById('fitChart');
 const fitCtx = fitCv.getContext('2d');
+const FIT_R_MAX = DOUBLE_OUTER;  // board outer radius (mm)
 
 function polarToXY(r, thetaDeg) {
   const th = thetaDeg * Math.PI / 180;
@@ -1148,16 +1151,41 @@ function renderFit() {
   drawFitChart(fit);
 }
 
+function showFitError(msg) {
+  if (!msg) {
+    elFitError.style.display = 'none';
+    elFitError.textContent = '';
+    return;
+  }
+  elFitError.style.display = 'block';
+  elFitError.textContent = msg;
+}
+
 function addFitThrow() {
   const r = parseFloat(elFitRadius.value);
-  if (!Number.isFinite(r) || r < 0) return;
+  if (!Number.isFinite(r)) {
+    showFitError('Enter a distance in mm.');
+    return;
+  }
+  if (r < 0 || r > FIT_R_MAX) {
+    showFitError('Distance must be between 0 and ' + FIT_R_MAX + ' mm (board outer edge).');
+    return;
+  }
   let theta = null;
   const rawA = elFitAngle.value.trim();
   if (rawA !== '') {
     const a = parseFloat(rawA);
-    if (!Number.isFinite(a)) return;
-    theta = ((a % 360) + 360) % 360;
+    if (!Number.isFinite(a)) {
+      showFitError('Angle must be a number.');
+      return;
+    }
+    if (a < 0 || a > 360) {
+      showFitError('Angle must be between 0 and 360 degrees.');
+      return;
+    }
+    theta = a === 360 ? 0 : a;
   }
+  showFitError('');
   fitThrows.push({ r, theta });
   elFitRadius.value = '';
   elFitAngle.value = '';
