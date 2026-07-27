@@ -367,7 +367,6 @@ function makePlayer(name, start, doubleIn) {
   return {
     name, remaining: start, opened: !doubleIn,
     dartsThrown: 0, pointsScored: 0, visitScores: [],
-    first9Points: 0, first9Darts: 0,
     checkoutHits: 0, checkoutAttempts: 0, highestCheckout: 0, highestVisit: 0,
     scores180: 0, scores140: 0, scores100: 0, busts: 0, legsWon: 0,
   };
@@ -385,16 +384,13 @@ function newMatch(startScore, doubleIn, names) {
       makePlayer(names[1], startScore, doubleIn),
     ],
     current: 0, dartsLeft: 3, turnStart: startScore,
-    visitDarts: [], visitPoints: 0, visitFirst9Points: 0,
+    visitDarts: [], visitPoints: 0,
     winner: null, message: names[0] + ' to throw', undo: [],
   };
 }
 
 function avg3(p) {
   return p.dartsThrown ? (p.pointsScored / p.dartsThrown * 3) : null;
-}
-function avgFirst9(p) {
-  return p.first9Darts ? (p.first9Points / p.first9Darts * 3) : null;
 }
 function checkoutPct(p) {
   return p.checkoutAttempts ? (100 * p.checkoutHits / p.checkoutAttempts) : null;
@@ -424,7 +420,6 @@ function finishVisit(m, busted) {
     const refund = m.visitDarts.filter(d => d.outcome === 'ok')
       .reduce((a, d) => a + d.points, 0);
     p.pointsScored -= refund;
-    p.first9Points = Math.max(0, p.first9Points - m.visitFirst9Points);
     score = 0;
   } else {
     score = m.visitPoints;
@@ -443,7 +438,6 @@ function nextPlayer(m) {
   m.turnStart = m.players[m.current].remaining;
   m.visitDarts = [];
   m.visitPoints = 0;
-  m.visitFirst9Points = 0;
   m.message = m.players[m.current].name + ' to throw';
 }
 
@@ -465,7 +459,6 @@ function throwDart(m, label) {
 
   function countDart() {
     p.dartsThrown += 1;
-    if (p.first9Darts < 9) p.first9Darts += 1;
     if (atDouble) p.checkoutAttempts += 1;
   }
   function record(result) {
@@ -473,10 +466,6 @@ function throwDart(m, label) {
     if (result.outcome === 'ok' || result.outcome === 'checkout') {
       m.visitPoints += result.points;
       p.pointsScored += result.points;
-      if (p.dartsThrown <= 9) {
-        p.first9Points += result.points;
-        m.visitFirst9Points += result.points;
-      }
     }
   }
 
@@ -546,7 +535,6 @@ function newLeg(m) {
   m.turnStart = m.startScore;
   m.visitDarts = [];
   m.visitPoints = 0;
-  m.visitFirst9Points = 0;
   m.winner = null;
   m.message = m.players[m.current].name + ' to throw';
 }
@@ -683,10 +671,10 @@ function renderStats() {
   const a = match.players[0], b = match.players[1];
   const rows = [
     ['3-dart avg', fmt(avg3(a), 1), fmt(avg3(b), 1)],
-    ['First 9', fmt(avgFirst9(a), 1), fmt(avgFirst9(b), 1)],
     ['Darts', a.dartsThrown, b.dartsThrown],
-    ['100 / 140 / 180', a.scores100+'/'+a.scores140+'/'+a.scores180,
-                       b.scores100+'/'+b.scores140+'/'+b.scores180],
+    ['Visits 100–139', a.scores100, b.scores100],
+    ['Visits 140–179', a.scores140, b.scores140],
+    ['Visits 180', a.scores180, b.scores180],
     ['Checkout %',
      (checkoutPct(a) === null ? '—' : fmt(checkoutPct(a), 0) + '%') + ' ('+a.checkoutHits+'/'+a.checkoutAttempts+')',
      (checkoutPct(b) === null ? '—' : fmt(checkoutPct(b), 0) + '%') + ' ('+b.checkoutHits+'/'+b.checkoutAttempts+')'],
