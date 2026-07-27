@@ -186,6 +186,13 @@
     font-size: 36px; font-weight: 800; color: var(--accent); line-height: 1.1;
   }
   .fit-result .sub { color: #b9b9b9; font-size: 13px; margin-top: 6px; }
+  .fit-result .quality {
+    font-size: 14px; font-weight: 700; margin-top: 8px;
+  }
+  .fit-result .quality.low { color: #ff8a8a; }
+  .fit-result .quality.fair { color: #ffb84d; }
+  .fit-result .quality.good { color: #8fdf8f; }
+  .fit-result .quality.high { color: #44bb44; }
   .fit-list {
     max-height: 220px; overflow-y: auto; background: var(--panel);
     border-radius: 12px; padding: 8px; font-size: 13px; color: #cfcfcf;
@@ -324,6 +331,7 @@
     <div class="fit-help" id="fitError" style="display:none;color:#ff8a8a;margin-top:0;margin-bottom:8px"></div>
     <div class="fit-result" id="fitResult">
       <div class="big" id="fitSigma">—</div>
+      <div class="quality" id="fitQuality"></div>
       <div class="sub" id="fitDetail">Add throws to estimate σ</div>
     </div>
     <canvas id="fitChart" width="800" height="400"></canvas>
@@ -1180,6 +1188,7 @@ const fitThrows = [];
 const elFitRadius = document.getElementById('fitRadius');
 const elFitAngle = document.getElementById('fitAngle');
 const elFitSigma = document.getElementById('fitSigma');
+const elFitQuality = document.getElementById('fitQuality');
 const elFitDetail = document.getElementById('fitDetail');
 const elFitList = document.getElementById('fitList');
 const elFitError = document.getElementById('fitError');
@@ -1394,19 +1403,48 @@ function drawGeneralChart(fit, cssW, cssH) {
   fitCtx.fillText('Landing cloud — general Gaussian', cx, cssH - 8);
 }
 
+function fitQuality(fit) {
+  const n = fit.n;
+  const sigma = fit.sigmaEq || fit.sigma || 0;
+  const se = fit.se || 0;
+  const relSe = sigma > 1e-9 ? se / sigma : 1;
+  const pct = 100 * 1.96 * relSe;
+  const aniso = fit.mode === 'general'
+    && Math.abs(fit.sigma1 - fit.sigma2) > 0.5;
+  const nEff = aniso ? n * 0.65 : n;
+  let level, label;
+  if (n < 8 || (aniso && n < 12)) {
+    level = 'low'; label = 'Low confidence';
+  } else if (nEff < 25 || relSe > 0.12) {
+    level = 'fair'; label = 'Fair confidence';
+  } else if (nEff < 60 || relSe > 0.07) {
+    level = 'good'; label = 'Good confidence';
+  } else {
+    level = 'high'; label = 'High confidence';
+  }
+  let detail = '±' + pct.toFixed(0) + '% on σ (95% CI) · n=' + n;
+  if (aniso && n < 30) detail += ' · need more throws for tilt';
+  return { level, label, detail, pct };
+}
+
 function refreshFitSummary() {
   const fit = fitCurrent();
   if (!fit) {
     elFitSigma.textContent = '—';
+    elFitQuality.textContent = '';
+    elFitQuality.className = 'quality';
     elFitDetail.textContent = fitThrows.length
       ? 'Fix invalid rows to estimate σ'
       : 'Add throws to estimate σ (angle optional)';
   } else if (fit.mode === 'general') {
+    const q = fitQuality(fit);
     elFitSigma.textContent = 'σ₁ ' + fit.sigma1.toFixed(1)
-      + ' · σ₂ ' + fit.sigma2.toFixed(1) + ' mm';
+      + ' · σ₂ ' + fit.sigma2.toFixed(1) + ' mm'
+      + ' · φ=' + fit.phiDeg.toFixed(0) + '°';
+    elFitQuality.className = 'quality ' + q.level;
+    elFitQuality.textContent = q.label + ' — ' + q.detail;
     elFitDetail.textContent =
-      'φ=' + fit.phiDeg.toFixed(0) + '° · σ_eq=' + fit.sigmaEq.toFixed(1) + ' mm'
-      + ' · n=' + fit.n
+      'σ_eq=' + fit.sigmaEq.toFixed(1) + ' mm'
       + ' · policy ' + (() => {
           const s = snapPolicyShape({
             sigma1: fit.sigma1, sigma2: fit.sigma2, phiDeg: fit.phiDeg,
@@ -1415,13 +1453,15 @@ function refreshFitSummary() {
         })()
       + ' · 95% within ~' + fit.r95.toFixed(0) + ' mm';
   } else {
+    const q = fitQuality(fit);
     elFitSigma.textContent = 'σ ' + fit.sigma.toFixed(1) + ' mm';
+    elFitQuality.className = 'quality ' + q.level;
+    elFitQuality.textContent = q.label + ' — ' + q.detail;
     const missingAng = fitThrows.some(t => t.theta === null || t.theta === undefined);
     const s = nearestPolicySigma(fit.sigma);
     elFitDetail.textContent =
-      'isotropic' + (missingAng ? ' (add angles on every throw for σ₁/σ₂)' : '')
-      + ' · n=' + fit.n
-      + ' · 95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
+      (missingAng ? 'isotropic (add angles for σ₁/σ₂) · ' : '')
+      + '95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
       + ' · policy s' + s + '_s' + s + '_p0';
   }
   drawFitChart(fit);
