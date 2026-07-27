@@ -89,7 +89,6 @@
     background: var(--field); color: #fff; border: 1px solid #555;
     border-radius: 8px; text-align: center; width: 100%;
   }
-  .card .sigma-row .range { font-size: 10px; color: var(--mute); }
   .card .shape-row {
     display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 6px;
   }
@@ -102,6 +101,12 @@
     border-radius: 8px; padding: 6px 4px; font-size: 12px; width: 100%;
     text-align: center;
   }
+  /* Hide number spinners (σ / σ₁ σ₂ φ). */
+  .card input[type=number]::-webkit-outer-spin-button,
+  .card input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  .card input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
   .board-wrap { position: relative; width: 100%; margin-top: 10px; }
   canvas { width: 100%; height: auto; display: block; border-radius: 12px; }
@@ -244,7 +249,6 @@
         <label for="sigma0">σ</label>
         <input id="sigma0" type="number" inputmode="numeric" min="1" max="50" step="1"
                value="25" placeholder="1–50">
-        <span class="range">1–50 mm</span>
       </div>
       <div class="shape-row hidden" id="complexRow0">
         <div class="mini">
@@ -273,7 +277,6 @@
         <label for="sigma1">σ</label>
         <input id="sigma1" type="number" inputmode="numeric" min="1" max="50" step="1"
                value="25" placeholder="1–50">
-        <span class="range">1–50 mm</span>
       </div>
       <div class="shape-row hidden" id="complexRow1">
         <div class="mini">
@@ -774,7 +777,6 @@ function buildModeToggle() {
 function populateSigmas() {
   const m = mode();
   const lo = m.sigmas[0], hi = m.sigmas[m.sigmas.length - 1];
-  const rangeText = lo + '–' + hi + ' mm';
   for (const el of [elSigma0, elSigma1]) {
     const prev = parseInt(el.value, 10);
     el.min = String(lo);
@@ -785,8 +787,6 @@ function populateSigmas() {
     if (!m.sigmas.includes(pick))
       pick = m.sigmas.includes(25) ? 25 : lo;
     el.value = String(pick);
-    const hint = el.parentElement.querySelector('.range');
-    if (hint) hint.textContent = rangeText;
   }
 }
 
