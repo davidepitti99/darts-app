@@ -416,32 +416,34 @@ function drawAim(x, y, sigmaOrShape) {
   const [X, Y] = px(x, y);
   const shape = (sigmaOrShape && typeof sigmaOrShape === 'object')
     ? sigmaOrShape : null;
-  const sigma = shape ? null : sigmaOrShape;
+  const sigma = shape ? null : Number(sigmaOrShape);
 
-  for (const [k, a, w] of [[1, 0.9, 3], [2, 0.5, 2]]) {
+  for (const [k, a, w] of [[1, 0.95, 3], [2, 0.55, 2]]) {
     ctx.strokeStyle = 'rgba(255,210,63,' + a + ')';
-    ctx.setLineDash([6, 5]);
-    ctx.lineWidth = w;
+    ctx.lineWidth = Math.max(w, cv.width * 0.003);
     ctx.beginPath();
+    let rPix;
     if (shape) {
-      // Tilted ellipse: principal axes σ1 along φ (from top, clockwise).
       const ph = (shape.phiDeg || 0) * Math.PI / 180;
       const a1 = k * shape.sigma1 * s;
       const a2 = k * shape.sigma2 * s;
+      rPix = Math.max(a1, a2);
       for (let i = 0; i <= 64; i++) {
         const t = (i / 64) * 2 * Math.PI;
         const u = a1 * Math.cos(t), v = a2 * Math.sin(t);
         const dx = u * Math.sin(ph) + v * Math.cos(ph);
         const dy = u * Math.cos(ph) - v * Math.sin(ph);
-        // board y-up → canvas y-down already handled by px; here offsets in px space:
         const pxX = X + dx;
         const pxY = Y - dy;
         if (i === 0) ctx.moveTo(pxX, pxY); else ctx.lineTo(pxX, pxY);
       }
       ctx.closePath();
     } else {
-      ctx.arc(X, Y, k * sigma * s, 0, 2 * Math.PI);
+      rPix = k * sigma * s;
+      ctx.arc(X, Y, Math.max(rPix, 2), 0, 2 * Math.PI);
     }
+    // Dashes vanish on tiny rings (preliminary small-σ policies).
+    ctx.setLineDash(rPix < 18 ? [] : [6, 5]);
     ctx.stroke();
   }
   ctx.setLineDash([]);
@@ -1076,7 +1078,7 @@ function render() {
     const [aim, x, y, et] = entry;
     const aims = formatHitPath(policy, hitContinuation(policy, score, darts));
     const aimClean = aims.length ? aims[0] : displayAim(aim, x, y);
-    drawAim(x, y, shape || sigma);
+    drawAim(x, y, resolved.snap);
     html += '<div class="aim">Aim: ' + aimClean;
     for (let i = 1; i < aims.length; i++)
       html += '<span class="next"> ' + aims[i] + '</span>';
