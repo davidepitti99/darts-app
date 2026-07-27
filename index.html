@@ -139,13 +139,8 @@
     border-radius: 10px; -webkit-appearance: none; appearance: none;
   }
 
-  .pending {
-    margin-top: 10px; text-align: center; font-size: 15px; font-weight: 700;
-    color: var(--accent); min-height: 22px;
-  }
-
   .pad {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px;
   }
   .pad .wide { grid-column: span 2; }
   .pad .mult { background: #3a3a3a; color: var(--accent); }
@@ -295,7 +290,6 @@
     </div>
   </div>
 
-  <div class="pending" id="pending"></div>
   <div class="pad" id="pad"></div>
 
   <div class="actions">
@@ -360,7 +354,6 @@ const DRIFT_SMALL_MM = 75, DRIFT_LARGE_MM = 150;
 const cv = document.getElementById('board');
 const ctx = cv.getContext('2d');
 const elInfo = document.getElementById('info');
-const elPending = document.getElementById('pending');
 const elStats = document.getElementById('stats');
 const elSigma0 = document.getElementById('sigma0');
 const elSigma1 = document.getElementById('sigma1');
@@ -980,8 +973,6 @@ function buildPad() {
 }
 
 function updatePending() {
-  elPending.textContent = 'Multiplier: ' + pendingMult
-    + '  ·  tap 1–20, Bull (S=25 / D=50), or Miss';
   for (const b of elPad.querySelectorAll('.mult'))
     b.classList.toggle('sel', b.dataset.mult === pendingMult);
 }
