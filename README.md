@@ -1,11 +1,5 @@
-# darts-app (retired)
+# Darts scorekeeper (password gated)
 
-This public GitHub Pages site has been taken down.
+Live: https://davidepitti99.github.io/darts-app/
 
-The private app lives in a separate private repository / local folder
-(`darts-app-private`). Disable Pages here:
-
-**Settings → Pages → Source → None**
-
-Then make this repository **private** (or delete it) so the old URL and files
-are no longer publicly reachable.
+The page asks for a site password (see `Risiko/darts/.site_password` after `python build_iphone_app.py`).
