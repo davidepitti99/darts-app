@@ -225,6 +225,28 @@
   .fit-actions.single { grid-template-columns: 1fr; }
   #fitChart { width: 100%; height: auto; display: block; border-radius: 12px;
               background: #141414; margin-top: 10px; }
+  .fit-method { margin-bottom: 10px; }
+  .fit-panel.hidden { display: none; }
+  .zone-grid {
+    display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 8px;
+  }
+  .zone-row {
+    display: grid; grid-template-columns: 1fr auto auto auto; gap: 6px;
+    align-items: center; background: var(--panel); border-radius: 10px;
+    padding: 8px 10px;
+  }
+  .zone-row .zlab { font-size: 13px; font-weight: 600; text-align: left; }
+  .zone-row .zsub { display: block; font-size: 11px; color: var(--mute); font-weight: 400; }
+  .zone-row .zcount {
+    min-width: 2.2em; text-align: center; font-size: 18px; font-weight: 700;
+    color: var(--accent);
+  }
+  .zone-row button {
+    width: 40px; height: 40px; border-radius: 10px; border: 1px solid #555;
+    background: var(--field); color: #fff; font-size: 20px; font-weight: 700;
+    cursor: pointer; line-height: 1;
+  }
+  .zone-row button.plus { background: #2a3a2a; border-color: #3a5a3a; }
 
   .gate {
     position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center;
@@ -345,6 +367,12 @@
   </div><!-- /pageScore -->
 
   <div class="page" id="pageFit">
+    <div class="segmented fit-method" id="fitMethodToggle">
+      <button type="button" class="active" data-fit-method="measure">Distance</button>
+      <button type="button" data-fit-method="zones">Score zones</button>
+    </div>
+
+    <div class="fit-panel" id="fitPanelMeasure">
     <div class="fit-help">
       Aim at the <b>bull</b>. Enter each dart’s <b>distance</b> from the centre (mm).
       Optionally add the <b>angle</b> (degrees from the top / 20, clockwise) for a
@@ -359,6 +387,17 @@
              placeholder="Angle 0–360° (opt.)">
       <button type="button" class="primary" id="fitAdd">Add</button>
     </div>
+    </div><!-- /fitPanelMeasure -->
+
+    <div class="fit-panel hidden" id="fitPanelZones">
+    <div class="fit-help">
+      Aim at the <b>bull</b>. Tap the <b>score belt</b> each dart hit.
+      Isotropic Gaussian σ is inferred by maximum likelihood from the belt counts
+      (red bull → green bull → inner single → triple → outer single → double → miss).
+    </div>
+    <div class="zone-grid" id="zoneGrid"></div>
+    </div><!-- /fitPanelZones -->
+
     <div class="fit-help" id="fitError" style="display:none;color:#ff8a8a;margin-top:0;margin-bottom:8px"></div>
     <div class="fit-result" id="fitResult">
       <div class="big" id="fitSigma">—</div>
@@ -1213,9 +1252,21 @@ for (const b of pageNav.children)
   b.addEventListener('click', () => showPage(b.dataset.page));
 
 // ── Live Gaussian σ fit from bull landings ───────────────────────────────
-// Throws: { r, theta? }  — angle optional (deg from top / 20, clockwise).
-// All angles present + n≥2 → general (σ1, σ2, φ); else isotropic Rayleigh.
+// Measure: { r, theta? } — angle optional → isotropic or general.
+// Zones: annular score-belt counts → isotropic multinomial MLE.
 const fitThrows = [];
+const FIT_ANNULI = [
+  { key: 'red_bull', label: 'Red bull', sub: '50 · 0–6.35 mm', lo: 0, hi: BULL_RADIUS },
+  { key: 'green_bull', label: 'Green bull', sub: '25 · 6.35–15.9 mm', lo: BULL_RADIUS, hi: OUTER_BULL_RADIUS },
+  { key: 'single_inner', label: 'Inner single', sub: '15.9–99 mm', lo: OUTER_BULL_RADIUS, hi: TRIPLE_INNER },
+  { key: 'triple', label: 'Triple belt', sub: '99–107 mm', lo: TRIPLE_INNER, hi: TRIPLE_OUTER },
+  { key: 'single_outer', label: 'Outer single', sub: '107–162 mm', lo: TRIPLE_OUTER, hi: DOUBLE_INNER },
+  { key: 'double', label: 'Double belt', sub: '162–170 mm', lo: DOUBLE_INNER, hi: DOUBLE_OUTER },
+  { key: 'miss', label: 'Miss / off', sub: '> 170 mm', lo: DOUBLE_OUTER, hi: null },
+];
+const fitZoneCounts = Object.fromEntries(FIT_ANNULI.map(a => [a.key, 0]));
+let fitMethod = 'measure'; // 'measure' | 'zones'
+
 const elFitRadius = document.getElementById('fitRadius');
 const elFitAngle = document.getElementById('fitAngle');
 const elFitSigma = document.getElementById('fitSigma');
@@ -1223,9 +1274,53 @@ const elFitQuality = document.getElementById('fitQuality');
 const elFitDetail = document.getElementById('fitDetail');
 const elFitList = document.getElementById('fitList');
 const elFitError = document.getElementById('fitError');
+const elFitPanelMeasure = document.getElementById('fitPanelMeasure');
+const elFitPanelZones = document.getElementById('fitPanelZones');
+const elZoneGrid = document.getElementById('zoneGrid');
+const elFitMethodToggle = document.getElementById('fitMethodToggle');
 const fitCv = document.getElementById('fitChart');
 const fitCtx = fitCv.getContext('2d');
 const FIT_R_MAX = DOUBLE_OUTER;  // board outer radius (mm)
+
+function setFitMethod(method) {
+  fitMethod = method;
+  for (const b of elFitMethodToggle.children)
+    b.classList.toggle('active', b.dataset.fitMethod === method);
+  elFitPanelMeasure.classList.toggle('hidden', method !== 'measure');
+  elFitPanelZones.classList.toggle('hidden', method !== 'zones');
+  renderFit();
+}
+
+for (const b of elFitMethodToggle.children)
+  b.addEventListener('click', () => setFitMethod(b.dataset.fitMethod));
+
+function zoneTotal() {
+  let n = 0;
+  for (const a of FIT_ANNULI) n += fitZoneCounts[a.key] || 0;
+  return n;
+}
+
+function renderZoneGrid() {
+  elZoneGrid.innerHTML = FIT_ANNULI.map(a => (
+    '<div class="zone-row" data-key="' + a.key + '">'
+    + '<div class="zlab">' + a.label
+    + '<span class="zsub">' + a.sub + '</span></div>'
+    + '<button type="button" class="minus" data-delta="-1" aria-label="minus">−</button>'
+    + '<span class="zcount">' + (fitZoneCounts[a.key] || 0) + '</span>'
+    + '<button type="button" class="plus" data-delta="1" aria-label="plus">+</button>'
+    + '</div>'
+  )).join('');
+  elZoneGrid.querySelectorAll('.zone-row').forEach(row => {
+    const key = row.dataset.key;
+    row.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = parseInt(btn.dataset.delta, 10);
+        fitZoneCounts[key] = Math.max(0, (fitZoneCounts[key] || 0) + d);
+        renderFit();
+      });
+    });
+  });
+}
 
 function polarToXY(r, thetaDeg) {
   const th = thetaDeg * Math.PI / 180;
@@ -1245,6 +1340,63 @@ function fitIsotropic(radii) {
     ciLo: Math.max(0, sigma - 1.96 * se), ciHi: sigma + 1.96 * se,
     r50: sigma * Math.sqrt(-2 * Math.log(0.5)),
     r95: sigma * Math.sqrt(-2 * Math.log(0.05)),
+  };
+}
+
+function annulusProbs(sigma) {
+  const inv = 1 / (2 * sigma * sigma);
+  const surv = (r) => {
+    if (r === null || r === undefined) return 0;
+    if (r <= 0) return 1;
+    return Math.exp(-(r * r) * inv);
+  };
+  const probs = FIT_ANNULI.map(a => Math.max(0, surv(a.lo) - surv(a.hi)));
+  let s = 0;
+  for (const p of probs) s += p;
+  if (s <= 0) return probs.map(() => 1 / probs.length);
+  return probs.map(p => Math.max(p / s, 1e-300));
+}
+
+function fitAnnuli(counts) {
+  const nVec = FIT_ANNULI.map(a => counts[a.key] || 0);
+  const n = nVec.reduce((a, b) => a + b, 0);
+  if (n < 1) return null;
+
+  function nll(logSigma) {
+    const sigma = Math.exp(logSigma);
+    const p = annulusProbs(sigma);
+    let s = 0;
+    for (let i = 0; i < nVec.length; i++) s += nVec[i] * Math.log(p[i]);
+    return -s;
+  }
+
+  // Golden-section search on log σ ∈ [log 0.5, log 400]
+  let lo = Math.log(0.5), hi = Math.log(400);
+  const gr = (Math.sqrt(5) - 1) / 2;
+  let c = hi - gr * (hi - lo);
+  let d = lo + gr * (hi - lo);
+  let fc = nll(c), fd = nll(d);
+  for (let iter = 0; iter < 80; iter++) {
+    if (fc < fd) { hi = d; d = c; fd = fc; c = hi - gr * (hi - lo); fc = nll(c); }
+    else { lo = c; c = d; fc = fd; d = lo + gr * (hi - lo); fd = nll(d); }
+  }
+  const logHat = (lo + hi) / 2;
+  const sigma = Math.exp(logHat);
+  const h = 1e-4;
+  const f0 = nll(logHat);
+  const d2 = (nll(logHat + h) - 2 * f0 + nll(logHat - h)) / (h * h);
+  const se = d2 > 1e-12 ? sigma / Math.sqrt(d2) : sigma;
+  const probs = annulusProbs(sigma);
+  const expected = probs.map(p => p * n);
+  return {
+    mode: 'annuli', n, sigma, sigma1: sigma, sigma2: sigma, phiDeg: 0,
+    sigmaEq: sigma, se,
+    ciLo: Math.max(0, sigma - 1.96 * se), ciHi: sigma + 1.96 * se,
+    r50: sigma * Math.sqrt(-2 * Math.log(0.5)),
+    r95: sigma * Math.sqrt(-2 * Math.log(0.05)),
+    counts: Object.assign({}, counts),
+    expected,
+    probs,
   };
 }
 
@@ -1283,6 +1435,7 @@ function fitGeneral(xs, ys) {
 }
 
 function fitCurrent() {
+  if (fitMethod === 'zones') return fitAnnuli(fitZoneCounts);
   if (!fitThrows.length) return null;
   const allAngled = fitThrows.every(t => t.theta !== null && t.theta !== undefined);
   if (allAngled && fitThrows.length >= 2) {
@@ -1325,11 +1478,43 @@ function drawFitChart(fit) {
     fitCtx.fillStyle = '#666';
     fitCtx.font = '14px sans-serif';
     fitCtx.textAlign = 'center';
-    fitCtx.fillText('Chart appears after you add throws', cssW / 2, cssH / 2);
+    fitCtx.fillText(
+      fitMethod === 'zones' ? 'Chart appears after you count belts' : 'Chart appears after you add throws',
+      cssW / 2, cssH / 2);
     return;
   }
-  if (fit.mode === 'general') drawGeneralChart(fit, cssW, cssH);
+  if (fit.mode === 'annuli') drawAnnuliChart(fit, cssW, cssH);
+  else if (fit.mode === 'general') drawGeneralChart(fit, cssW, cssH);
   else drawIsoChart(fit, cssW, cssH);
+}
+
+function drawAnnuliChart(fit, cssW, cssH) {
+  const padL = 8, padR = 8, padT = 16, padB = 48;
+  const W = cssW - padL - padR, H = cssH - padT - padB;
+  const n = FIT_ANNULI.length;
+  const obs = FIT_ANNULI.map(a => (fit.counts[a.key] || 0) / fit.n);
+  const exp = fit.probs;
+  let yMax = 0;
+  for (let i = 0; i < n; i++) yMax = Math.max(yMax, obs[i], exp[i]);
+  yMax = Math.max(yMax * 1.2, 0.05);
+  const groupW = W / n;
+  for (let i = 0; i < n; i++) {
+    const x0 = padL + i * groupW;
+    const bw = groupW * 0.35;
+    const hO = (obs[i] / yMax) * H;
+    const hE = (exp[i] / yMax) * H;
+    fitCtx.fillStyle = 'rgba(90,155,212,0.9)';
+    fitCtx.fillRect(x0 + groupW * 0.12, padT + H - hO, bw, hO);
+    fitCtx.fillStyle = 'rgba(255,210,63,0.85)';
+    fitCtx.fillRect(x0 + groupW * 0.5, padT + H - hE, bw, hE);
+  }
+  fitCtx.fillStyle = '#888';
+  fitCtx.font = '9px sans-serif';
+  fitCtx.textAlign = 'center';
+  const short = ['RB', 'GB', 'S1', 'T', 'S2', 'D', 'X'];
+  for (let i = 0; i < n; i++)
+    fitCtx.fillText(short[i], padL + (i + 0.5) * groupW, cssH - 28);
+  fitCtx.fillText('Observed (blue) vs model (gold)', padL + W / 2, cssH - 10);
 }
 
 function drawIsoChart(fit, cssW, cssH) {
@@ -1455,6 +1640,7 @@ function fitQuality(fit) {
   }
   let detail = '±' + pct.toFixed(0) + '% on σ (95% CI) · n=' + n;
   if (aniso && n < 30) detail += ' · need more throws for tilt';
+  if (fit.mode === 'annuli') detail += ' · belt MLE';
   return { level, label, detail, pct };
 }
 
@@ -1464,9 +1650,13 @@ function refreshFitSummary() {
     elFitSigma.textContent = '—';
     elFitQuality.textContent = '';
     elFitQuality.className = 'quality';
-    elFitDetail.textContent = fitThrows.length
-      ? 'Fix invalid rows to estimate σ'
-      : 'Add throws to estimate σ (angle optional)';
+    if (fitMethod === 'zones') {
+      elFitDetail.textContent = 'Tap + on each belt a dart hit';
+    } else {
+      elFitDetail.textContent = fitThrows.length
+        ? 'Fix invalid rows to estimate σ'
+        : 'Add throws to estimate σ (angle optional)';
+    }
   } else if (fit.mode === 'general') {
     const q = fitQuality(fit);
     elFitSigma.textContent = 'σ₁ ' + fit.sigma1.toFixed(1)
@@ -1488,12 +1678,19 @@ function refreshFitSummary() {
     elFitSigma.textContent = 'σ ' + fit.sigma.toFixed(1) + ' mm';
     elFitQuality.className = 'quality ' + q.level;
     elFitQuality.textContent = q.label + ' — ' + q.detail;
-    const missingAng = fitThrows.some(t => t.theta === null || t.theta === undefined);
     const s = nearestPolicySigma(fit.sigma);
-    elFitDetail.textContent =
-      (missingAng ? 'isotropic (add angles for σ₁/σ₂) · ' : '')
-      + '95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
-      + ' · policy s' + s + '_s' + s + '_p0';
+    if (fit.mode === 'annuli') {
+      elFitDetail.textContent =
+        'belt MLE (isotropic) · 95% CI ' + fit.ciLo.toFixed(1)
+        + '–' + fit.ciHi.toFixed(1) + ' mm'
+        + ' · policy s' + s + '_s' + s + '_p0';
+    } else {
+      const missingAng = fitThrows.some(t => t.theta === null || t.theta === undefined);
+      elFitDetail.textContent =
+        (missingAng ? 'isotropic (add angles for σ₁/σ₂) · ' : '')
+        + '95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
+        + ' · policy s' + s + '_s' + s + '_p0';
+    }
   }
   drawFitChart(fit);
 }
@@ -1514,6 +1711,15 @@ function parseThrowFields(rRaw, aRaw) {
 }
 
 function renderFitList() {
+  if (fitMethod === 'zones') {
+    const n = zoneTotal();
+    if (!n) {
+      elFitList.innerHTML = '<div class="empty">No belt counts yet</div>';
+      return;
+    }
+    elFitList.innerHTML = '<div class="empty">n = ' + n + ' throws across score belts</div>';
+    return;
+  }
   if (!fitThrows.length) {
     elFitList.innerHTML = '<div class="empty">No throws yet — tap a row later to edit</div>';
     return;
@@ -1571,6 +1777,7 @@ function renderFitList() {
 }
 
 function renderFit() {
+  if (fitMethod === 'zones') renderZoneGrid();
   refreshFitSummary();
   renderFitList();
 }
@@ -1629,7 +1836,9 @@ elFitAngle.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); addFitThrow(); }
 });
 document.getElementById('fitClear').addEventListener('click', () => {
-  fitThrows.length = 0; renderFit();
+  fitThrows.length = 0;
+  for (const a of FIT_ANNULI) fitZoneCounts[a.key] = 0;
+  renderFit();
 });
 document.getElementById('fitApply0').addEventListener('click', () => applyFitToPlayer(0));
 document.getElementById('fitApply1').addEventListener('click', () => applyFitToPlayer(1));
