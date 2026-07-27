@@ -74,6 +74,18 @@
   .card .sigma-row select {
     flex: 1; max-width: 110px; padding: 6px 8px; font-size: 13px;
   }
+  .card .shape-row {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 6px;
+  }
+  .card .shape-row .mini {
+    display: flex; flex-direction: column; gap: 2px; align-items: stretch;
+  }
+  .card .shape-row label { font-size: 10px; color: var(--mute); text-align: center; }
+  .card .shape-row input {
+    background: var(--field); color: #fff; border: 1px solid #555;
+    border-radius: 8px; padding: 6px 4px; font-size: 12px; width: 100%;
+    text-align: center;
+  }
 
   .board-wrap { position: relative; width: 100%; margin-top: 10px; }
   canvas { width: 100%; height: auto; display: block; border-radius: 12px; }
@@ -191,6 +203,20 @@
         <label for="sigma0">σ</label>
         <select id="sigma0"></select>
       </div>
+      <div class="shape-row">
+        <div class="mini">
+          <label for="s1_0">σ₁</label>
+          <input id="s1_0" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="opt.">
+        </div>
+        <div class="mini">
+          <label for="s2_0">σ₂</label>
+          <input id="s2_0" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="opt.">
+        </div>
+        <div class="mini">
+          <label for="phi_0">φ°</label>
+          <input id="phi_0" type="number" inputmode="decimal" min="0" max="180" step="0.1" placeholder="opt.">
+        </div>
+      </div>
     </div>
     <div class="card" id="card1">
       <input class="name" id="name1" value="Player 2" maxlength="16">
@@ -199,6 +225,20 @@
       <div class="sigma-row">
         <label for="sigma1">σ</label>
         <select id="sigma1"></select>
+      </div>
+      <div class="shape-row">
+        <div class="mini">
+          <label for="s1_1">σ₁</label>
+          <input id="s1_1" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="opt.">
+        </div>
+        <div class="mini">
+          <label for="s2_1">σ₂</label>
+          <input id="s2_1" type="number" inputmode="decimal" min="0.1" step="0.1" placeholder="opt.">
+        </div>
+        <div class="mini">
+          <label for="phi_1">φ°</label>
+          <input id="phi_1" type="number" inputmode="decimal" min="0" max="180" step="0.1" placeholder="opt.">
+        </div>
       </div>
     </div>
   </div>
@@ -225,7 +265,8 @@
       Aim at the <b>bull</b>. Enter each dart’s <b>distance</b> from the centre (mm).
       Optionally add the <b>angle</b> (degrees from the top / 20, clockwise) for a
       full tilted Gaussian (σ₁, σ₂, φ). Distance-only uses a simple isotropic σ.
-      Policies still use one σ — we apply the equivalent σ<sub>eq</sub>.
+      Policies use one σ (σ<sub>eq</sub>); optional σ₁/σ₂/φ on the scorekeeper
+      draw the tilted aim rings.
     </div>
     <div class="fit-entry" style="grid-template-columns:1fr 1fr auto">
       <input id="fitRadius" type="number" inputmode="decimal" min="0" max="170" step="0.1"
@@ -330,15 +371,37 @@ function drawBoard() {
   }
 }
 
-function drawAim(x, y, sigma) {
+function drawAim(x, y, sigmaOrShape) {
   const s = scale();
   const [X, Y] = px(x, y);
+  const shape = (sigmaOrShape && typeof sigmaOrShape === 'object')
+    ? sigmaOrShape : null;
+  const sigma = shape ? null : sigmaOrShape;
+
   for (const [k, a, w] of [[1, 0.9, 3], [2, 0.5, 2]]) {
-    ctx.beginPath();
-    ctx.arc(X, Y, k * sigma * s, 0, 2 * Math.PI);
     ctx.strokeStyle = 'rgba(255,210,63,' + a + ')';
     ctx.setLineDash([6, 5]);
     ctx.lineWidth = w;
+    ctx.beginPath();
+    if (shape) {
+      // Tilted ellipse: principal axes σ1 along φ (from top, clockwise).
+      const ph = (shape.phiDeg || 0) * Math.PI / 180;
+      const a1 = k * shape.sigma1 * s;
+      const a2 = k * shape.sigma2 * s;
+      for (let i = 0; i <= 64; i++) {
+        const t = (i / 64) * 2 * Math.PI;
+        const u = a1 * Math.cos(t), v = a2 * Math.sin(t);
+        const dx = u * Math.sin(ph) + v * Math.cos(ph);
+        const dy = u * Math.cos(ph) - v * Math.sin(ph);
+        // board y-up → canvas y-down already handled by px; here offsets in px space:
+        const pxX = X + dx;
+        const pxY = Y - dy;
+        if (i === 0) ctx.moveTo(pxX, pxY); else ctx.lineTo(pxX, pxY);
+      }
+      ctx.closePath();
+    } else {
+      ctx.arc(X, Y, k * sigma * s, 0, 2 * Math.PI);
+    }
     ctx.stroke();
   }
   ctx.setLineDash([]);
@@ -679,6 +742,43 @@ function activeSigma() {
   return parseInt(el.value, 10);
 }
 
+/** Optional tilted Gaussian for player idx, or null if isotropic-only. */
+function playerShape(idx) {
+  const s1 = parseFloat(document.getElementById('s1_' + idx).value);
+  const s2 = parseFloat(document.getElementById('s2_' + idx).value);
+  let phi = parseFloat(document.getElementById('phi_' + idx).value);
+  if (!(s1 > 0) || !(s2 > 0)) return null;
+  if (!Number.isFinite(phi)) phi = 0;
+  if (phi < 0 || phi > 180) phi = ((phi % 180) + 180) % 180;
+  // Keep σ1 as major for drawing consistency
+  if (s1 >= s2) return { sigma1: s1, sigma2: s2, phiDeg: phi };
+  return { sigma1: s2, sigma2: s1, phiDeg: (phi + 90) % 180 };
+}
+
+function shapeSigmaEq(shape) {
+  return Math.sqrt(0.5 * (shape.sigma1 * shape.sigma1 + shape.sigma2 * shape.sigma2));
+}
+
+function setPlayerShape(idx, shapeOrNull) {
+  const el1 = document.getElementById('s1_' + idx);
+  const el2 = document.getElementById('s2_' + idx);
+  const elp = document.getElementById('phi_' + idx);
+  if (!shapeOrNull) {
+    el1.value = ''; el2.value = ''; elp.value = '';
+    return;
+  }
+  el1.value = String(Math.round(shapeOrNull.sigma1 * 10) / 10);
+  el2.value = String(Math.round(shapeOrNull.sigma2 * 10) / 10);
+  elp.value = String(Math.round((shapeOrNull.phiDeg || 0) * 10) / 10);
+}
+
+function syncPolicyFromShape(idx) {
+  const shape = playerShape(idx);
+  if (!shape) return;
+  const el = idx === 0 ? elSigma0 : elSigma1;
+  el.value = String(nearestPolicySigma(shapeSigmaEq(shape)));
+}
+
 function selectMode(key) {
   currentModeKey = key;
   const m = mode();
@@ -787,6 +887,7 @@ function render() {
   syncNames();
   const m = mode();
   const sigma = activeSigma();
+  const shape = playerShape(match.current);
   const policy = (DATA.policies[m.key] && DATA.policies[m.key][String(sigma)]) || {};
 
   for (let i = 0; i < 2; i++) {
@@ -814,7 +915,13 @@ function render() {
   const entry = policy[score + ',' + darts];
   let html = '<div class="turn">' + match.players[match.current].name
     + ' · dart ' + dartN + '/3 · ' + darts + ' left · visit ' + match.visitPoints
-    + ' · σ ' + sigma + ' mm</div>';
+    + (shape
+        ? (' · σ₁ ' + shape.sigma1.toFixed(1)
+           + ' σ₂ ' + shape.sigma2.toFixed(1)
+           + ' φ ' + shape.phiDeg.toFixed(0) + '°'
+           + ' (σ_eq→' + sigma + ')')
+        : (' · σ ' + sigma + ' mm'))
+    + '</div>';
 
   if (!entry) {
     html += '<div class="warn">No optimal aim for ' + score + ' with ' + darts + ' dart(s).</div>';
@@ -822,7 +929,7 @@ function render() {
     const [aim, x, y, et] = entry;
     const aims = formatHitPath(policy, hitContinuation(policy, score, darts));
     const aimClean = aims.length ? aims[0] : displayAim(aim, x, y);
-    drawAim(x, y, sigma);
+    drawAim(x, y, shape || sigma);
     html += '<div class="aim">Aim: ' + aimClean;
     for (let i = 1; i < aims.length; i++)
       html += '<span class="next"> ' + aims[i] + '</span>';
@@ -856,8 +963,22 @@ document.getElementById('btnMatch').addEventListener('click', () => {
   match = newMatch(m.start_score, m.double_in, names());
   render();
 });
-elSigma0.addEventListener('change', render);
-elSigma1.addEventListener('change', render);
+elSigma0.addEventListener('change', () => {
+  // Manual isotropic override clears optional shape for that player.
+  setPlayerShape(0, null);
+  render();
+});
+elSigma1.addEventListener('change', () => {
+  setPlayerShape(1, null);
+  render();
+});
+for (const id of ['s1_0','s2_0','phi_0','s1_1','s2_1','phi_1']) {
+  document.getElementById(id).addEventListener('change', () => {
+    const idx = id.endsWith('_0') ? 0 : 1;
+    syncPolicyFromShape(idx);
+    render();
+  });
+}
 document.getElementById('name0').addEventListener('change', () => { syncNames(); render(); });
 document.getElementById('name1').addEventListener('change', () => { syncNames(); render(); });
 
@@ -1199,6 +1320,13 @@ function applyFitToPlayer(idx) {
   const snapped = nearestPolicySigma(fit.sigmaEq || fit.sigma);
   const el = idx === 0 ? elSigma0 : elSigma1;
   el.value = String(snapped);
+  if (fit.mode === 'general') {
+    setPlayerShape(idx, {
+      sigma1: fit.sigma1, sigma2: fit.sigma2, phiDeg: fit.phiDeg,
+    });
+  } else {
+    setPlayerShape(idx, null);
+  }
   showPage('score');
   render();
 }
