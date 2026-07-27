@@ -101,12 +101,12 @@
     border-radius: 8px; padding: 6px 4px; font-size: 12px; width: 100%;
     text-align: center;
   }
-  /* Hide number spinners (σ / σ₁ σ₂ φ). */
-  .card input[type=number]::-webkit-outer-spin-button,
-  .card input[type=number]::-webkit-inner-spin-button {
+  /* Hide up/down spinners on every number field. */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button {
     -webkit-appearance: none; margin: 0;
   }
-  .card input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
   .board-wrap { position: relative; width: 100%; margin-top: 10px; }
   canvas { width: 100%; height: auto; display: block; border-radius: 12px; }
