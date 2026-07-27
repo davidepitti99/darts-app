@@ -52,9 +52,17 @@
   .card .rem {
     font-size: 42px; font-weight: 800; line-height: 1.05; margin: 4px 0;
   }
-  .card .meta { font-size: 11px; color: var(--mute); }
+  .card .meta { font-size: 11px; color: var(--mute); margin-bottom: 6px; }
+  .card .sigma-row {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-top: 2px;
+  }
+  .card .sigma-row label { font-size: 11px; color: var(--mute); white-space: nowrap; }
+  .card .sigma-row select {
+    flex: 1; max-width: 110px; padding: 6px 8px; font-size: 13px;
+  }
 
-  .board-wrap { position: relative; width: 100%; }
+  .board-wrap { position: relative; width: 100%; margin-top: 10px; }
   canvas { width: 100%; height: auto; display: block; border-radius: 12px; }
 
   .info {
@@ -69,17 +77,6 @@
   .info .warn { color: #ff8a8a; }
   .k { color: var(--mute); }
 
-  .toolbar {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px;
-  }
-  .toolbar .field { display: flex; flex-direction: column; gap: 3px; }
-  .toolbar label { font-size: 11px; color: #b9b9b9; }
-  select {
-    background: var(--field); color: #fff; border: 1px solid #555;
-    border-radius: 10px; padding: 10px 8px; font-size: 15px; width: 100%;
-    -webkit-appearance: none; appearance: none;
-  }
-
   .actions {
     display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px;
   }
@@ -91,9 +88,14 @@
   .actions button:active, .pad button:active { background: #555; }
   .actions .primary { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
 
+  select {
+    background: var(--field); color: #fff; border: 1px solid #555;
+    border-radius: 10px; -webkit-appearance: none; appearance: none;
+  }
+
   .pending {
-    margin-top: 10px; text-align: center; font-size: 18px; font-weight: 700;
-    color: var(--accent); min-height: 26px;
+    margin-top: 10px; text-align: center; font-size: 15px; font-weight: 700;
+    color: var(--accent); min-height: 22px;
   }
 
   .pad {
@@ -127,37 +129,35 @@
       <input class="name" id="name0" value="Player 1" maxlength="16">
       <div class="rem" id="rem0">501</div>
       <div class="meta" id="meta0">Legs 0</div>
+      <div class="sigma-row">
+        <label for="sigma0">σ</label>
+        <select id="sigma0"></select>
+      </div>
     </div>
     <div class="card" id="card1">
       <input class="name" id="name1" value="Player 2" maxlength="16">
       <div class="rem" id="rem1">501</div>
       <div class="meta" id="meta1">Legs 0</div>
-    </div>
-  </div>
-
-  <div class="board-wrap">
-    <canvas id="board" width="800" height="800"></canvas>
-  </div>
-
-  <div class="info" id="info"></div>
-
-  <div class="toolbar">
-    <div class="field">
-      <label for="sigma">Accuracy &sigma;</label>
-      <select id="sigma"></select>
-    </div>
-    <div class="field" style="grid-column: span 2; justify-content: flex-end;">
-      <label>&nbsp;</label>
-      <div class="actions" style="margin:0">
-        <button type="button" id="btnUndo">Undo</button>
-        <button type="button" id="btnLeg">New leg</button>
-        <button type="button" id="btnMatch" class="primary">New match</button>
+      <div class="sigma-row">
+        <label for="sigma1">σ</label>
+        <select id="sigma1"></select>
       </div>
     </div>
   </div>
 
   <div class="pending" id="pending"></div>
   <div class="pad" id="pad"></div>
+
+  <div class="actions">
+    <button type="button" id="btnUndo">Undo</button>
+    <button type="button" id="btnLeg">New leg</button>
+    <button type="button" id="btnMatch" class="primary">New match</button>
+  </div>
+
+  <div class="info" id="info"></div>
+  <div class="board-wrap">
+    <canvas id="board" width="800" height="800"></canvas>
+  </div>
 
   <div class="stats" id="stats"></div>
 </div>
@@ -180,7 +180,8 @@ const ctx = cv.getContext('2d');
 const elInfo = document.getElementById('info');
 const elPending = document.getElementById('pending');
 const elStats = document.getElementById('stats');
-const elSigma = document.getElementById('sigma');
+const elSigma0 = document.getElementById('sigma0');
+const elSigma1 = document.getElementById('sigma1');
 const elModeToggle = document.getElementById('modeToggle');
 const elPad = document.getElementById('pad');
 
@@ -581,16 +582,23 @@ function buildModeToggle() {
 
 function populateSigmas() {
   const m = mode();
-  const prev = parseInt(elSigma.value, 10);
-  elSigma.innerHTML = '';
-  for (const s of m.sigmas) {
-    const o = document.createElement('option');
-    o.value = String(s); o.textContent = s + ' mm';
-    elSigma.appendChild(o);
+  for (const el of [elSigma0, elSigma1]) {
+    const prev = parseInt(el.value, 10);
+    el.innerHTML = '';
+    for (const s of m.sigmas) {
+      const o = document.createElement('option');
+      o.value = String(s); o.textContent = s + ' mm';
+      el.appendChild(o);
+    }
+    let pick = m.sigmas.includes(prev) ? prev
+             : (m.sigmas.includes(25) ? 25 : m.sigmas[0]);
+    el.value = String(pick);
   }
-  let pick = m.sigmas.includes(prev) ? prev
-           : (m.sigmas.includes(25) ? 25 : m.sigmas[0]);
-  elSigma.value = String(pick);
+}
+
+function activeSigma() {
+  const el = match.current === 0 ? elSigma0 : elSigma1;
+  return parseInt(el.value, 10);
 }
 
 function selectMode(key) {
@@ -700,7 +708,7 @@ function render() {
   drawBoard();
   syncNames();
   const m = mode();
-  const sigma = parseInt(elSigma.value, 10);
+  const sigma = activeSigma();
   const policy = (DATA.policies[m.key] && DATA.policies[m.key][String(sigma)]) || {};
 
   for (let i = 0; i < 2; i++) {
@@ -727,7 +735,8 @@ function render() {
   const darts = match.dartsLeft;
   const entry = policy[score + ',' + darts];
   let html = '<div class="turn">' + match.players[match.current].name
-    + ' · dart ' + dartN + '/3 · ' + darts + ' left · visit ' + match.visitPoints + '</div>';
+    + ' · dart ' + dartN + '/3 · ' + darts + ' left · visit ' + match.visitPoints
+    + ' · σ ' + sigma + ' mm</div>';
 
   if (!entry) {
     html += '<div class="warn">No optimal aim for ' + score + ' with ' + darts + ' dart(s).</div>';
@@ -769,7 +778,8 @@ document.getElementById('btnMatch').addEventListener('click', () => {
   match = newMatch(m.start_score, m.double_in, names());
   render();
 });
-elSigma.addEventListener('change', render);
+elSigma0.addEventListener('change', render);
+elSigma1.addEventListener('change', render);
 document.getElementById('name0').addEventListener('change', () => { syncNames(); render(); });
 document.getElementById('name1').addEventListener('change', () => { syncNames(); render(); });
 
