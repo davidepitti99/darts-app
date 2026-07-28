@@ -501,8 +501,8 @@
 <div class="player-modal hidden" id="scoreModal">
   <div class="player-box">
     <h2 id="scoreModalTitle">Set score</h2>
-    <p class="hint" id="scoreModalHint">Enter remaining score (0–501).</p>
-    <input id="scoreModalInput" type="number" inputmode="numeric" min="0" step="1"
+    <p class="hint" id="scoreModalHint">Enter remaining score (2–501).</p>
+    <input id="scoreModalInput" type="number" inputmode="numeric" min="2" step="1"
            placeholder="Score" autocomplete="off">
     <div class="player-actions">
       <button type="button" id="scoreModalCancel">Cancel</button>
@@ -522,7 +522,7 @@
   <div class="scores">
     <div class="card" id="card0">
       <input class="name" id="name0" value="Player 1" maxlength="16" readonly
-             inputmode="none" title="Tap to load or save player">
+             inputmode="none" title="Tap for roster or history">
       <div class="rem cricket-hide" id="rem0" title="Tap to set remaining score">0</div>
       <div class="meta" id="meta0">Legs 0</div>
       <div class="acc-toggle cricket-hide" data-player="0">
@@ -551,7 +551,7 @@
     </div>
     <div class="card" id="card1">
       <input class="name" id="name1" value="Player 2" maxlength="16" readonly
-             inputmode="none" title="Tap to load or save player">
+             inputmode="none" title="Tap for roster or history">
       <div class="rem cricket-hide" id="rem1" title="Tap to set remaining score">0</div>
       <div class="meta" id="meta1">Legs 0</div>
       <div class="acc-toggle cricket-hide" data-player="1">
@@ -862,7 +862,7 @@ function hitContinuation(policy, score, dartsLeft) {
     const [pts, isDbl] = aimPoints(aim);
     const nxt = s - pts;
     if (nxt === 0 && isDbl) { steps.push([s, d, clean, 0, 'checkout']); break; }
-    if (nxt < 0 || nxt === 0) { steps.push([s, d, clean, null, 'bust']); break; }
+    if (nxt < 0 || nxt === 1 || nxt === 0) { steps.push([s, d, clean, null, 'bust']); break; }
     if (d === 1) { steps.push([s, d, clean, nxt, 'end_turn']); break; }
     steps.push([s, d, clean, nxt, 'continue']);
     s = nxt; d = d - 1;
@@ -1643,10 +1643,10 @@ function openScoreModal(idx) {
   const hint = document.getElementById('scoreModalHint');
   const inp = document.getElementById('scoreModalInput');
   title.textContent = p.name + ' — remaining';
-  hint.textContent = 'Enter remaining score (0–' + max + '). Mid-visit darts for this player are cleared.';
-  inp.min = '0';
+  hint.textContent = 'Enter remaining score (2–' + max + '). Mid-visit darts for this player are cleared.';
+  inp.min = '2';
   inp.max = String(max);
-  inp.value = String(p.remaining);
+  inp.value = String(Math.max(2, Math.min(max, p.remaining || max)));
   inp.classList.remove('bad');
   modal.classList.remove('hidden');
   setTimeout(() => { inp.focus(); inp.select(); }, 50);
@@ -1662,7 +1662,8 @@ function applyScoreFromModal() {
   const inp = document.getElementById('scoreModalInput');
   const max = match.startScore;
   const n = parseInt(String(inp.value).trim(), 10);
-  if (!Number.isFinite(n) || n < 0 || n > max) {
+  // 0/1 are not playable remainings (always bust / already finished).
+  if (!Number.isFinite(n) || n < 2 || n > max) {
     inp.classList.add('bad');
     inp.focus();
     return;
@@ -1672,7 +1673,8 @@ function applyScoreFromModal() {
   const idx = scoreEditIdx;
   const p = match.players[idx];
   p.remaining = n;
-  if (match.doubleIn) p.opened = n < match.startScore;
+  // Once opened in double-in, stay opened; only force open when below start.
+  if (match.doubleIn && n < match.startScore) p.opened = true;
   // Editing clears any in-progress visit for that player so bust/visit math stays consistent.
   if (match.current === idx) {
     match.turnStart = n;
@@ -1681,6 +1683,10 @@ function applyScoreFromModal() {
     match.visitPoints = 0;
   }
   if (match.winner !== null) {
+    if (match.archiveId) {
+      removeArchivedMatch(match.archiveId);
+      match.archiveId = null;
+    }
     match.winner = null;
   }
   match.message = p.name + ' set to ' + n;
