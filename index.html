@@ -125,12 +125,95 @@
   }
   .player-modal.hidden { display: none; }
   .player-box {
-    width: min(380px, 100%); max-height: min(80vh, 560px);
+    width: min(400px, 100%); max-height: min(88vh, 640px);
     background: #1a1a1a; border: 1px solid #333; border-radius: 14px;
     padding: 16px 14px; display: flex; flex-direction: column; gap: 10px;
   }
   .player-box h2 { margin: 0; font-size: 16px; text-align: center; }
   .player-box .hint { margin: 0; font-size: 12px; color: var(--mute); text-align: center; line-height: 1.4; }
+  .player-tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    background: #111; border-radius: 10px; padding: 3px;
+  }
+  .player-tabs button {
+    background: transparent; color: var(--mute); border: none;
+    border-radius: 8px; padding: 8px 6px; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+  }
+  .player-tabs button.active { background: var(--field); color: var(--accent); }
+  .player-panel.hidden { display: none; }
+  .hist-summary {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  }
+  .hist-summary .cell {
+    background: #141414; border: 1px solid #2a2a2a; border-radius: 10px;
+    padding: 8px 6px; text-align: center;
+  }
+  .hist-summary .v { font-size: 16px; font-weight: 800; color: #fff; }
+  .hist-summary .k { font-size: 10px; color: var(--mute); margin-top: 2px; }
+  .hist-form {
+    display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
+  }
+  .hist-form span {
+    width: 22px; height: 22px; border-radius: 6px; font-size: 11px; font-weight: 800;
+    display: grid; place-items: center;
+  }
+  .hist-form .W { background: #1e3a1e; color: #7dcc7d; }
+  .hist-form .L { background: #3a1e1e; color: #ff8a8a; }
+  .hist-chart {
+    height: 72px; display: flex; align-items: flex-end; gap: 3px;
+    padding: 6px 4px 2px; background: #141414; border: 1px solid #2a2a2a;
+    border-radius: 10px;
+  }
+  .hist-chart .bar {
+    flex: 1; min-width: 0; border-radius: 3px 3px 0 0;
+    background: #3a3a3a; position: relative;
+  }
+  .hist-chart .bar.win { background: #2f5a2f; }
+  .hist-chart .bar.loss { background: #5a2f2f; }
+  .hist-chart .bar .tip {
+    position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -2px);
+    font-size: 9px; color: var(--mute); white-space: nowrap; display: none;
+  }
+  .hist-chart .bar:last-child .tip { display: block; color: var(--accent); }
+  .hist-chart-label {
+    font-size: 10px; color: var(--mute); text-align: center; margin-top: -4px;
+  }
+  .hist-list {
+    flex: 1; overflow-y: auto; border: 1px solid #333; border-radius: 10px;
+    min-height: 100px; max-height: 220px; background: #141414;
+  }
+  .hist-list .empty { color: var(--mute); padding: 16px; text-align: center; font-size: 13px; }
+  .hist-list button {
+    display: grid; width: 100%; grid-template-columns: auto 1fr auto;
+    gap: 8px; align-items: center; background: transparent; border: none;
+    border-bottom: 1px solid #2a2a2a; color: #eee; padding: 10px 12px;
+    font-size: 13px; font-weight: 600; cursor: pointer; text-align: left;
+  }
+  .hist-list button:last-child { border-bottom: none; }
+  .hist-list button .wl {
+    width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center;
+    font-size: 11px; font-weight: 800;
+  }
+  .hist-list button .wl.W { background: #1e3a1e; color: #7dcc7d; }
+  .hist-list button .wl.L { background: #3a1e1e; color: #ff8a8a; }
+  .hist-list button .mid { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .hist-list button .mid .line1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hist-list button .mid .line2 { font-size: 11px; color: var(--mute); font-weight: 500; }
+  .hist-list button .avg { font-size: 13px; color: var(--accent); font-weight: 700; }
+  .hist-detail {
+    overflow-y: auto; border: 1px solid #333; border-radius: 10px;
+    background: #141414; padding: 12px; font-size: 12px; line-height: 1.45;
+    max-height: 320px;
+  }
+  .hist-detail .d-title { font-size: 14px; font-weight: 700; margin: 0 0 6px; }
+  .hist-detail .d-meta { color: var(--mute); font-size: 11px; margin-bottom: 10px; word-break: break-all; }
+  .hist-detail .d-grid {
+    display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 4px 8px;
+  }
+  .hist-detail .d-grid .h { color: var(--mute); font-size: 11px; }
+  .hist-detail .d-grid .lbl { color: var(--mute); }
+  .hist-detail .winner { color: var(--accent); }
   .player-box input[type=text],
   .player-box input[type=number] {
     width: 100%; background: var(--field); color: #fff; border: 1px solid #555;
@@ -390,14 +473,28 @@
 <div class="player-modal hidden" id="playerModal">
   <div class="player-box">
     <h2 id="playerModalTitle">Player</h2>
-    <p class="hint">Shared roster for both sides. Tap a name to load, or type a new one and Save (name only).</p>
+    <div class="player-tabs" id="playerTabs">
+      <button type="button" class="active" data-tab="roster">Roster</button>
+      <button type="button" data-tab="history">History</button>
+    </div>
     <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
-    <div class="player-list" id="playerList"></div>
-    <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr 1fr">
-      <button type="button" id="playerDelete" class="danger">Delete</button>
-      <button type="button" id="playerCancel">Cancel</button>
-      <button type="button" id="playerLoad" class="primary">Load</button>
-      <button type="button" id="playerSave" class="primary">Save</button>
+    <div class="player-panel" id="playerRosterPanel">
+      <p class="hint">Shared roster for both sides. Tap a name to load, or type a new one and Save (name only).</p>
+      <div class="player-list" id="playerList"></div>
+      <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr 1fr">
+        <button type="button" id="playerDelete" class="danger">Delete</button>
+        <button type="button" id="playerCancel">Cancel</button>
+        <button type="button" id="playerLoad" class="primary">Load</button>
+        <button type="button" id="playerSave" class="primary">Save</button>
+      </div>
+    </div>
+    <div class="player-panel hidden" id="playerHistoryPanel">
+      <p class="hint" id="histHint">Finished matches for this name (saved on this device).</p>
+      <div id="histOverview"></div>
+      <div class="player-actions" style="margin-top:4px">
+        <button type="button" id="histClose">Close</button>
+        <button type="button" id="histBack" class="primary hidden">Back to list</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1160,6 +1257,217 @@ function archiveFinishedMatch(m) {
   return id;
 }
 
+function matchesForPlayer(name) {
+  const key = normPlayerName(name);
+  if (!key) return [];
+  return loadMatchHistory().filter(r =>
+    r && Array.isArray(r.players) &&
+    r.players.some(p => normPlayerName(p.name) === key));
+}
+
+function playerSideInMatch(rec, name) {
+  const key = normPlayerName(name);
+  const idx = (rec.players || []).findIndex(p => normPlayerName(p.name) === key);
+  if (idx < 0) return null;
+  const me = rec.players[idx];
+  const opp = rec.players[1 - idx] || null;
+  const won = rec.winner === idx || normPlayerName(rec.winnerName) === key;
+  return { idx, me, opp, won };
+}
+
+function formatHistWhen(ts) {
+  try {
+    const d = new Date(ts);
+    if (Number.isNaN(d.getTime())) return String(ts || '');
+    return d.toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  } catch (_) {
+    return String(ts || '');
+  }
+}
+
+function modeLabel(rec) {
+  if (!rec) return '—';
+  if (rec.game === 'cricket' || rec.mode === 'cricket') return 'Cricket';
+  if (rec.mode === '301di' || rec.doubleIn) return '301 DI';
+  if (rec.mode === '501') return '501';
+  return rec.mode || (rec.startScore ? String(rec.startScore) : 'Match');
+}
+
+function histMetric(side, rec) {
+  if (!side || !side.me) return '—';
+  if (rec.game === 'cricket' || rec.mode === 'cricket')
+    return String(side.me.points != null ? side.me.points : '—') + ' pts';
+  if (side.me.avg3 == null) return '—';
+  return Number(side.me.avg3).toFixed(1);
+}
+
+let playerModalTab = 'roster';
+let histDetailId = null;
+
+function setPlayerModalTab(tab) {
+  playerModalTab = tab;
+  histDetailId = null;
+  document.querySelectorAll('#playerTabs button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.getElementById('playerRosterPanel').classList.toggle('hidden', tab !== 'roster');
+  document.getElementById('playerHistoryPanel').classList.toggle('hidden', tab !== 'history');
+  if (tab === 'history') renderPlayerHistory();
+}
+
+function renderPlayerHistory() {
+  const name = (document.getElementById('playerModalName').value || '').trim()
+    || names()[playerEditIdx];
+  const hint = document.getElementById('histHint');
+  const box = document.getElementById('histOverview');
+  const back = document.getElementById('histBack');
+  const rows = matchesForPlayer(name);
+  hint.textContent = name
+    ? ('History for ' + name + ' · ' + rows.length + ' saved match'
+      + (rows.length === 1 ? '' : 'es') + ' on this device')
+    : 'Type a player name to see history.';
+
+  if (histDetailId) {
+    back.classList.remove('hidden');
+    const rec = loadMatchHistory().find(r => r && r.id === histDetailId);
+    if (!rec) {
+      histDetailId = null;
+      back.classList.add('hidden');
+    } else {
+      box.innerHTML = renderMatchDetailHtml(rec, name);
+      return;
+    }
+  }
+  back.classList.add('hidden');
+
+  if (!rows.length) {
+    box.innerHTML = '<div class="hist-list"><div class="empty">'
+      + (name ? 'No finished matches saved for this name yet.'
+              : 'Enter a name to view history.')
+      + '</div></div>';
+    return;
+  }
+
+  let wins = 0, avgSum = 0, avgN = 0;
+  for (const rec of rows) {
+    const side = playerSideInMatch(rec, name);
+    if (!side) continue;
+    if (side.won) wins += 1;
+    if (rec.game !== 'cricket' && rec.mode !== 'cricket' && side.me.avg3 != null) {
+      avgSum += Number(side.me.avg3);
+      avgN += 1;
+    }
+  }
+  const losses = rows.length - wins;
+  const careerAvg = avgN ? (avgSum / avgN) : null;
+
+  const form = rows.slice(0, 12).map(rec => {
+    const side = playerSideInMatch(rec, name);
+    const wl = side && side.won ? 'W' : 'L';
+    return '<span class="' + wl + '" title="' + modeLabel(rec) + '">' + wl + '</span>';
+  }).join('');
+
+  // Chart: chronological (oldest → newest) of last 12 x01 averages; cricket as short bars.
+  const chartSrc = rows.slice(0, 12).slice().reverse();
+  let maxV = 1;
+  const vals = chartSrc.map(rec => {
+    const side = playerSideInMatch(rec, name);
+    if (!side) return { v: 0, win: false, label: '—', cricket: false };
+    const cricket = rec.game === 'cricket' || rec.mode === 'cricket';
+    const v = cricket
+      ? (side.me.points | 0)
+      : (side.me.avg3 != null ? Number(side.me.avg3) : 0);
+    if (v > maxV) maxV = v;
+    return {
+      v, win: !!side.won, cricket,
+      label: cricket ? (String(side.me.points | 0) + 'p') : (side.me.avg3 == null ? '—' : Number(side.me.avg3).toFixed(0)),
+    };
+  });
+  const chart = vals.map(b => {
+    const h = Math.max(4, Math.round(64 * (b.v / maxV)));
+    return '<div class="bar ' + (b.win ? 'win' : 'loss') + '" style="height:' + h + 'px">'
+      + '<span class="tip">' + b.label + '</span></div>';
+  }).join('');
+
+  let list = rows.slice(0, 40).map(rec => {
+    const side = playerSideInMatch(rec, name);
+    if (!side) return '';
+    const wl = side.won ? 'W' : 'L';
+    const vs = side.opp ? side.opp.name : '—';
+    return '<button type="button" data-id="' + encodeURIComponent(rec.id) + '">'
+      + '<span class="wl ' + wl + '">' + wl + '</span>'
+      + '<span class="mid"><span class="line1">' + modeLabel(rec)
+      + ' vs ' + vs + '</span>'
+      + '<span class="line2">' + formatHistWhen(rec.ts || rec.id) + '</span></span>'
+      + '<span class="avg">' + histMetric(side, rec) + '</span>'
+      + '</button>';
+  }).join('');
+
+  box.innerHTML =
+    '<div class="hist-summary">'
+    + '<div class="cell"><div class="v">' + rows.length + '</div><div class="k">Matches</div></div>'
+    + '<div class="cell"><div class="v">' + wins + '–' + losses + '</div><div class="k">Win–loss</div></div>'
+    + '<div class="cell"><div class="v">'
+    + (careerAvg == null ? '—' : careerAvg.toFixed(1))
+    + '</div><div class="k">Avg 3-dart</div></div>'
+    + '</div>'
+    + '<div class="hist-form" title="Recent form (newest left)">' + form + '</div>'
+    + '<div class="hist-chart">' + chart + '</div>'
+    + '<div class="hist-chart-label">Recent form · bar height = 3-dart avg (or Cricket pts)</div>'
+    + '<div class="hist-list">' + list + '</div>';
+
+  box.querySelectorAll('.hist-list button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      histDetailId = decodeURIComponent(btn.dataset.id);
+      renderPlayerHistory();
+    });
+  });
+}
+
+function renderMatchDetailHtml(rec, focusName) {
+  const a = (rec.players && rec.players[0]) || { name: '—' };
+  const b = (rec.players && rec.players[1]) || { name: '—' };
+  const cricket = rec.game === 'cricket' || rec.mode === 'cricket';
+  const winName = rec.winnerName || (rec.players && rec.players[rec.winner] && rec.players[rec.winner].name) || '—';
+  const rows = cricket
+    ? [
+        ['Points', a.points, b.points],
+        ['Closed', (a.closed != null ? a.closed : '—') + '/7', (b.closed != null ? b.closed : '—') + '/7'],
+        ['Darts', a.dartsThrown, b.dartsThrown],
+        ['Legs', a.legsWon, b.legsWon],
+      ]
+    : [
+        ['3-dart avg', a.avg3 == null ? '—' : Number(a.avg3).toFixed(1),
+                      b.avg3 == null ? '—' : Number(b.avg3).toFixed(1)],
+        ['Darts', a.dartsThrown, b.dartsThrown],
+        ['100–139', a.scores100, b.scores100],
+        ['140–179', a.scores140, b.scores140],
+        ['180', a.scores180, b.scores180],
+        ['Checkout %',
+          a.checkoutPct == null ? '—' : Math.round(a.checkoutPct) + '%',
+          b.checkoutPct == null ? '—' : Math.round(b.checkoutPct) + '%'],
+        ['Hi checkout', a.highestCheckout || '—', b.highestCheckout || '—'],
+        ['Hi visit', a.highestVisit || '—', b.highestVisit || '—'],
+        ['Busts', a.busts, b.busts],
+        ['Legs', a.legsWon, b.legsWon],
+      ];
+  const aCls = normPlayerName(a.name) === normPlayerName(winName) ? ' winner' : '';
+  const bCls = normPlayerName(b.name) === normPlayerName(winName) ? ' winner' : '';
+  let grid = '<div class="h"></div><div class="h' + aCls + '">' + a.name
+    + '</div><div class="h' + bCls + '">' + b.name + '</div>';
+  for (const [lab, va, vb] of rows) {
+    grid += '<div class="lbl">' + lab + '</div><div>' + va + '</div><div>' + vb + '</div>';
+  }
+  return '<div class="hist-detail">'
+    + '<div class="d-title">' + modeLabel(rec) + ' · ' + winName + ' won</div>'
+    + '<div class="d-meta">' + formatHistWhen(rec.ts || rec.id)
+    + '<br>id ' + rec.id + '</div>'
+    + '<div class="d-grid">' + grid + '</div>'
+    + '</div>';
+}
+
 function loadSavedPlayers() {
   try {
     const raw = localStorage.getItem(PLAYERS_KEY);
@@ -1263,21 +1571,24 @@ function renderPlayerList(filterName) {
 function openPlayerModal(idx) {
   playerEditIdx = idx;
   playerListSel = null;
+  histDetailId = null;
   const modal = document.getElementById('playerModal');
   const title = document.getElementById('playerModalTitle');
   const nameIn = document.getElementById('playerModalName');
-  title.textContent = 'Player ' + (idx + 1) + ' — shared roster';
+  title.textContent = 'Player ' + (idx + 1);
   nameIn.value = names()[idx];
   const existing = findSavedPlayer(nameIn.value);
   if (existing) playerListSel = normPlayerName(existing.name);
   modal.classList.remove('hidden');
-  // Always show the full shared list; typing filters it.
+  setPlayerModalTab('roster');
   renderPlayerList('');
   setTimeout(() => { nameIn.focus(); nameIn.select(); }, 50);
 }
 
 function closePlayerModal() {
   document.getElementById('playerModal').classList.add('hidden');
+  histDetailId = null;
+  playerModalTab = 'roster';
 }
 
 let scoreEditIdx = null;
@@ -1906,6 +2217,16 @@ for (const idx of [0, 1]) {
   document.getElementById('rem' + idx).addEventListener('click', () => openScoreModal(idx));
 }
 document.getElementById('playerCancel').addEventListener('click', closePlayerModal);
+document.getElementById('histClose').addEventListener('click', closePlayerModal);
+document.getElementById('histBack').addEventListener('click', () => {
+  histDetailId = null;
+  renderPlayerHistory();
+});
+document.getElementById('playerTabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-tab]');
+  if (!btn) return;
+  setPlayerModalTab(btn.dataset.tab);
+});
 document.getElementById('scoreModalCancel').addEventListener('click', closeScoreModal);
 document.getElementById('scoreModalSet').addEventListener('click', applyScoreFromModal);
 document.getElementById('scoreModal').addEventListener('click', (e) => {
@@ -1926,9 +2247,11 @@ document.getElementById('playerModal').addEventListener('click', (e) => {
 });
 document.getElementById('playerModalName').addEventListener('input', () => {
   playerListSel = null;
+  histDetailId = null;
   const q = document.getElementById('playerModalName').value;
   // Filter only while typing a non-default custom query; empty → full shared list
-  renderPlayerList(q);
+  if (playerModalTab === 'history') renderPlayerHistory();
+  else renderPlayerList(q);
 });
 document.getElementById('playerModalName').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
