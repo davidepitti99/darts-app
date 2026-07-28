@@ -1437,12 +1437,10 @@ function renderPlayerHistory() {
     const side = playerSideInMatch(rec, name);
     if (!side) return '';
     const wl = side.won ? 'W' : 'L';
-    const vs = side.opp ? side.opp.name : '—';
     return '<button type="button" data-id="' + encodeURIComponent(rec.id) + '">'
       + '<span class="wl ' + wl + '">' + wl + '</span>'
       + '<span class="mid"><span class="line1">' + matchTitle(rec) + '</span>'
-      + '<span class="line2">' + formatHistWhen(rec.ts || rec.id)
-      + (vs ? (' · vs ' + vs) : '') + '</span></span>'
+      + '<span class="line2">' + formatHistWhen(rec.ts || rec.id) + '</span></span>'
       + '<span class="avg">' + histMetric(side, rec) + '</span>'
       + '</button>';
   }).join('');
