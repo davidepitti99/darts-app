@@ -491,9 +491,10 @@
     <div class="player-panel hidden" id="playerHistoryPanel">
       <p class="hint" id="histHint">Finished matches for this name (saved on this device).</p>
       <div id="histOverview"></div>
-      <div class="player-actions" style="margin-top:4px">
+      <div class="player-actions" id="histActions" style="margin-top:4px;grid-template-columns:1fr 1fr">
         <button type="button" id="histClose">Close</button>
         <button type="button" id="histBack" class="primary hidden">Back to list</button>
+        <button type="button" id="histDelete" class="danger hidden">Delete</button>
       </div>
     </div>
   </div>
@@ -1295,6 +1296,12 @@ function modeLabel(rec) {
   return rec.mode || (rec.startScore ? String(rec.startScore) : 'Match');
 }
 
+function matchTitle(rec) {
+  const a = (rec && rec.players && rec.players[0] && rec.players[0].name) || '—';
+  const b = (rec && rec.players && rec.players[1] && rec.players[1].name) || '—';
+  return modeLabel(rec) + ': ' + a + ' vs ' + b;
+}
+
 function histMetric(side, rec) {
   if (!side || !side.me) return '—';
   if (rec.game === 'cricket' || rec.mode === 'cricket')
@@ -1317,12 +1324,47 @@ function setPlayerModalTab(tab) {
   if (tab === 'history') renderPlayerHistory();
 }
 
+function syncHistActionButtons(detail) {
+  const back = document.getElementById('histBack');
+  const del = document.getElementById('histDelete');
+  const actions = document.getElementById('histActions');
+  back.classList.toggle('hidden', !detail);
+  del.classList.toggle('hidden', !detail);
+  if (actions) {
+    actions.style.gridTemplateColumns = detail ? '1fr 1fr 1fr' : '1fr 1fr';
+  }
+}
+
+function deleteHistDetail() {
+  if (!histDetailId) return;
+  const rec = loadMatchHistory().find(r => r && r.id === histDetailId);
+  if (!rec) {
+    histDetailId = null;
+    renderPlayerHistory();
+    return;
+  }
+  const when = formatHistWhen(rec.ts || rec.id);
+  const ok = window.confirm(
+    'Delete this saved match from history?\n\n'
+    + matchTitle(rec) + '\n'
+    + when + '\n'
+    + 'Winner: ' + (rec.winnerName || '—') + '\n'
+    + 'id: ' + rec.id + '\n\n'
+    + 'This cannot be undone.');
+  if (!ok) return;
+  const id = histDetailId;
+  removeArchivedMatch(id);
+  if (match && match.archiveId === id) match.archiveId = null;
+  histDetailId = null;
+  renderPlayerHistory();
+  if (typeof render === 'function') render();
+}
+
 function renderPlayerHistory() {
   const name = (document.getElementById('playerModalName').value || '').trim()
     || names()[playerEditIdx];
   const hint = document.getElementById('histHint');
   const box = document.getElementById('histOverview');
-  const back = document.getElementById('histBack');
   const rows = matchesForPlayer(name);
   hint.textContent = name
     ? ('History for ' + name + ' · ' + rows.length + ' saved match'
@@ -1330,17 +1372,17 @@ function renderPlayerHistory() {
     : 'Type a player name to see history.';
 
   if (histDetailId) {
-    back.classList.remove('hidden');
     const rec = loadMatchHistory().find(r => r && r.id === histDetailId);
     if (!rec) {
       histDetailId = null;
-      back.classList.add('hidden');
+      syncHistActionButtons(false);
     } else {
+      syncHistActionButtons(true);
       box.innerHTML = renderMatchDetailHtml(rec, name);
       return;
     }
   }
-  back.classList.add('hidden');
+  syncHistActionButtons(false);
 
   if (!rows.length) {
     box.innerHTML = '<div class="hist-list"><div class="empty">'
@@ -1398,9 +1440,9 @@ function renderPlayerHistory() {
     const vs = side.opp ? side.opp.name : '—';
     return '<button type="button" data-id="' + encodeURIComponent(rec.id) + '">'
       + '<span class="wl ' + wl + '">' + wl + '</span>'
-      + '<span class="mid"><span class="line1">' + modeLabel(rec)
-      + ' vs ' + vs + '</span>'
-      + '<span class="line2">' + formatHistWhen(rec.ts || rec.id) + '</span></span>'
+      + '<span class="mid"><span class="line1">' + matchTitle(rec) + '</span>'
+      + '<span class="line2">' + formatHistWhen(rec.ts || rec.id)
+      + (vs ? (' · vs ' + vs) : '') + '</span></span>'
       + '<span class="avg">' + histMetric(side, rec) + '</span>'
       + '</button>';
   }).join('');
@@ -1461,8 +1503,9 @@ function renderMatchDetailHtml(rec, focusName) {
     grid += '<div class="lbl">' + lab + '</div><div>' + va + '</div><div>' + vb + '</div>';
   }
   return '<div class="hist-detail">'
-    + '<div class="d-title">' + modeLabel(rec) + ' · ' + winName + ' won</div>'
+    + '<div class="d-title">' + matchTitle(rec) + '</div>'
     + '<div class="d-meta">' + formatHistWhen(rec.ts || rec.id)
+    + ' · ' + winName + ' won'
     + '<br>id ' + rec.id + '</div>'
     + '<div class="d-grid">' + grid + '</div>'
     + '</div>';
@@ -2222,6 +2265,7 @@ document.getElementById('histBack').addEventListener('click', () => {
   histDetailId = null;
   renderPlayerHistory();
 });
+document.getElementById('histDelete').addEventListener('click', deleteHistDetail);
 document.getElementById('playerTabs').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-tab]');
   if (!btn) return;
