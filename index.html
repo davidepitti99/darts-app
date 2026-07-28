@@ -64,6 +64,11 @@
   .cricket-board td.marks.open { color: var(--accent); }
   .cricket-board td.marks.closed { color: var(--ok); }
   .cricket-board tr.pts td { border-bottom: none; font-weight: 800; font-size: 18px; color: var(--accent); padding-top: 10px; }
+  .cricket-help {
+    background: var(--panel); border-radius: 12px; padding: 10px 12px;
+    margin-bottom: 10px; font-size: 12px; color: #cfcfcf; line-height: 1.45;
+  }
+  .cricket-help.hidden { display: none; }
   .cricket-mode .cricket-hide { display: none !important; }
 
   .scores {
@@ -368,6 +373,12 @@
   </div>
 
   <div class="cricket-board hidden" id="cricketBoard"></div>
+  <div class="cricket-help hidden" id="cricketHelp">
+    Targets <b>20–15 &amp; Bull</b>: 3 hits to close (S=1, D=2, T=3; outer bull=1, red bull=2).
+    Extra hits score the face value only while the opponent has not closed that number.
+    Win by closing all targets with points ≥ opponent; if you close first but trail, keep
+    scoring on numbers they still have open.
+  </div>
 
   <div class="pad" id="pad"></div>
 
@@ -742,14 +753,19 @@ function throwCricketDart(m, label) {
     p.marks[t.key] = before + used;
     left -= used;
     if (left > 0 && (opp.marks[t.key] || 0) < 3) {
+      // Points only after you own the number, and only while opponent has not closed it.
       scored = left * t.value;
       p.points += scored;
       p.remaining = p.points;
       p.pointsScored += scored;
+    } else if (left > 0 && (opp.marks[t.key] || 0) >= 3) {
+      note = label + ' (dead)';
     }
-    note = label + (scored ? (' +' + scored) : '');
+    if (scored) note = label + ' +' + scored;
+    else if (t && (p.marks[t.key] || 0) >= 3 && !note.includes('dead'))
+      note = label + (before < 3 ? ' closed' : '');
   } else if (label !== 'Miss') {
-    note = label + ' (no cricket)';
+    note = label + ' (inactive)';
   }
   const result = {
     label, points: scored, isDouble: false,
@@ -760,12 +776,17 @@ function throwCricketDart(m, label) {
   m.visitPoints += scored;
   m.message = p.name + ': ' + note;
 
+  // Win immediately: all targets closed and points ≥ opponent.
   if (cricketClosed(p) && p.points >= opp.points) {
     finishVisit(m, false);
     p.legsWon += 1;
     m.winner = m.current;
     m.message = p.name + ' wins Cricket (' + p.points + '–' + opp.points + ')!';
     return result;
+  }
+  if (cricketClosed(p) && p.points < opp.points) {
+    m.message = p.name + ': all closed — need ≥ ' + opp.points + ' pts (trail '
+      + (opp.points - p.points) + ')';
   }
   afterDart(m);
   return result;
@@ -1129,6 +1150,8 @@ function syncCricketChrome() {
   document.getElementById('mainApp').classList.toggle('cricket-mode', cricket);
   const board = document.getElementById('cricketBoard');
   if (board) board.classList.toggle('hidden', !cricket);
+  const help = document.getElementById('cricketHelp');
+  if (help) help.classList.toggle('hidden', !cricket);
   if (pageScore.classList.contains('active')) {
     appTitle.textContent = cricket ? 'Cricket Scorekeeper'
       : ((mode().label || '501') + ' Scorekeeper');
@@ -1286,7 +1309,7 @@ function render() {
       elInfo.innerHTML = '<div class="turn">' + match.players[match.current].name
         + ' · dart ' + dartN + '/3 · ' + match.dartsLeft + ' left'
         + ' · visit pts ' + match.visitPoints + '</div>'
-        + '<div class="aim">Cricket · 20–15 & Bull</div>'
+        + '<div class="aim">Cricket · close 20–15 & Bull</div>'
         + '<div class="row"><span class="k">This visit:</span> ' + visit + '</div>'
         + '<div class="msg">' + match.message + '</div>';
     }
