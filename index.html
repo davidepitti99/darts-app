@@ -23,7 +23,6 @@
              env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
   .app { max-width: 560px; margin: 0 auto; padding: 10px 12px 24px; }
-  h1 { font-size: 16px; font-weight: 700; margin: 2px 0 10px; text-align: center; }
   .page { display: none; }
   .page.active { display: block; }
 
@@ -132,10 +131,12 @@
   }
   .player-box h2 { margin: 0; font-size: 16px; text-align: center; }
   .player-box .hint { margin: 0; font-size: 12px; color: var(--mute); text-align: center; line-height: 1.4; }
-  .player-box input[type=text] {
+  .player-box input[type=text],
+  .player-box input[type=number] {
     width: 100%; background: var(--field); color: #fff; border: 1px solid #555;
     border-radius: 10px; padding: 12px 10px; font-size: 16px; text-align: center;
   }
+  .player-box input.bad { border-color: #ff8a8a; }
   .player-list {
     flex: 1; overflow-y: auto; border: 1px solid #333; border-radius: 10px;
     min-height: 80px; max-height: 220px; background: #141414;
@@ -165,7 +166,11 @@
   .player-actions button.danger { background: #3a2a2a; border-color: #5a3a3a; color: #ff8a8a; }
   .card .rem {
     font-size: 42px; font-weight: 800; line-height: 1.05; margin: 4px 0;
+    cursor: pointer; user-select: none;
+    border-radius: 10px; padding: 2px 6px;
   }
+  .card .rem:hover { background: rgba(255,255,255,0.06); }
+  .card .rem:active { background: rgba(255,255,255,0.1); }
   .card .meta { font-size: 11px; color: var(--mute); margin-bottom: 6px; }
   .card .acc-toggle {
     display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px;
@@ -396,8 +401,19 @@
     </div>
   </div>
 </div>
+<div class="player-modal hidden" id="scoreModal">
+  <div class="player-box">
+    <h2 id="scoreModalTitle">Set score</h2>
+    <p class="hint" id="scoreModalHint">Enter remaining score (0–501).</p>
+    <input id="scoreModalInput" type="number" inputmode="numeric" min="0" step="1"
+           placeholder="Score" autocomplete="off">
+    <div class="player-actions">
+      <button type="button" id="scoreModalCancel">Cancel</button>
+      <button type="button" id="scoreModalSet" class="primary">Set</button>
+    </div>
+  </div>
+</div>
 <div class="app locked" id="mainApp">
-  <h1 id="appTitle">501 Scorekeeper</h1>
   <div class="nav" id="pageNav">
     <button type="button" class="active" data-page="score">Scorekeeper</button>
     <button type="button" data-page="fit">Fit σ</button>
@@ -410,7 +426,7 @@
     <div class="card" id="card0">
       <input class="name" id="name0" value="Player 1" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
-      <div class="rem cricket-hide" id="rem0">0</div>
+      <div class="rem cricket-hide" id="rem0" title="Tap to set remaining score">0</div>
       <div class="meta" id="meta0">Legs 0</div>
       <div class="acc-toggle cricket-hide" data-player="0">
         <button type="button" class="active" data-mode="simple">Simple σ</button>
@@ -439,7 +455,7 @@
     <div class="card" id="card1">
       <input class="name" id="name1" value="Player 2" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
-      <div class="rem cricket-hide" id="rem1">0</div>
+      <div class="rem cricket-hide" id="rem1" title="Tap to set remaining score">0</div>
       <div class="meta" id="meta1">Legs 0</div>
       <div class="acc-toggle cricket-hide" data-player="1">
         <button type="button" class="active" data-mode="simple">Simple σ</button>
@@ -1185,6 +1201,63 @@ function closePlayerModal() {
   document.getElementById('playerModal').classList.add('hidden');
 }
 
+let scoreEditIdx = null;
+
+function openScoreModal(idx) {
+  if (match.game === 'cricket') return;
+  scoreEditIdx = idx;
+  const p = match.players[idx];
+  const max = match.startScore;
+  const modal = document.getElementById('scoreModal');
+  const title = document.getElementById('scoreModalTitle');
+  const hint = document.getElementById('scoreModalHint');
+  const inp = document.getElementById('scoreModalInput');
+  title.textContent = p.name + ' — remaining';
+  hint.textContent = 'Enter remaining score (0–' + max + '). Mid-visit darts for this player are cleared.';
+  inp.min = '0';
+  inp.max = String(max);
+  inp.value = String(p.remaining);
+  inp.classList.remove('bad');
+  modal.classList.remove('hidden');
+  setTimeout(() => { inp.focus(); inp.select(); }, 50);
+}
+
+function closeScoreModal() {
+  document.getElementById('scoreModal').classList.add('hidden');
+  scoreEditIdx = null;
+}
+
+function applyScoreFromModal() {
+  if (scoreEditIdx === null || match.game === 'cricket') return;
+  const inp = document.getElementById('scoreModalInput');
+  const max = match.startScore;
+  const n = parseInt(String(inp.value).trim(), 10);
+  if (!Number.isFinite(n) || n < 0 || n > max) {
+    inp.classList.add('bad');
+    inp.focus();
+    return;
+  }
+  inp.classList.remove('bad');
+  pushUndo(match);
+  const idx = scoreEditIdx;
+  const p = match.players[idx];
+  p.remaining = n;
+  if (match.doubleIn) p.opened = n < match.startScore;
+  // Editing clears any in-progress visit for that player so bust/visit math stays consistent.
+  if (match.current === idx) {
+    match.turnStart = n;
+    match.dartsLeft = 3;
+    match.visitDarts = [];
+    match.visitPoints = 0;
+  }
+  if (match.winner !== null) {
+    match.winner = null;
+  }
+  match.message = p.name + ' set to ' + n;
+  closeScoreModal();
+  render();
+}
+
 function saveCurrentPlayerFromModal() {
   const nameIn = document.getElementById('playerModalName');
   const name = (nameIn.value || '').trim();
@@ -1432,12 +1505,6 @@ function syncCricketChrome() {
   if (board) board.classList.toggle('hidden', !cricket);
   const help = document.getElementById('cricketHelp');
   if (help) help.classList.toggle('hidden', !cricket);
-  const scorePage = document.getElementById('pageScore');
-  const titleEl = document.getElementById('appTitle');
-  if (scorePage && scorePage.classList.contains('active') && titleEl) {
-    titleEl.textContent = cricket ? 'Cricket Scorekeeper'
-      : ((mode().label || '501') + ' Scorekeeper');
-  }
 }
 
 function cricketCommit(target, mult) {
@@ -1749,8 +1816,21 @@ for (const idx of [0, 1]) {
   const el = document.getElementById('name' + idx);
   el.addEventListener('click', (e) => { e.preventDefault(); openPlayerModal(idx); });
   el.addEventListener('focus', (e) => { e.preventDefault(); el.blur(); openPlayerModal(idx); });
+  document.getElementById('rem' + idx).addEventListener('click', () => openScoreModal(idx));
 }
 document.getElementById('playerCancel').addEventListener('click', closePlayerModal);
+document.getElementById('scoreModalCancel').addEventListener('click', closeScoreModal);
+document.getElementById('scoreModalSet').addEventListener('click', applyScoreFromModal);
+document.getElementById('scoreModal').addEventListener('click', (e) => {
+  if (e.target.id === 'scoreModal') closeScoreModal();
+});
+document.getElementById('scoreModalInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); applyScoreFromModal(); }
+  else if (e.key === 'Escape') { e.preventDefault(); closeScoreModal(); }
+});
+document.getElementById('scoreModalInput').addEventListener('input', () => {
+  document.getElementById('scoreModalInput').classList.remove('bad');
+});
 document.getElementById('playerSave').addEventListener('click', saveCurrentPlayerFromModal);
 document.getElementById('playerLoad').addEventListener('click', loadSelectedPlayerFromModal);
 document.getElementById('playerDelete').addEventListener('click', deleteSelectedPlayerFromModal);
@@ -1789,7 +1869,6 @@ window.addEventListener('orientationchange', sizeCanvas);
 const pageNav = document.getElementById('pageNav');
 const pageScore = document.getElementById('pageScore');
 const pageFit = document.getElementById('pageFit');
-const appTitle = document.getElementById('appTitle');
 
 buildModeToggle();
 populateSigmas();
@@ -1803,10 +1882,12 @@ function showPage(id) {
   pageFit.classList.toggle('active', id === 'fit');
   for (const b of pageNav.children)
     b.classList.toggle('active', b.dataset.page === id);
-  if (id === 'fit') appTitle.textContent = 'Fit accuracy σ';
-  else syncCricketChrome();
-  if (id === 'score') sizeCanvas();
-  else renderFit();
+  if (id === 'score') {
+    syncCricketChrome();
+    sizeCanvas();
+  } else {
+    renderFit();
+  }
 }
 for (const b of pageNav.children)
   b.addEventListener('click', () => showPage(b.dataset.page));
