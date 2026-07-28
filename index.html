@@ -372,7 +372,7 @@
     <div class="card" id="card0">
       <input class="name" id="name0" value="Player 1" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
-      <div class="rem" id="rem0">501</div>
+      <div class="rem" id="rem0">0</div>
       <div class="meta" id="meta0">Legs 0</div>
       <div class="acc-toggle cricket-hide" data-player="0">
         <button type="button" class="active" data-mode="simple">Simple σ</button>
@@ -401,7 +401,7 @@
     <div class="card" id="card1">
       <input class="name" id="name1" value="Player 2" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
-      <div class="rem" id="rem1">501</div>
+      <div class="rem" id="rem1">0</div>
       <div class="meta" id="meta1">Legs 0</div>
       <div class="acc-toggle cricket-hide" data-player="1">
         <button type="button" class="active" data-mode="simple">Simple σ</button>
@@ -1373,19 +1373,22 @@ function selectMode(key) {
     b.className = (b.dataset.key === key) ? 'active' : '';
   populateSigmas();
   match = newMatch(m.start_score, m.double_in, names(), m.game || 'x01');
+  buildPad();
   updatePending();
   render();
 }
 
 function syncCricketChrome() {
-  const cricket = isCricket();
+  const cricket = !!(match && match.game === 'cricket') || isCricket();
   document.getElementById('mainApp').classList.toggle('cricket-mode', cricket);
   const board = document.getElementById('cricketBoard');
   if (board) board.classList.toggle('hidden', !cricket);
   const help = document.getElementById('cricketHelp');
   if (help) help.classList.toggle('hidden', !cricket);
-  if (pageScore.classList.contains('active')) {
-    appTitle.textContent = cricket ? 'Cricket Scorekeeper'
+  const scorePage = document.getElementById('pageScore');
+  const titleEl = document.getElementById('appTitle');
+  if (scorePage && scorePage.classList.contains('active') && titleEl) {
+    titleEl.textContent = cricket ? 'Cricket Scorekeeper'
       : ((mode().label || '501') + ' Scorekeeper');
   }
 }
@@ -1409,7 +1412,12 @@ function renderCricketBoard() {
 
 function buildPad() {
   elPad.innerHTML = '';
-  const nums = [20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1];
+  const cricket = !!(match && match.game === 'cricket') || isCricket();
+  // Cricket: only active targets. X01: full board.
+  const nums = cricket
+    ? [20, 19, 18, 17, 16, 15]
+    : [20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1];
+  elPad.style.gridTemplateColumns = cricket ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)';
   for (const n of nums) {
     const b = document.createElement('button');
     b.type = 'button';
@@ -1440,7 +1448,7 @@ function buildPad() {
   elPad.appendChild(bull);
 
   const miss = document.createElement('button');
-  miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss wide';
+  miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss' + (cricket ? '' : ' wide');
   miss.addEventListener('click', () => commitLabel('Miss'));
   elPad.appendChild(miss);
 }
@@ -1516,8 +1524,10 @@ function render() {
   for (let i = 0; i < 2; i++) {
     const p = match.players[i];
     if (match.game === 'cricket') {
-      document.getElementById('rem' + i).textContent = String(p.points || 0);
-      const closed = CRICKET_KEYS.filter(k => (p.marks[k] || 0) >= 3).length;
+      const pts = (p.points != null) ? p.points : 0;
+      document.getElementById('rem' + i).textContent = String(pts);
+      const marks = p.marks || emptyCricketMarks();
+      const closed = CRICKET_KEYS.filter(k => (marks[k] || 0) >= 3).length;
       document.getElementById('meta' + i).textContent =
         closed + '/7 closed · Legs ' + p.legsWon;
     } else {
@@ -1623,6 +1633,7 @@ document.getElementById('btnLeg').addEventListener('click', () => {
 document.getElementById('btnMatch').addEventListener('click', () => {
   const m = mode();
   match = newMatch(m.start_score, m.double_in, names(), m.game || 'x01');
+  buildPad();
   render();
 });
 elSigma0.addEventListener('change', () => commitSigmaInput(elSigma0));
@@ -1686,18 +1697,18 @@ function sizeCanvas() {
 window.addEventListener('resize', sizeCanvas);
 window.addEventListener('orientationchange', sizeCanvas);
 
-buildModeToggle();
-buildPad();
-populateSigmas();
-match = newMatch(mode().start_score, mode().double_in, names(), mode().game || 'x01');
-updatePending();
-sizeCanvas();
-
 // ── Page navigation ──────────────────────────────────────────────────────
 const pageNav = document.getElementById('pageNav');
 const pageScore = document.getElementById('pageScore');
 const pageFit = document.getElementById('pageFit');
 const appTitle = document.getElementById('appTitle');
+
+buildModeToggle();
+populateSigmas();
+match = newMatch(mode().start_score, mode().double_in, names(), mode().game || 'x01');
+buildPad();
+updatePending();
+sizeCanvas();
 
 function showPage(id) {
   pageScore.classList.toggle('active', id === 'score');
