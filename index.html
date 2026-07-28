@@ -1601,7 +1601,7 @@ function buildPad() {
   elPad.appendChild(bull);
 
   const miss = document.createElement('button');
-  miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss wide';
+  miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss';
   miss.addEventListener('click', () => commitLabel('Miss'));
   elPad.appendChild(miss);
 }
