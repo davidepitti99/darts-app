@@ -347,7 +347,7 @@
 <div class="player-modal hidden" id="playerModal">
   <div class="player-box">
     <h2 id="playerModalTitle">Player</h2>
-    <p class="hint">Pick a saved player, or type a new name and Save (stores name + σ).</p>
+    <p class="hint">Shared roster for both sides. Tap a name to load, or type a new one and Save (stores name + σ).</p>
     <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
     <div class="player-list" id="playerList"></div>
     <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr 1fr">
@@ -1130,12 +1130,13 @@ function openPlayerModal(idx) {
   const modal = document.getElementById('playerModal');
   const title = document.getElementById('playerModalTitle');
   const nameIn = document.getElementById('playerModalName');
-  title.textContent = 'Player ' + (idx + 1);
+  title.textContent = 'Player ' + (idx + 1) + ' — shared roster';
   nameIn.value = names()[idx];
   const existing = findSavedPlayer(nameIn.value);
   if (existing) playerListSel = normPlayerName(existing.name);
   modal.classList.remove('hidden');
-  renderPlayerList(nameIn.value);
+  // Always show the full shared list; typing filters it.
+  renderPlayerList('');
   setTimeout(() => { nameIn.focus(); nameIn.select(); }, 50);
 }
 
@@ -1673,7 +1674,9 @@ document.getElementById('playerModal').addEventListener('click', (e) => {
 });
 document.getElementById('playerModalName').addEventListener('input', () => {
   playerListSel = null;
-  renderPlayerList(document.getElementById('playerModalName').value);
+  const q = document.getElementById('playerModalName').value;
+  // Filter only while typing a non-default custom query; empty → full shared list
+  renderPlayerList(q);
 });
 document.getElementById('playerModalName').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
