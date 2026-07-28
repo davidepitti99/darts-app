@@ -822,7 +822,8 @@ function newMatch(startScore, doubleIn, names, game) {
     ],
     current: 0, dartsLeft: 3, turnStart: startScore,
     visitDarts: [], visitPoints: 0,
-    winner: null, message: names[0] + ' to throw', undo: [],
+    winner: null, archiveId: null,
+    message: names[0] + ' to throw', undo: [],
   };
 }
 
@@ -920,10 +921,13 @@ function pushUndo(m) {
 
 function undoMatch(m) {
   if (!m.undo.length) return false;
+  const prevArchiveId = m.archiveId;
   const snap = m.undo.pop();
   const stack = m.undo;
   Object.assign(m, snap);
   m.undo = stack;
+  // Winning dart created an archive; undoing removes that record.
+  if (prevArchiveId && !m.archiveId) removeArchivedMatch(prevArchiveId);
   return true;
 }
 
@@ -1057,6 +1061,7 @@ function newLeg(m) {
   m.visitDarts = [];
   m.visitPoints = 0;
   m.winner = null;
+  m.archiveId = null;
   m.message = m.players[m.current].name + ' to throw';
 }
 
@@ -1078,8 +1083,82 @@ function syncNames() {
 
 // ── Saved players (localStorage) ─────────────────────────────────────────
 const PLAYERS_KEY = 'dartsSavedPlayers';
+const MATCH_HISTORY_KEY = 'dartsMatchHistory';
+const MATCH_HISTORY_MAX = 200;
 let playerEditIdx = 0;
 let playerListSel = null; // normalized name of highlighted saved row
+
+function playerStatsSnapshot(p, game) {
+  const snap = {
+    name: p.name,
+    dartsThrown: p.dartsThrown | 0,
+    legsWon: p.legsWon | 0,
+  };
+  if (game === 'cricket') {
+    snap.points = p.points | 0;
+    snap.marks = Object.assign({}, p.marks || emptyCricketMarks());
+    snap.closed = CRICKET_KEYS.filter(k => (snap.marks[k] || 0) >= 3).length;
+  } else {
+    snap.pointsScored = p.pointsScored | 0;
+    snap.avg3 = avg3(p);
+    snap.checkoutHits = p.checkoutHits | 0;
+    snap.checkoutAttempts = p.checkoutAttempts | 0;
+    snap.checkoutPct = checkoutPct(p);
+    snap.highestCheckout = p.highestCheckout | 0;
+    snap.highestVisit = p.highestVisit | 0;
+    snap.scores100 = p.scores100 | 0;
+    snap.scores140 = p.scores140 | 0;
+    snap.scores180 = p.scores180 | 0;
+    snap.busts = p.busts | 0;
+    snap.remaining = p.remaining | 0;
+  }
+  return snap;
+}
+
+function loadMatchHistory() {
+  try {
+    const raw = localStorage.getItem(MATCH_HISTORY_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function storeMatchHistory(list) {
+  localStorage.setItem(MATCH_HISTORY_KEY, JSON.stringify(list.slice(0, MATCH_HISTORY_MAX)));
+}
+
+function removeArchivedMatch(id) {
+  if (!id) return;
+  storeMatchHistory(loadMatchHistory().filter(r => r && r.id !== id));
+}
+
+function archiveFinishedMatch(m) {
+  if (!m || m.winner === null || m.archiveId) return null;
+  const ts = new Date();
+  const id = ts.toISOString();
+  const modeKey = (typeof currentModeKey !== 'undefined' && currentModeKey)
+    ? currentModeKey
+    : (m.game === 'cricket' ? 'cricket'
+      : (m.doubleIn ? '301di' : '501'));
+  const rec = {
+    id: id,
+    ts: id,
+    mode: modeKey,
+    game: m.game || 'x01',
+    startScore: m.startScore,
+    doubleIn: !!m.doubleIn,
+    winner: m.winner,
+    winnerName: m.players[m.winner].name,
+    players: m.players.map(p => playerStatsSnapshot(p, m.game)),
+  };
+  const hist = loadMatchHistory();
+  hist.unshift(rec);
+  storeMatchHistory(hist);
+  m.archiveId = id;
+  return id;
+}
 
 function loadSavedPlayers() {
   try {
@@ -1623,6 +1702,10 @@ function commitLabel(label) {
   } catch (e) {
     match.message = String(e.message || e);
   }
+  if (match.winner !== null) {
+    const id = archiveFinishedMatch(match);
+    if (id) match.message += ' · saved ' + id;
+  }
   pendingMult = 'S';
   updatePending();
   render();
@@ -1666,6 +1749,10 @@ function renderStats() {
     html += '<div class="lbl">'+lab+'</div><div>'+va+'</div><div>'+vb+'</div>';
   }
   html += '</div>';
+  if (match.archiveId) {
+    html += '<div class="msg" style="margin-top:8px;font-size:11px;color:var(--mute)">'
+      + 'Match saved · ' + match.archiveId + '</div>';
+  }
   elStats.innerHTML = html;
 }
 
