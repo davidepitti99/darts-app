@@ -43,11 +43,28 @@
     border-radius: 12px; margin: 0 0 10px;
   }
   .segmented button {
-    flex: 1; padding: 10px 6px; font-size: 14px; font-weight: 600;
+    flex: 1; padding: 10px 4px; font-size: 13px; font-weight: 600;
     color: #cfcfcf; background: transparent; border: none; border-radius: 8px;
     cursor: pointer;
   }
   .segmented button.active { background: var(--accent); color: #1a1a1a; }
+
+  .cricket-board {
+    background: var(--panel); border-radius: 12px; padding: 10px 8px;
+    margin-bottom: 10px; font-size: 13px;
+  }
+  .cricket-board.hidden { display: none; }
+  .cricket-board table { width: 100%; border-collapse: collapse; }
+  .cricket-board th, .cricket-board td {
+    text-align: center; padding: 6px 4px; border-bottom: 1px solid #2a2a2a;
+  }
+  .cricket-board th { color: var(--mute); font-weight: 600; font-size: 12px; }
+  .cricket-board td.num { color: #fff; font-weight: 700; width: 18%; }
+  .cricket-board td.marks { letter-spacing: 2px; font-size: 16px; font-weight: 700; }
+  .cricket-board td.marks.open { color: var(--accent); }
+  .cricket-board td.marks.closed { color: var(--ok); }
+  .cricket-board tr.pts td { border-bottom: none; font-weight: 800; font-size: 18px; color: var(--accent); padding-top: 10px; }
+  .cricket-mode .cricket-hide { display: none !important; }
 
   .scores {
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
@@ -296,16 +313,16 @@
       <input class="name" id="name0" value="Player 1" maxlength="16">
       <div class="rem" id="rem0">501</div>
       <div class="meta" id="meta0">Legs 0</div>
-      <div class="acc-toggle" data-player="0">
+      <div class="acc-toggle cricket-hide" data-player="0">
         <button type="button" class="active" data-mode="simple">Simple σ</button>
         <button type="button" data-mode="complex">σ₁ σ₂ φ</button>
       </div>
-      <div class="sigma-row" id="simpleRow0">
+      <div class="sigma-row cricket-hide" id="simpleRow0">
         <label for="sigma0">σ</label>
         <input id="sigma0" type="number" inputmode="numeric" min="1" max="50" step="1"
                value="25" placeholder="1–50">
       </div>
-      <div class="shape-row hidden" id="complexRow0">
+      <div class="shape-row hidden cricket-hide" id="complexRow0">
         <div class="mini">
           <label for="s1_0">σ₁</label>
           <input id="s1_0" type="number" inputmode="numeric" min="1" max="50" step="1" placeholder="1–50">
@@ -324,16 +341,16 @@
       <input class="name" id="name1" value="Player 2" maxlength="16">
       <div class="rem" id="rem1">501</div>
       <div class="meta" id="meta1">Legs 0</div>
-      <div class="acc-toggle" data-player="1">
+      <div class="acc-toggle cricket-hide" data-player="1">
         <button type="button" class="active" data-mode="simple">Simple σ</button>
         <button type="button" data-mode="complex">σ₁ σ₂ φ</button>
       </div>
-      <div class="sigma-row" id="simpleRow1">
+      <div class="sigma-row cricket-hide" id="simpleRow1">
         <label for="sigma1">σ</label>
         <input id="sigma1" type="number" inputmode="numeric" min="1" max="50" step="1"
                value="25" placeholder="1–50">
       </div>
-      <div class="shape-row hidden" id="complexRow1">
+      <div class="shape-row hidden cricket-hide" id="complexRow1">
         <div class="mini">
           <label for="s1_1">σ₁</label>
           <input id="s1_1" type="number" inputmode="numeric" min="1" max="50" step="1" placeholder="1–50">
@@ -350,6 +367,8 @@
     </div>
   </div>
 
+  <div class="cricket-board hidden" id="cricketBoard"></div>
+
   <div class="pad" id="pad"></div>
 
   <div class="actions">
@@ -359,7 +378,7 @@
   </div>
 
   <div class="info" id="info"></div>
-  <div class="board-wrap">
+  <div class="board-wrap cricket-hide">
     <canvas id="board" width="800" height="800"></canvas>
   </div>
 
@@ -417,7 +436,7 @@
 </div>
 
 <script>
-const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 double-in","start_score":301,"double_in":true,"sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501"};
+const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501"};
 
 const OUTER_BULL_RADIUS = 15.9, BULL_RADIUS = 6.35;
 const TRIPLE_INNER = 99.0, TRIPLE_OUTER = 107.0;
@@ -640,30 +659,116 @@ function formatHitPath(policy, steps) {
 }
 
 // ── Match engine ─────────────────────────────────────────────────────────
-function makePlayer(name, start, doubleIn) {
-  return {
+const CRICKET_KEYS = [20, 19, 18, 17, 16, 15, 'Bull'];
+
+function emptyCricketMarks() {
+  const m = {};
+  for (const k of CRICKET_KEYS) m[k] = 0;
+  return m;
+}
+
+function makePlayer(name, start, doubleIn, game) {
+  const p = {
     name, remaining: start, opened: !doubleIn,
     dartsThrown: 0, pointsScored: 0, visitScores: [],
     checkoutHits: 0, checkoutAttempts: 0, highestCheckout: 0, highestVisit: 0,
     scores180: 0, scores140: 0, scores100: 0, busts: 0, legsWon: 0,
   };
+  if (game === 'cricket') {
+    p.remaining = 0; // cricket points shown in rem
+    p.marks = emptyCricketMarks();
+    p.points = 0;
+  }
+  return p;
 }
 
 function cloneMatch(m) {
   return JSON.parse(JSON.stringify(m));
 }
 
-function newMatch(startScore, doubleIn, names) {
+function isCricket() {
+  return mode() && mode().game === 'cricket';
+}
+
+function newMatch(startScore, doubleIn, names, game) {
+  game = game || 'x01';
   return {
-    startScore, doubleIn,
+    startScore, doubleIn, game,
     players: [
-      makePlayer(names[0], startScore, doubleIn),
-      makePlayer(names[1], startScore, doubleIn),
+      makePlayer(names[0], startScore, doubleIn, game),
+      makePlayer(names[1], startScore, doubleIn, game),
     ],
     current: 0, dartsLeft: 3, turnStart: startScore,
     visitDarts: [], visitPoints: 0,
     winner: null, message: names[0] + ' to throw', undo: [],
   };
+}
+
+function cricketTarget(label) {
+  if (!label || label === 'Miss') return null;
+  if (label === 'Bull') return { key: 'Bull', value: 25, marks: 2 };
+  if (label === '25') return { key: 'Bull', value: 25, marks: 1 };
+  const m = String(label).match(/^([SDT])(\d+)$/i);
+  if (!m) return null;
+  const n = parseInt(m[2], 10);
+  if (n < 15 || n > 20) return null;
+  const marks = m[1].toUpperCase() === 'S' ? 1 : (m[1].toUpperCase() === 'D' ? 2 : 3);
+  return { key: n, value: n, marks };
+}
+
+function cricketClosed(p) {
+  return CRICKET_KEYS.every(k => (p.marks[k] || 0) >= 3);
+}
+
+function formatMarks(n) {
+  n = Math.max(0, Math.min(3, n | 0));
+  return '●'.repeat(n) + '○'.repeat(3 - n);
+}
+
+function throwCricketDart(m, label) {
+  if (m.winner !== null) throw new Error('Leg already finished');
+  pushUndo(m);
+  const p = m.players[m.current];
+  const opp = m.players[1 - m.current];
+  p.dartsThrown += 1;
+  const t = cricketTarget(label);
+  let scored = 0;
+  let note = label;
+  if (t) {
+    let left = t.marks;
+    const before = p.marks[t.key] || 0;
+    const room = Math.max(0, 3 - before);
+    const used = Math.min(left, room);
+    p.marks[t.key] = before + used;
+    left -= used;
+    if (left > 0 && (opp.marks[t.key] || 0) < 3) {
+      scored = left * t.value;
+      p.points += scored;
+      p.remaining = p.points;
+      p.pointsScored += scored;
+    }
+    note = label + (scored ? (' +' + scored) : '');
+  } else if (label !== 'Miss') {
+    note = label + ' (no cricket)';
+  }
+  const result = {
+    label, points: scored, isDouble: false,
+    outcome: scored ? 'ok' : (t ? 'mark' : 'no_score'),
+    remainingAfter: p.points,
+  };
+  m.visitDarts.push(result);
+  m.visitPoints += scored;
+  m.message = p.name + ': ' + note;
+
+  if (cricketClosed(p) && p.points >= opp.points) {
+    finishVisit(m, false);
+    p.legsWon += 1;
+    m.winner = m.current;
+    m.message = p.name + ' wins Cricket (' + p.points + '–' + opp.points + ')!';
+    return result;
+  }
+  afterDart(m);
+  return result;
 }
 
 function avg3(p) {
@@ -727,6 +832,7 @@ function afterDart(m) {
 }
 
 function throwDart(m, label) {
+  if (m.game === 'cricket') return throwCricketDart(m, label);
   if (m.winner !== null) throw new Error('Leg already finished');
   const [pts, isDbl] = aimPoints(label);
   pushUndo(m);
@@ -804,12 +910,18 @@ function newLeg(m) {
   pushUndo(m);
   const starter = (m.winner === null) ? 0 : (1 - m.winner);
   for (const p of m.players) {
-    p.remaining = m.startScore;
-    p.opened = !m.doubleIn;
+    if (m.game === 'cricket') {
+      p.remaining = 0;
+      p.points = 0;
+      p.marks = emptyCricketMarks();
+    } else {
+      p.remaining = m.startScore;
+      p.opened = !m.doubleIn;
+    }
   }
   m.current = starter;
   m.dartsLeft = 3;
-  m.turnStart = m.startScore;
+  m.turnStart = m.game === 'cricket' ? 0 : m.startScore;
   m.visitDarts = [];
   m.visitPoints = 0;
   m.winner = null;
@@ -1007,9 +1119,37 @@ function selectMode(key) {
   for (const b of elModeToggle.children)
     b.className = (b.dataset.key === key) ? 'active' : '';
   populateSigmas();
-  match = newMatch(m.start_score, m.double_in, names());
+  match = newMatch(m.start_score, m.double_in, names(), m.game || 'x01');
   updatePending();
   render();
+}
+
+function syncCricketChrome() {
+  const cricket = isCricket();
+  document.getElementById('mainApp').classList.toggle('cricket-mode', cricket);
+  const board = document.getElementById('cricketBoard');
+  if (board) board.classList.toggle('hidden', !cricket);
+  if (pageScore.classList.contains('active')) {
+    appTitle.textContent = cricket ? 'Cricket Scorekeeper'
+      : ((mode().label || '501') + ' Scorekeeper');
+  }
+}
+
+function renderCricketBoard() {
+  const el = document.getElementById('cricketBoard');
+  if (!el || !match || match.game !== 'cricket') return;
+  const a = match.players[0], b = match.players[1];
+  let html = '<table><thead><tr><th></th><th>'
+    + a.name + '</th><th>' + b.name + '</th></tr></thead><tbody>';
+  for (const k of CRICKET_KEYS) {
+    const ma = a.marks[k] || 0, mb = b.marks[k] || 0;
+    html += '<tr><td class="num">' + k + '</td>'
+      + '<td class="marks ' + (ma >= 3 ? 'closed' : 'open') + '">' + formatMarks(ma) + '</td>'
+      + '<td class="marks ' + (mb >= 3 ? 'closed' : 'open') + '">' + formatMarks(mb) + '</td></tr>';
+  }
+  html += '<tr class="pts"><td class="num">Pts</td><td>' + a.points
+    + '</td><td>' + b.points + '</td></tr></tbody></table>';
+  el.innerHTML = html;
 }
 
 function buildPad() {
@@ -1079,20 +1219,31 @@ function fmt(v, dig) {
 
 function renderStats() {
   const a = match.players[0], b = match.players[1];
-  const rows = [
-    ['3-dart avg', fmt(avg3(a), 1), fmt(avg3(b), 1)],
-    ['Darts', a.dartsThrown, b.dartsThrown],
-    ['Visits 100–139', a.scores100, b.scores100],
-    ['Visits 140–179', a.scores140, b.scores140],
-    ['Visits 180', a.scores180, b.scores180],
-    ['Checkout %',
-     (checkoutPct(a) === null ? '—' : fmt(checkoutPct(a), 0) + '%') + ' ('+a.checkoutHits+'/'+a.checkoutAttempts+')',
-     (checkoutPct(b) === null ? '—' : fmt(checkoutPct(b), 0) + '%') + ' ('+b.checkoutHits+'/'+b.checkoutAttempts+')'],
-    ['Hi checkout', a.highestCheckout || '—', b.highestCheckout || '—'],
-    ['Hi visit', a.highestVisit || '—', b.highestVisit || '—'],
-    ['Busts', a.busts, b.busts],
-    ['Legs', a.legsWon, b.legsWon],
-  ];
+  let rows;
+  if (match.game === 'cricket') {
+    const closed = (p) => CRICKET_KEYS.filter(k => (p.marks[k] || 0) >= 3).length;
+    rows = [
+      ['Points', a.points, b.points],
+      ['Numbers closed', closed(a) + '/7', closed(b) + '/7'],
+      ['Darts', a.dartsThrown, b.dartsThrown],
+      ['Legs', a.legsWon, b.legsWon],
+    ];
+  } else {
+    rows = [
+      ['3-dart avg', fmt(avg3(a), 1), fmt(avg3(b), 1)],
+      ['Darts', a.dartsThrown, b.dartsThrown],
+      ['Visits 100–139', a.scores100, b.scores100],
+      ['Visits 140–179', a.scores140, b.scores140],
+      ['Visits 180', a.scores180, b.scores180],
+      ['Checkout %',
+       (checkoutPct(a) === null ? '—' : fmt(checkoutPct(a), 0) + '%') + ' ('+a.checkoutHits+'/'+a.checkoutAttempts+')',
+       (checkoutPct(b) === null ? '—' : fmt(checkoutPct(b), 0) + '%') + ' ('+b.checkoutHits+'/'+b.checkoutAttempts+')'],
+      ['Hi checkout', a.highestCheckout || '—', b.highestCheckout || '—'],
+      ['Hi visit', a.highestVisit || '—', b.highestVisit || '—'],
+      ['Busts', a.busts, b.busts],
+      ['Legs', a.legsWon, b.legsWon],
+    ];
+  }
   let html = '<h2>Statistics</h2><div class="grid">'
     + '<div class="head"></div><div class="head">'+a.name+'</div><div class="head">'+b.name+'</div>';
   for (const [lab, va, vb] of rows) {
@@ -1103,9 +1254,47 @@ function renderStats() {
 }
 
 function render() {
-  drawBoard();
   syncNames();
+  syncCricketChrome();
   const m = mode();
+
+  for (let i = 0; i < 2; i++) {
+    const p = match.players[i];
+    if (match.game === 'cricket') {
+      document.getElementById('rem' + i).textContent = String(p.points || 0);
+      const closed = CRICKET_KEYS.filter(k => (p.marks[k] || 0) >= 3).length;
+      document.getElementById('meta' + i).textContent =
+        closed + '/7 closed · Legs ' + p.legsWon;
+    } else {
+      document.getElementById('rem' + i).textContent = String(p.remaining);
+      document.getElementById('meta' + i).textContent = 'Legs ' + p.legsWon;
+    }
+    const card = document.getElementById('card' + i);
+    const active = (match.winner === null && match.current === i) || match.winner === i;
+    card.classList.toggle('active', active);
+  }
+
+  if (match.game === 'cricket') {
+    renderCricketBoard();
+    const visit = match.visitDarts.map(d => d.label).join(' ') || '—';
+    const dartN = match.winner !== null ? '—' : (4 - match.dartsLeft);
+    if (match.winner !== null) {
+      elInfo.innerHTML = '<div class="turn">Game over</div>'
+        + '<div class="aim">' + match.message + '</div>'
+        + '<div class="row"><span class="k">Last visit:</span> ' + visit + '</div>';
+    } else {
+      elInfo.innerHTML = '<div class="turn">' + match.players[match.current].name
+        + ' · dart ' + dartN + '/3 · ' + match.dartsLeft + ' left'
+        + ' · visit pts ' + match.visitPoints + '</div>'
+        + '<div class="aim">Cricket · 20–15 & Bull</div>'
+        + '<div class="row"><span class="k">This visit:</span> ' + visit + '</div>'
+        + '<div class="msg">' + match.message + '</div>';
+    }
+    renderStats();
+    return;
+  }
+
+  drawBoard();
   const sigma = activeSigma();
   const shape = playerShape(match.current);
   // Always on-demand: simple σ → sσ_sσ_p0; complex → snapped (σ1,σ2,φ).
@@ -1121,15 +1310,6 @@ function render() {
           : (' φ ' + resolved.snap.phiDeg + '°'));
   } else {
     aimSource = 'σ ' + resolved.snap.sigma1 + ' mm';
-  }
-
-  for (let i = 0; i < 2; i++) {
-    const p = match.players[i];
-    document.getElementById('rem' + i).textContent = String(p.remaining);
-    document.getElementById('meta' + i).textContent = 'Legs ' + p.legsWon;
-    const card = document.getElementById('card' + i);
-    const active = (match.winner === null && match.current === i) || match.winner === i;
-    card.classList.toggle('active', active);
   }
 
   const visit = match.visitDarts.map(d => d.label).join(' ') || '—';
@@ -1187,7 +1367,7 @@ document.getElementById('btnLeg').addEventListener('click', () => {
 });
 document.getElementById('btnMatch').addEventListener('click', () => {
   const m = mode();
-  match = newMatch(m.start_score, m.double_in, names());
+  match = newMatch(m.start_score, m.double_in, names(), m.game || 'x01');
   render();
 });
 elSigma0.addEventListener('change', () => commitSigmaInput(elSigma0));
@@ -1229,7 +1409,7 @@ window.addEventListener('orientationchange', sizeCanvas);
 buildModeToggle();
 buildPad();
 populateSigmas();
-match = newMatch(mode().start_score, mode().double_in, names());
+match = newMatch(mode().start_score, mode().double_in, names(), mode().game || 'x01');
 updatePending();
 sizeCanvas();
 
@@ -1244,7 +1424,8 @@ function showPage(id) {
   pageFit.classList.toggle('active', id === 'fit');
   for (const b of pageNav.children)
     b.classList.toggle('active', b.dataset.page === id);
-  appTitle.textContent = (id === 'fit') ? 'Fit accuracy σ' : '501 Scorekeeper';
+  if (id === 'fit') appTitle.textContent = 'Fit accuracy σ';
+  else syncCricketChrome();
   if (id === 'score') sizeCanvas();
   else renderFit();
 }
