@@ -59,11 +59,14 @@
     text-align: center; padding: 6px 4px; border-bottom: 1px solid #2a2a2a;
   }
   .cricket-board th { color: var(--mute); font-weight: 600; font-size: 12px; }
-  .cricket-board td.num { color: #fff; font-weight: 700; width: 18%; }
-  .cricket-board td.marks { letter-spacing: 2px; font-size: 16px; font-weight: 700; }
+  .cricket-board td.num, .cricket-board th.num {
+    color: #fff; font-weight: 800; width: 22%;
+  }
+  .cricket-board td.marks { letter-spacing: 2px; font-size: 16px; font-weight: 700; width: 39%; }
   .cricket-board td.marks.open { color: var(--accent); }
   .cricket-board td.marks.closed { color: var(--ok); }
   .cricket-board tr.pts td { border-bottom: none; font-weight: 800; font-size: 18px; color: var(--accent); padding-top: 10px; }
+  .cricket-board tr.pts td.num { color: var(--mute); font-size: 12px; font-weight: 600; }
   .cricket-help {
     background: var(--panel); border-radius: 12px; padding: 10px 12px;
     margin-bottom: 10px; font-size: 12px; color: #cfcfcf; line-height: 1.45;
@@ -1398,16 +1401,19 @@ function renderCricketBoard() {
   const el = document.getElementById('cricketBoard');
   if (!el || !match || match.game !== 'cricket') return;
   const a = match.players[0], b = match.players[1];
-  let html = '<table><thead><tr><th></th><th>'
-    + a.name + '</th><th>' + b.name + '</th></tr></thead><tbody>';
+  // Layout: left marks | target number | right marks
+  let html = '<table><thead><tr><th>' + a.name
+    + '</th><th class="num"></th><th>' + b.name + '</th></tr></thead><tbody>';
   for (const k of CRICKET_KEYS) {
     const ma = a.marks[k] || 0, mb = b.marks[k] || 0;
-    html += '<tr><td class="num">' + k + '</td>'
+    html += '<tr>'
       + '<td class="marks ' + (ma >= 3 ? 'closed' : 'open') + '">' + formatMarks(ma) + '</td>'
-      + '<td class="marks ' + (mb >= 3 ? 'closed' : 'open') + '">' + formatMarks(mb) + '</td></tr>';
+      + '<td class="num">' + k + '</td>'
+      + '<td class="marks ' + (mb >= 3 ? 'closed' : 'open') + '">' + formatMarks(mb) + '</td>'
+      + '</tr>';
   }
-  html += '<tr class="pts"><td class="num">Pts</td><td>' + a.points
-    + '</td><td>' + b.points + '</td></tr></tbody></table>';
+  html += '<tr class="pts"><td>' + (a.points || 0) + '</td>'
+    + '<td class="num">Pts</td><td>' + (b.points || 0) + '</td></tr></tbody></table>';
   el.innerHTML = html;
 }
 
