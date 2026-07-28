@@ -479,12 +479,11 @@
     </div>
     <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
     <div class="player-panel" id="playerRosterPanel">
-      <p class="hint">Shared roster for both sides. Tap a name to load, or type a new one and Save (name only).</p>
+      <p class="hint">Shared roster for both sides. Tap a name to use it, or type a new one and Save.</p>
       <div class="player-list" id="playerList"></div>
-      <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr 1fr">
+      <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr">
         <button type="button" id="playerDelete" class="danger">Delete</button>
         <button type="button" id="playerCancel">Cancel</button>
-        <button type="button" id="playerLoad" class="primary">Load</button>
         <button type="button" id="playerSave" class="primary">Save</button>
       </div>
     </div>
@@ -2282,7 +2281,6 @@ document.getElementById('scoreModalInput').addEventListener('input', () => {
   document.getElementById('scoreModalInput').classList.remove('bad');
 });
 document.getElementById('playerSave').addEventListener('click', saveCurrentPlayerFromModal);
-document.getElementById('playerLoad').addEventListener('click', loadSelectedPlayerFromModal);
 document.getElementById('playerDelete').addEventListener('click', deleteSelectedPlayerFromModal);
 document.getElementById('playerModal').addEventListener('click', (e) => {
   if (e.target.id === 'playerModal') closePlayerModal();
