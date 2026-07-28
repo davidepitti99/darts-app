@@ -54,18 +54,29 @@
     margin-bottom: 10px; font-size: 13px;
   }
   .cricket-board.hidden { display: none; }
-  .cricket-board table { width: 100%; border-collapse: collapse; }
+  .cricket-board table {
+    width: 100%; border-collapse: collapse; table-layout: fixed;
+  }
+  .cricket-board col.side { width: calc((100% - 72px) / 2); }
+  .cricket-board col.mid { width: 72px; }
   .cricket-board th, .cricket-board td {
-    text-align: center; padding: 6px 4px; border-bottom: 1px solid #2a2a2a;
+    text-align: center; vertical-align: middle;
+    padding: 7px 4px; border-bottom: 1px solid #2a2a2a;
   }
   .cricket-board th { color: var(--mute); font-weight: 600; font-size: 12px; }
   .cricket-board td.num, .cricket-board th.num {
-    color: #fff; font-weight: 800; width: 22%;
+    color: #fff; font-weight: 800; padding-left: 2px; padding-right: 2px;
   }
-  .cricket-board td.marks { letter-spacing: 2px; font-size: 16px; font-weight: 700; width: 39%; }
+  .cricket-board td.marks {
+    letter-spacing: 2px; font-size: 16px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
   .cricket-board td.marks.open { color: var(--accent); }
   .cricket-board td.marks.closed { color: var(--ok); }
-  .cricket-board tr.pts td { border-bottom: none; font-weight: 800; font-size: 18px; color: var(--accent); padding-top: 10px; }
+  .cricket-board tr.pts td {
+    border-bottom: none; font-weight: 800; font-size: 18px;
+    color: var(--accent); padding-top: 10px;
+  }
   .cricket-board tr.pts td.num { color: var(--mute); font-size: 12px; font-weight: 600; }
   .cricket-help {
     background: var(--panel); border-radius: 12px; padding: 10px 12px;
@@ -73,10 +84,11 @@
   }
   .cricket-help.hidden { display: none; }
   .cricket-mode .cricket-hide { display: none !important; }
-  .cricket-board td.num button, .cricket-board th.num {
-    width: 100%; background: #2a2a2a; color: #fff; border: 1px solid #444;
-    border-radius: 8px; padding: 8px 4px; font-size: 15px; font-weight: 800;
-    cursor: pointer;
+  .cricket-board td.num button {
+    display: block; width: 56px; margin: 0 auto;
+    background: #2a2a2a; color: #fff; border: 1px solid #444;
+    border-radius: 8px; padding: 8px 0; font-size: 15px; font-weight: 800;
+    cursor: pointer; line-height: 1.1; text-align: center;
   }
   .cricket-board td.num button:active { background: var(--accent); color: #1a1a1a; }
   .cricket-mode .scores { margin-bottom: 6px; }
@@ -1422,9 +1434,11 @@ function renderCricketBoard() {
   const el = document.getElementById('cricketBoard');
   if (!el || !match || match.game !== 'cricket') return;
   const a = match.players[0], b = match.players[1];
-  // Layout: left marks | tappable target | right marks
-  let html = '<table><thead><tr><th>' + a.name
-    + '</th><th class="num">Tap</th><th>' + b.name + '</th></tr></thead><tbody>';
+  // Layout: left marks | centered tappable target | right marks
+  let html = '<table><colgroup>'
+    + '<col class="side"><col class="mid"><col class="side">'
+    + '</colgroup><thead><tr><th>' + a.name
+    + '</th><th class="num"></th><th>' + b.name + '</th></tr></thead><tbody>';
   for (const k of CRICKET_KEYS) {
     const ma = a.marks[k] || 0, mb = b.marks[k] || 0;
     const keyAttr = (k === 'Bull') ? 'Bull' : String(k);
