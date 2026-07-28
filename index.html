@@ -81,9 +81,50 @@
   .card.active { border-color: var(--accent); }
   .card .name {
     width: 100%; background: transparent; border: none; color: #b9b9b9;
-    font-size: 13px; font-weight: 600; text-align: center; padding: 0;
+    font-size: 13px; font-weight: 600; text-align: center; padding: 4px 0;
+    cursor: pointer; border-radius: 6px;
   }
+  .card .name:focus { outline: 1px solid #555; }
   .card.active .name { color: var(--accent); }
+
+  .player-modal {
+    position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center;
+    background: rgba(0,0,0,0.72); padding: 18px;
+  }
+  .player-modal.hidden { display: none; }
+  .player-box {
+    width: min(380px, 100%); max-height: min(80vh, 560px);
+    background: #1a1a1a; border: 1px solid #333; border-radius: 14px;
+    padding: 16px 14px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .player-box h2 { margin: 0; font-size: 16px; text-align: center; }
+  .player-box .hint { margin: 0; font-size: 12px; color: var(--mute); text-align: center; line-height: 1.4; }
+  .player-box input[type=text] {
+    width: 100%; background: var(--field); color: #fff; border: 1px solid #555;
+    border-radius: 10px; padding: 12px 10px; font-size: 16px; text-align: center;
+  }
+  .player-list {
+    flex: 1; overflow-y: auto; border: 1px solid #333; border-radius: 10px;
+    min-height: 80px; max-height: 220px; background: #141414;
+  }
+  .player-list .empty { color: var(--mute); padding: 16px; text-align: center; font-size: 13px; }
+  .player-list button {
+    display: flex; width: 100%; align-items: center; justify-content: space-between;
+    gap: 8px; background: transparent; border: none; border-bottom: 1px solid #2a2a2a;
+    color: #eee; padding: 12px 12px; font-size: 15px; font-weight: 600;
+    cursor: pointer; text-align: left;
+  }
+  .player-list button:last-child { border-bottom: none; }
+  .player-list button .sub { color: var(--mute); font-size: 11px; font-weight: 500; }
+  .player-list button.sel { background: #2a2a20; color: var(--accent); }
+  .player-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .player-actions.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .player-actions button {
+    background: var(--field); color: #fff; border: 1px solid #555;
+    border-radius: 10px; padding: 12px 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .player-actions button.primary { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
+  .player-actions button.danger { background: #3a2a2a; border-color: #5a3a3a; color: #ff8a8a; }
   .card .rem {
     font-size: 42px; font-weight: 800; line-height: 1.05; margin: 4px 0;
   }
@@ -303,6 +344,20 @@
     <div class="err" id="gateErr"></div>
   </div>
 </div>
+<div class="player-modal hidden" id="playerModal">
+  <div class="player-box">
+    <h2 id="playerModalTitle">Player</h2>
+    <p class="hint">Pick a saved player, or type a new name and Save (stores name + σ).</p>
+    <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
+    <div class="player-list" id="playerList"></div>
+    <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr 1fr">
+      <button type="button" id="playerDelete" class="danger">Delete</button>
+      <button type="button" id="playerCancel">Cancel</button>
+      <button type="button" id="playerLoad" class="primary">Load</button>
+      <button type="button" id="playerSave" class="primary">Save</button>
+    </div>
+  </div>
+</div>
 <div class="app locked" id="mainApp">
   <h1 id="appTitle">501 Scorekeeper</h1>
   <div class="nav" id="pageNav">
@@ -315,7 +370,8 @@
 
   <div class="scores">
     <div class="card" id="card0">
-      <input class="name" id="name0" value="Player 1" maxlength="16">
+      <input class="name" id="name0" value="Player 1" maxlength="16" readonly
+             inputmode="none" title="Tap to load or save player">
       <div class="rem" id="rem0">501</div>
       <div class="meta" id="meta0">Legs 0</div>
       <div class="acc-toggle cricket-hide" data-player="0">
@@ -343,7 +399,8 @@
       </div>
     </div>
     <div class="card" id="card1">
-      <input class="name" id="name1" value="Player 2" maxlength="16">
+      <input class="name" id="name1" value="Player 2" maxlength="16" readonly
+             inputmode="none" title="Tap to load or save player">
       <div class="rem" id="rem1">501</div>
       <div class="meta" id="meta1">Legs 0</div>
       <div class="acc-toggle cricket-hide" data-player="1">
@@ -965,6 +1022,181 @@ function syncNames() {
   match.players[1].name = n[1];
 }
 
+// ── Saved players (localStorage) ─────────────────────────────────────────
+const PLAYERS_KEY = 'dartsSavedPlayers';
+let playerEditIdx = 0;
+let playerListSel = null; // normalized name of highlighted saved row
+
+function loadSavedPlayers() {
+  try {
+    const raw = localStorage.getItem(PLAYERS_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function storeSavedPlayers(list) {
+  localStorage.setItem(PLAYERS_KEY, JSON.stringify(list));
+}
+
+function normPlayerName(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+function findSavedPlayer(name) {
+  const key = normPlayerName(name);
+  if (!key) return null;
+  return loadSavedPlayers().find(p => normPlayerName(p.name) === key) || null;
+}
+
+function collectPlayerProfile(idx) {
+  const name = names()[idx];
+  const modeAcc = sigmaMode[idx] === 'complex' ? 'complex' : 'simple';
+  const sigma = nearestPolicySigma(parseFloat(
+    (idx === 0 ? elSigma0 : elSigma1).value));
+  const shape = playerShape(idx);
+  const snap = shape ? snapPolicyShape(shape) : null;
+  return {
+    name,
+    sigmaMode: modeAcc,
+    sigma,
+    sigma1: snap ? snap.sigma1 : sigma,
+    sigma2: snap ? snap.sigma2 : sigma,
+    phiDeg: snap ? snap.phiDeg : 0,
+  };
+}
+
+function applyPlayerProfile(idx, profile) {
+  const elName = document.getElementById('name' + idx);
+  elName.value = profile.name;
+  const sigma = nearestPolicySigma(profile.sigma || 25);
+  (idx === 0 ? elSigma0 : elSigma1).value = String(sigma);
+  if (profile.sigmaMode === 'complex'
+      && profile.sigma1 > 0 && profile.sigma2 > 0) {
+    setSigmaMode(idx, 'complex', { keepValues: true });
+    setPlayerShape(idx, snapPolicyShape({
+      sigma1: profile.sigma1,
+      sigma2: profile.sigma2,
+      phiDeg: profile.phiDeg || 0,
+    }));
+  } else {
+    setSigmaMode(idx, 'simple', { keepValues: true });
+    setPlayerShape(idx, null);
+  }
+  syncNames();
+}
+
+function renderPlayerList(filterName) {
+  const list = document.getElementById('playerList');
+  const players = loadSavedPlayers()
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  const q = normPlayerName(filterName);
+  const shown = q
+    ? players.filter(p => normPlayerName(p.name).includes(q))
+    : players;
+  if (!shown.length) {
+    list.innerHTML = '<div class="empty">'
+      + (players.length ? 'No match — Save to create this player' : 'No saved players yet')
+      + '</div>';
+    return;
+  }
+  list.innerHTML = shown.map(p => {
+    const key = normPlayerName(p.name);
+    const sub = p.sigmaMode === 'complex'
+      ? ('σ₁ ' + p.sigma1 + ' · σ₂ ' + p.sigma2 + ' · φ ' + (p.phiDeg || 0) + '°')
+      : ('σ ' + (p.sigma || '?') + ' mm');
+    return '<button type="button" data-name="' + encodeURIComponent(p.name) + '"'
+      + (playerListSel === key ? ' class="sel"' : '') + '>'
+      + '<span>' + p.name + '</span><span class="sub">' + sub + '</span></button>';
+  }).join('');
+  list.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = decodeURIComponent(btn.dataset.name);
+      const prof = findSavedPlayer(name);
+      if (!prof) return;
+      applyPlayerProfile(playerEditIdx, prof);
+      closePlayerModal();
+      render();
+    });
+  });
+}
+
+function openPlayerModal(idx) {
+  playerEditIdx = idx;
+  playerListSel = null;
+  const modal = document.getElementById('playerModal');
+  const title = document.getElementById('playerModalTitle');
+  const nameIn = document.getElementById('playerModalName');
+  title.textContent = 'Player ' + (idx + 1);
+  nameIn.value = names()[idx];
+  const existing = findSavedPlayer(nameIn.value);
+  if (existing) playerListSel = normPlayerName(existing.name);
+  modal.classList.remove('hidden');
+  renderPlayerList(nameIn.value);
+  setTimeout(() => { nameIn.focus(); nameIn.select(); }, 50);
+}
+
+function closePlayerModal() {
+  document.getElementById('playerModal').classList.add('hidden');
+}
+
+function saveCurrentPlayerFromModal() {
+  const nameIn = document.getElementById('playerModalName');
+  const name = (nameIn.value || '').trim();
+  if (!name) {
+    nameIn.focus();
+    return;
+  }
+  if (name.length > 16) {
+    nameIn.value = name.slice(0, 16);
+  }
+  document.getElementById('name' + playerEditIdx).value = name.slice(0, 16);
+  syncNames();
+  const profile = collectPlayerProfile(playerEditIdx);
+  profile.name = name.slice(0, 16);
+  const list = loadSavedPlayers();
+  const key = normPlayerName(profile.name);
+  const i = list.findIndex(p => normPlayerName(p.name) === key);
+  if (i >= 0) list[i] = profile;
+  else list.push(profile);
+  storeSavedPlayers(list);
+  playerListSel = key;
+  closePlayerModal();
+  render();
+}
+
+function loadSelectedPlayerFromModal() {
+  const nameIn = document.getElementById('playerModalName');
+  const prof = findSavedPlayer(nameIn.value) ||
+    (playerListSel && loadSavedPlayers().find(p => normPlayerName(p.name) === playerListSel));
+  if (!prof) {
+    // New name only — just apply the typed name without σ load
+    const name = (nameIn.value || '').trim();
+    if (!name) return;
+    document.getElementById('name' + playerEditIdx).value = name.slice(0, 16);
+    syncNames();
+    closePlayerModal();
+    render();
+    return;
+  }
+  applyPlayerProfile(playerEditIdx, prof);
+  closePlayerModal();
+  render();
+}
+
+function deleteSelectedPlayerFromModal() {
+  const nameIn = document.getElementById('playerModalName');
+  const key = playerListSel || normPlayerName(nameIn.value);
+  if (!key) return;
+  const list = loadSavedPlayers().filter(p => normPlayerName(p.name) !== key);
+  storeSavedPlayers(list);
+  playerListSel = null;
+  renderPlayerList(nameIn.value);
+}
+
 function buildModeToggle() {
   elModeToggle.innerHTML = '';
   if (DATA.modes.length < 2) { elModeToggle.style.display = 'none'; return; }
@@ -1416,8 +1648,33 @@ for (const toggle of document.querySelectorAll('.acc-toggle')) {
     render();
   });
 }
-document.getElementById('name0').addEventListener('change', () => { syncNames(); render(); });
-document.getElementById('name1').addEventListener('change', () => { syncNames(); render(); });
+for (const idx of [0, 1]) {
+  const el = document.getElementById('name' + idx);
+  el.addEventListener('click', (e) => { e.preventDefault(); openPlayerModal(idx); });
+  el.addEventListener('focus', (e) => { e.preventDefault(); el.blur(); openPlayerModal(idx); });
+}
+document.getElementById('playerCancel').addEventListener('click', closePlayerModal);
+document.getElementById('playerSave').addEventListener('click', saveCurrentPlayerFromModal);
+document.getElementById('playerLoad').addEventListener('click', loadSelectedPlayerFromModal);
+document.getElementById('playerDelete').addEventListener('click', deleteSelectedPlayerFromModal);
+document.getElementById('playerModal').addEventListener('click', (e) => {
+  if (e.target.id === 'playerModal') closePlayerModal();
+});
+document.getElementById('playerModalName').addEventListener('input', () => {
+  playerListSel = null;
+  renderPlayerList(document.getElementById('playerModalName').value);
+});
+document.getElementById('playerModalName').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (findSavedPlayer(document.getElementById('playerModalName').value))
+      loadSelectedPlayerFromModal();
+    else
+      saveCurrentPlayerFromModal();
+  } else if (e.key === 'Escape') {
+    closePlayerModal();
+  }
+});
 
 function sizeCanvas() {
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
