@@ -57,15 +57,15 @@
   .cricket-board table {
     width: 100%; border-collapse: collapse; table-layout: fixed;
   }
-  .cricket-board col.side { width: calc((100% - 72px) / 2); }
-  .cricket-board col.mid { width: 72px; }
+  .cricket-board col.side { width: calc((100% - 118px) / 2); }
+  .cricket-board col.mid { width: 118px; }
   .cricket-board th, .cricket-board td {
     text-align: center; vertical-align: middle;
-    padding: 7px 4px; border-bottom: 1px solid #2a2a2a;
+    padding: 6px 2px; border-bottom: 1px solid #2a2a2a;
   }
   .cricket-board th { color: var(--mute); font-weight: 600; font-size: 12px; }
   .cricket-board td.num, .cricket-board th.num {
-    color: #fff; font-weight: 800; padding-left: 2px; padding-right: 2px;
+    color: #fff; font-weight: 800; padding-left: 0; padding-right: 0;
   }
   .cricket-board td.marks {
     letter-spacing: 2px; font-size: 16px; font-weight: 700;
@@ -84,13 +84,23 @@
   }
   .cricket-help.hidden { display: none; }
   .cricket-mode .cricket-hide { display: none !important; }
-  .cricket-board td.num button {
-    display: block; width: 56px; margin: 0 auto;
-    background: #2a2a2a; color: #fff; border: 1px solid #444;
-    border-radius: 8px; padding: 8px 0; font-size: 15px; font-weight: 800;
-    cursor: pointer; line-height: 1.1; text-align: center;
+  .cricket-hit {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
   }
-  .cricket-board td.num button:active { background: var(--accent); color: #1a1a1a; }
+  .cricket-hit .n {
+    width: 48px; background: #2a2a2a; color: #fff; border: 1px solid #444;
+    border-radius: 8px; padding: 8px 0; font-size: 15px; font-weight: 800;
+    cursor: pointer; line-height: 1.1;
+  }
+  .cricket-hit .m {
+    width: 28px; background: #333; color: var(--accent); border: 1px solid #555;
+    border-radius: 7px; padding: 7px 0; font-size: 11px; font-weight: 800;
+    cursor: pointer; line-height: 1.1;
+  }
+  .cricket-hit .m.ghost {
+    visibility: hidden; pointer-events: none;
+  }
+  .cricket-hit button:active { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
   .cricket-mode .scores { margin-bottom: 6px; }
   .cricket-mode .card .meta { margin-bottom: 0; }
 
@@ -1430,22 +1440,41 @@ function syncCricketChrome() {
   }
 }
 
+function cricketCommit(target, mult) {
+  // mult: 'S' | 'D' | 'T'. Bull: S=outer 25, D=inner 50, T unused.
+  if (target === 'Bull') {
+    if (mult === 'T') return;
+    commitLabel(mult === 'D' ? 'Bull' : '25');
+    return;
+  }
+  commitLabel(mult + target);
+}
+
 function renderCricketBoard() {
   const el = document.getElementById('cricketBoard');
   if (!el || !match || match.game !== 'cricket') return;
   const a = match.players[0], b = match.players[1];
-  // Layout: left marks | centered tappable target | right marks
+  // Layout: left marks | D · number · T | right marks
   let html = '<table><colgroup>'
     + '<col class="side"><col class="mid"><col class="side">'
     + '</colgroup><thead><tr><th>' + a.name
-    + '</th><th class="num"></th><th>' + b.name + '</th></tr></thead><tbody>';
+    + '</th><th class="num">D · # · T</th><th>' + b.name + '</th></tr></thead><tbody>';
   for (const k of CRICKET_KEYS) {
     const ma = a.marks[k] || 0, mb = b.marks[k] || 0;
     const keyAttr = (k === 'Bull') ? 'Bull' : String(k);
+    const noTriple = (k === 'Bull');
     html += '<tr>'
       + '<td class="marks ' + (ma >= 3 ? 'closed' : 'open') + '">' + formatMarks(ma) + '</td>'
-      + '<td class="num"><button type="button" data-cricket-target="' + keyAttr + '">'
-      + k + '</button></td>'
+      + '<td class="num"><div class="cricket-hit">'
+      + '<button type="button" class="m" data-cricket-target="' + keyAttr
+      + '" data-mult="D" title="Double">D</button>'
+      + '<button type="button" class="n" data-cricket-target="' + keyAttr
+      + '" data-mult="S" title="Single">' + k + '</button>'
+      + '<button type="button" class="m' + (noTriple ? ' ghost' : '')
+      + '" data-cricket-target="' + keyAttr
+      + '" data-mult="T" title="Triple"' + (noTriple ? ' tabindex="-1"' : '')
+      + '>T</button>'
+      + '</div></td>'
       + '<td class="marks ' + (mb >= 3 ? 'closed' : 'open') + '">' + formatMarks(mb) + '</td>'
       + '</tr>';
   }
@@ -1453,14 +1482,9 @@ function renderCricketBoard() {
     + '<td class="num">Pts</td><td>' + (b.points || 0) + '</td></tr></tbody></table>';
   el.innerHTML = html;
   el.querySelectorAll('button[data-cricket-target]').forEach(btn => {
+    if (btn.classList.contains('ghost')) return;
     btn.addEventListener('click', () => {
-      const t = btn.dataset.cricketTarget;
-      if (t === 'Bull') {
-        // Single = outer 25; Double = inner 50
-        commitLabel(pendingMult === 'D' ? 'Bull' : '25');
-      } else {
-        onNum(parseInt(t, 10));
-      }
+      cricketCommit(btn.dataset.cricketTarget, btn.dataset.mult || 'S');
     });
   });
 }
@@ -1468,12 +1492,18 @@ function renderCricketBoard() {
 function buildPad() {
   elPad.innerHTML = '';
   const cricket = !!(match && match.game === 'cricket') || isCricket();
-  // Cricket: numbers are tapped on the scoreboard; pad is S/D/T + Miss only.
-  // X01: full number pad.
-  const nums = cricket
-    ? []
-    : [20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1];
-  elPad.style.gridTemplateColumns = cricket ? 'repeat(4, 1fr)' : 'repeat(5, 1fr)';
+  // Cricket: D / number / T are on the scoreboard; pad is Miss only.
+  // X01: full number pad + S/D/T + Bull + Miss.
+  if (cricket) {
+    elPad.style.gridTemplateColumns = '1fr';
+    const miss = document.createElement('button');
+    miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss';
+    miss.addEventListener('click', () => commitLabel('Miss'));
+    elPad.appendChild(miss);
+    return;
+  }
+  elPad.style.gridTemplateColumns = 'repeat(5, 1fr)';
+  const nums = [20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1];
   for (const n of nums) {
     const b = document.createElement('button');
     b.type = 'button';
@@ -1495,18 +1525,16 @@ function buildPad() {
     });
     elPad.appendChild(b);
   }
-  if (!cricket) {
-    const bull = document.createElement('button');
-    bull.type = 'button'; bull.textContent = 'Bull'; bull.className = 'special';
-    bull.addEventListener('click', () => {
-      // Single = outer 25; Double = inner 50; Triple not allowed for bull.
-      commitLabel(pendingMult === 'D' ? 'Bull' : '25');
-    });
-    elPad.appendChild(bull);
-  }
+  const bull = document.createElement('button');
+  bull.type = 'button'; bull.textContent = 'Bull'; bull.className = 'special';
+  bull.addEventListener('click', () => {
+    // Single = outer 25; Double = inner 50; Triple not allowed for bull.
+    commitLabel(pendingMult === 'D' ? 'Bull' : '25');
+  });
+  elPad.appendChild(bull);
 
   const miss = document.createElement('button');
-  miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss';
+  miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss wide';
   miss.addEventListener('click', () => commitLabel('Miss'));
   elPad.appendChild(miss);
 }
@@ -1609,9 +1637,7 @@ function render() {
       elInfo.innerHTML = '<div class="turn">' + match.players[match.current].name
         + ' · dart ' + dartN + '/3 · ' + match.dartsLeft + ' left'
         + ' · visit pts ' + match.visitPoints + '</div>'
-        + '<div class="aim">Tap a number · '
-        + (pendingMult === 'D' ? 'Double' : (pendingMult === 'T' ? 'Triple' : 'Single'))
-        + '</div>'
+        + '<div class="aim">Tap D · number · T</div>'
         + '<div class="row"><span class="k">This visit:</span> ' + visit + '</div>'
         + '<div class="msg">' + match.message + '</div>';
     }
