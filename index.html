@@ -128,6 +128,11 @@
   .player-list button:last-child { border-bottom: none; }
   .player-list button .sub { color: var(--mute); font-size: 11px; font-weight: 500; }
   .player-list button.sel { background: #2a2a20; color: var(--accent); }
+  .player-list button.taken {
+    color: #666; cursor: not-allowed; opacity: 0.55;
+  }
+  .player-list button.taken .sub { color: #555; }
+  .player-list button.taken.sel { background: transparent; color: #666; }
   .player-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .player-actions.triple { grid-template-columns: 1fr 1fr 1fr; }
   .player-actions button {
@@ -1099,6 +1104,19 @@ function applyPlayerProfile(idx, profile) {
   syncNames();
 }
 
+function otherPlayerNameKey(idx) {
+  return normPlayerName(names()[1 - idx]);
+}
+
+function nameTakenByOther(name, idx) {
+  const key = normPlayerName(name);
+  if (!key) return false;
+  // Ignore default placeholders so "Player 1"/"Player 2" don't block each other.
+  const other = otherPlayerNameKey(idx);
+  if (!other || other === 'player 1' || other === 'player 2') return false;
+  return key === other;
+}
+
 function renderPlayerList(filterName) {
   const list = document.getElementById('playerList');
   const players = loadSavedPlayers()
@@ -1108,6 +1126,7 @@ function renderPlayerList(filterName) {
   const shown = q
     ? players.filter(p => normPlayerName(p.name).includes(q))
     : players;
+  const takenKey = otherPlayerNameKey(playerEditIdx);
   if (!shown.length) {
     list.innerHTML = '<div class="empty">'
       + (players.length ? 'No match — Save to create this player' : 'No saved players yet')
@@ -1116,16 +1135,26 @@ function renderPlayerList(filterName) {
   }
   list.innerHTML = shown.map(p => {
     const key = normPlayerName(p.name);
-    const sub = p.sigmaMode === 'complex'
-      ? ('σ₁ ' + p.sigma1 + ' · σ₂ ' + p.sigma2 + ' · φ ' + (p.phiDeg || 0) + '°')
-      : ('σ ' + (p.sigma || '?') + ' mm');
+    const taken = takenKey && key === takenKey;
+    const sub = taken
+      ? 'in use'
+      : (p.sigmaMode === 'complex'
+        ? ('σ₁ ' + p.sigma1 + ' · σ₂ ' + p.sigma2 + ' · φ ' + (p.phiDeg || 0) + '°')
+        : ('σ ' + (p.sigma || '?') + ' mm'));
+    const cls = [
+      playerListSel === key ? 'sel' : '',
+      taken ? 'taken' : '',
+    ].filter(Boolean).join(' ');
     return '<button type="button" data-name="' + encodeURIComponent(p.name) + '"'
-      + (playerListSel === key ? ' class="sel"' : '') + '>'
+      + (cls ? (' class="' + cls + '"') : '')
+      + (taken ? ' disabled aria-disabled="true"' : '') + '>'
       + '<span>' + p.name + '</span><span class="sub">' + sub + '</span></button>';
   }).join('');
   list.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (btn.disabled || btn.classList.contains('taken')) return;
       const name = decodeURIComponent(btn.dataset.name);
+      if (nameTakenByOther(name, playerEditIdx)) return;
       const prof = findSavedPlayer(name);
       if (!prof) return;
       applyPlayerProfile(playerEditIdx, prof);
@@ -1162,6 +1191,10 @@ function saveCurrentPlayerFromModal() {
     nameIn.focus();
     return;
   }
+  if (nameTakenByOther(name, playerEditIdx)) {
+    nameIn.focus();
+    return;
+  }
   if (name.length > 16) {
     nameIn.value = name.slice(0, 16);
   }
@@ -1182,18 +1215,23 @@ function saveCurrentPlayerFromModal() {
 
 function loadSelectedPlayerFromModal() {
   const nameIn = document.getElementById('playerModalName');
+  const typed = (nameIn.value || '').trim();
+  if (nameTakenByOther(typed, playerEditIdx)) {
+    nameIn.focus();
+    return;
+  }
   const prof = findSavedPlayer(nameIn.value) ||
     (playerListSel && loadSavedPlayers().find(p => normPlayerName(p.name) === playerListSel));
   if (!prof) {
     // New name only — just apply the typed name without σ load
-    const name = (nameIn.value || '').trim();
-    if (!name) return;
-    document.getElementById('name' + playerEditIdx).value = name.slice(0, 16);
+    if (!typed) return;
+    document.getElementById('name' + playerEditIdx).value = typed.slice(0, 16);
     syncNames();
     closePlayerModal();
     render();
     return;
   }
+  if (nameTakenByOther(prof.name, playerEditIdx)) return;
   applyPlayerProfile(playerEditIdx, prof);
   closePlayerModal();
   render();
