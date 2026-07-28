@@ -363,7 +363,7 @@
 <div class="player-modal hidden" id="playerModal">
   <div class="player-box">
     <h2 id="playerModalTitle">Player</h2>
-    <p class="hint">Shared roster for both sides. Tap a name to load, or type a new one and Save (stores name + σ).</p>
+    <p class="hint">Shared roster for both sides. Tap a name to load, or type a new one and Save (name only).</p>
     <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
     <div class="player-list" id="playerList"></div>
     <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr 1fr">
@@ -1047,14 +1047,27 @@ function loadSavedPlayers() {
   try {
     const raw = localStorage.getItem(PLAYERS_KEY);
     const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
+    if (!Array.isArray(arr)) return [];
+    // Names only (strip any old σ fields from earlier versions).
+    const seen = new Set();
+    const out = [];
+    for (const p of arr) {
+      const name = String((p && p.name) || '').trim().slice(0, 16);
+      const key = normPlayerName(name);
+      if (!name || !key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ name });
+    }
+    return out;
   } catch (_) {
     return [];
   }
 }
 
 function storeSavedPlayers(list) {
-  localStorage.setItem(PLAYERS_KEY, JSON.stringify(list));
+  const clean = (list || []).map(p => ({ name: String(p.name || '').trim().slice(0, 16) }))
+    .filter(p => p.name);
+  localStorage.setItem(PLAYERS_KEY, JSON.stringify(clean));
 }
 
 function normPlayerName(name) {
@@ -1067,40 +1080,8 @@ function findSavedPlayer(name) {
   return loadSavedPlayers().find(p => normPlayerName(p.name) === key) || null;
 }
 
-function collectPlayerProfile(idx) {
-  const name = names()[idx];
-  const modeAcc = sigmaMode[idx] === 'complex' ? 'complex' : 'simple';
-  const sigma = nearestPolicySigma(parseFloat(
-    (idx === 0 ? elSigma0 : elSigma1).value));
-  const shape = playerShape(idx);
-  const snap = shape ? snapPolicyShape(shape) : null;
-  return {
-    name,
-    sigmaMode: modeAcc,
-    sigma,
-    sigma1: snap ? snap.sigma1 : sigma,
-    sigma2: snap ? snap.sigma2 : sigma,
-    phiDeg: snap ? snap.phiDeg : 0,
-  };
-}
-
-function applyPlayerProfile(idx, profile) {
-  const elName = document.getElementById('name' + idx);
-  elName.value = profile.name;
-  const sigma = nearestPolicySigma(profile.sigma || 25);
-  (idx === 0 ? elSigma0 : elSigma1).value = String(sigma);
-  if (profile.sigmaMode === 'complex'
-      && profile.sigma1 > 0 && profile.sigma2 > 0) {
-    setSigmaMode(idx, 'complex', { keepValues: true });
-    setPlayerShape(idx, snapPolicyShape({
-      sigma1: profile.sigma1,
-      sigma2: profile.sigma2,
-      phiDeg: profile.phiDeg || 0,
-    }));
-  } else {
-    setSigmaMode(idx, 'simple', { keepValues: true });
-    setPlayerShape(idx, null);
-  }
+function applyPlayerName(idx, name) {
+  document.getElementById('name' + idx).value = String(name || '').trim().slice(0, 16);
   syncNames();
 }
 
@@ -1136,11 +1117,7 @@ function renderPlayerList(filterName) {
   list.innerHTML = shown.map(p => {
     const key = normPlayerName(p.name);
     const taken = takenKey && key === takenKey;
-    const sub = taken
-      ? 'in use'
-      : (p.sigmaMode === 'complex'
-        ? ('σ₁ ' + p.sigma1 + ' · σ₂ ' + p.sigma2 + ' · φ ' + (p.phiDeg || 0) + '°')
-        : ('σ ' + (p.sigma || '?') + ' mm'));
+    const sub = taken ? 'in use' : '';
     const cls = [
       playerListSel === key ? 'sel' : '',
       taken ? 'taken' : '',
@@ -1148,7 +1125,9 @@ function renderPlayerList(filterName) {
     return '<button type="button" data-name="' + encodeURIComponent(p.name) + '"'
       + (cls ? (' class="' + cls + '"') : '')
       + (taken ? ' disabled aria-disabled="true"' : '') + '>'
-      + '<span>' + p.name + '</span><span class="sub">' + sub + '</span></button>';
+      + '<span>' + p.name + '</span>'
+      + (sub ? ('<span class="sub">' + sub + '</span>') : '')
+      + '</button>';
   }).join('');
   list.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1157,7 +1136,7 @@ function renderPlayerList(filterName) {
       if (nameTakenByOther(name, playerEditIdx)) return;
       const prof = findSavedPlayer(name);
       if (!prof) return;
-      applyPlayerProfile(playerEditIdx, prof);
+      applyPlayerName(playerEditIdx, prof.name);
       closePlayerModal();
       render();
     });
@@ -1198,10 +1177,8 @@ function saveCurrentPlayerFromModal() {
   if (name.length > 16) {
     nameIn.value = name.slice(0, 16);
   }
-  document.getElementById('name' + playerEditIdx).value = name.slice(0, 16);
-  syncNames();
-  const profile = collectPlayerProfile(playerEditIdx);
-  profile.name = name.slice(0, 16);
+  applyPlayerName(playerEditIdx, name.slice(0, 16));
+  const profile = { name: name.slice(0, 16) };
   const list = loadSavedPlayers();
   const key = normPlayerName(profile.name);
   const i = list.findIndex(p => normPlayerName(p.name) === key);
@@ -1223,16 +1200,14 @@ function loadSelectedPlayerFromModal() {
   const prof = findSavedPlayer(nameIn.value) ||
     (playerListSel && loadSavedPlayers().find(p => normPlayerName(p.name) === playerListSel));
   if (!prof) {
-    // New name only — just apply the typed name without σ load
     if (!typed) return;
-    document.getElementById('name' + playerEditIdx).value = typed.slice(0, 16);
-    syncNames();
+    applyPlayerName(playerEditIdx, typed.slice(0, 16));
     closePlayerModal();
     render();
     return;
   }
   if (nameTakenByOther(prof.name, playerEditIdx)) return;
-  applyPlayerProfile(playerEditIdx, prof);
+  applyPlayerName(playerEditIdx, prof.name);
   closePlayerModal();
   render();
 }
