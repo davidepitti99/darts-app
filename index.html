@@ -3310,8 +3310,32 @@ function closePlayerModal() {
 
 let scoreEditIdx = null;
 
+/** True once any dart, leg, visit, or score change has left the fresh start state. */
+function matchPlayStarted(m) {
+  if (!m || m.game === 'cricket') return false;
+  if (m.winner !== null || m.archiveId) return true;
+  if ((m.visitDarts && m.visitDarts.length) || m.dartsLeft < 3) return true;
+  for (const p of m.players) {
+    if ((p.dartsThrown | 0) > 0) return true;
+    if ((p.legsWon | 0) > 0) return true;
+    if ((p.pointsScored | 0) > 0) return true;
+    if ((p.busts | 0) > 0) return true;
+    if ((p.remaining | 0) !== (m.startScore | 0)) return true;
+  }
+  return false;
+}
+
 function openScoreModal(idx) {
   if (match.game === 'cricket') return;
+  if (matchPlayStarted(match)) {
+    const ok = window.confirm(
+      'This match has already started.\n\n'
+      + 'Changing remaining score will interrupt the match and make '
+      + 'its live stats unreliable.\n\n'
+      + 'Continue anyway?'
+    );
+    if (!ok) return;
+  }
   scoreEditIdx = idx;
   const p = match.players[idx];
   const max = match.startScore;
@@ -3320,7 +3344,10 @@ function openScoreModal(idx) {
   const hint = document.getElementById('scoreModalHint');
   const inp = document.getElementById('scoreModalInput');
   title.textContent = p.name + ' — remaining';
-  hint.textContent = 'Enter remaining score (0–' + max + '). Mid-visit darts for this player are cleared.';
+  hint.textContent = matchPlayStarted(match)
+    ? ('Enter remaining (0–' + max + '). This clears the current visit and '
+      + 'should only be used to fix a wrong score.')
+    : ('Enter remaining score (0–' + max + ').');
   inp.min = '0';
   inp.max = String(max);
   inp.value = String(p.remaining);
@@ -3359,6 +3386,10 @@ function applyScoreFromModal() {
   }
   if (match.winner !== null) {
     match.winner = null;
+  }
+  if (match.archiveId) {
+    removeArchivedMatch(match.archiveId);
+    match.archiveId = null;
   }
   match.message = p.name + ' set to ' + n;
   closeScoreModal();
