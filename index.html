@@ -3507,15 +3507,20 @@ function resolvePolicy(modeKey, shape) {
     snap = { sigma1: s, sigma2: s, phiDeg: 0 };
   }
   const key = policyCacheKey(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg);
+  const label = (snap.sigma1 === snap.sigma2)
+    ? ('σ=' + snap.sigma1 + ' mm')
+    : ('σ₁=' + snap.sigma1 + ' σ₂=' + snap.sigma2 + ' φ=' + snap.phiDeg + '°');
   if (Object.prototype.hasOwnProperty.call(policyCache, key)) {
     const data = policyCache[key];
-    if (data) return { policy: data, snap, status: 'ready' };
+    if (data) {
+      // Drop stale miss/loading text from a previous σ.
+      policyStatus = '';
+      return { policy: data, snap, status: 'ready' };
+    }
+    policyStatus = 'Aim table not available for ' + label + ' yet';
     return { policy: null, snap, status: 'missing' };
   }
   if (!policyInflight[key]) {
-    const label = (snap.sigma1 === snap.sigma2)
-      ? ('σ=' + snap.sigma1 + ' mm')
-      : ('σ₁=' + snap.sigma1 + ' σ₂=' + snap.sigma2 + ' φ=' + snap.phiDeg + '°');
     policyStatus = 'Loading aim table (' + label + ')…';
     policyInflight[key] = fetch(policyUrl(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg))
       .then(r => {
@@ -3525,15 +3530,16 @@ function resolvePolicy(modeKey, shape) {
       .then(data => {
         policyCache[key] = data;
         delete policyInflight[key];
-        policyStatus = '';
+        // resolvePolicy on render clears or sets status for the *current* σ.
         render();
       })
       .catch(() => {
         policyCache[key] = false;
         delete policyInflight[key];
-        policyStatus = 'Aim table not available for ' + label + ' yet';
         render();
       });
+  } else {
+    policyStatus = 'Loading aim table (' + label + ')…';
   }
   return { policy: null, snap, status: 'loading' };
 }
