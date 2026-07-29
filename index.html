@@ -869,7 +869,7 @@
       </div>
     </div>
     <button type="button" class="swap-sides" id="btnSwapSides"
-            title="Swap left and right players" aria-label="Swap left and right players">⇄</button>
+            title="Swap players — thrower stays on the left" aria-label="Swap left and right players">⇄</button>
     <div class="card" id="card1">
       <input class="name" id="name1" value="Player 2" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
@@ -2140,19 +2140,15 @@ function swapDomValues(idA, idB) {
   b.value = t;
 }
 
-/** Swap left/right player seats (cards, accuracy, and match indices). */
-function swapPlayerSides() {
+/** Swap left/right seats (players + accuracy UI). Does not change whose turn index
+ *  until the caller adjusts current — winner index is flipped with the seats. */
+function exchangePlayerSeats() {
   if (!match) return;
-  syncNames();
-  const flipSnap = (m) => {
-    const t = m.players[0];
-    m.players[0] = m.players[1];
-    m.players[1] = t;
-    m.current = 1 - m.current;
-    if (m.winner !== null && m.winner !== undefined) m.winner = 1 - m.winner;
-  };
-  flipSnap(match);
-  for (const snap of match.undo) flipSnap(snap);
+  const t = match.players[0];
+  match.players[0] = match.players[1];
+  match.players[1] = t;
+  if (match.winner !== null && match.winner !== undefined)
+    match.winner = 1 - match.winner;
 
   swapDomValues('name0', 'name1');
   swapDomValues('sigma0', 'sigma1');
@@ -2165,9 +2161,32 @@ function swapPlayerSides() {
   setSigmaMode(0, sigmaMode[0], { keepValues: true });
   setSigmaMode(1, sigmaMode[1], { keepValues: true });
 
-  if (scoreEditIdx !== null) scoreEditIdx = 1 - scoreEditIdx;
+  if (typeof scoreEditIdx !== 'undefined' && scoreEditIdx !== null)
+    scoreEditIdx = 1 - scoreEditIdx;
   if (typeof playerEditIdx === 'number') playerEditIdx = 1 - playerEditIdx;
+}
 
+/** Left card is always the player to throw (or the winner). */
+function ensureThrowerOnLeft() {
+  if (!match) return;
+  if (match.winner !== null) {
+    if (match.winner === 1) exchangePlayerSeats();
+    return;
+  }
+  if (match.current === 0) return;
+  exchangePlayerSeats();
+  match.current = 0;
+}
+
+/** Swap who sits left/right; left seat stays the thrower. */
+function swapPlayerSides() {
+  if (!match) return;
+  syncNames();
+  exchangePlayerSeats();
+  if (match.winner === null) {
+    match.current = 0;
+    match.message = match.players[0].name + ' to throw';
+  }
   render();
 }
 
@@ -3839,6 +3858,7 @@ function renderStats() {
 
 function render() {
   syncNames();
+  ensureThrowerOnLeft();
   syncCricketChrome();
   const m = mode();
 
