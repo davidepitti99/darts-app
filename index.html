@@ -105,8 +105,17 @@
   .cricket-mode .card .meta { margin-bottom: 0; }
 
   .scores {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; margin-bottom: 10px;
+    align-items: center;
   }
+  .swap-sides {
+    width: 40px; height: 40px; padding: 0;
+    border-radius: 10px; border: 1px solid #555;
+    background: var(--field); color: #eee;
+    font-size: 18px; font-weight: 700; line-height: 1;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .swap-sides:active { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
   .card {
     background: var(--panel); border-radius: 12px; padding: 10px 8px 8px;
     border: 2px solid #333; text-align: center;
@@ -859,6 +868,8 @@
         </div>
       </div>
     </div>
+    <button type="button" class="swap-sides" id="btnSwapSides"
+            title="Swap left and right players" aria-label="Swap left and right players">⇄</button>
     <div class="card" id="card1">
       <input class="name" id="name1" value="Player 2" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
@@ -2118,6 +2129,46 @@ function syncNames() {
   const n = names();
   match.players[0].name = n[0];
   match.players[1].name = n[1];
+}
+
+function swapDomValues(idA, idB) {
+  const a = document.getElementById(idA);
+  const b = document.getElementById(idB);
+  if (!a || !b) return;
+  const t = a.value;
+  a.value = b.value;
+  b.value = t;
+}
+
+/** Swap left/right player seats (cards, accuracy, and match indices). */
+function swapPlayerSides() {
+  if (!match) return;
+  syncNames();
+  const flipSnap = (m) => {
+    const t = m.players[0];
+    m.players[0] = m.players[1];
+    m.players[1] = t;
+    m.current = 1 - m.current;
+    if (m.winner !== null && m.winner !== undefined) m.winner = 1 - m.winner;
+  };
+  flipSnap(match);
+  for (const snap of match.undo) flipSnap(snap);
+
+  swapDomValues('name0', 'name1');
+  swapDomValues('sigma0', 'sigma1');
+  swapDomValues('s1_0', 's1_1');
+  swapDomValues('s2_0', 's2_1');
+  swapDomValues('phi_0', 'phi_1');
+  const modeTmp = sigmaMode[0];
+  sigmaMode[0] = sigmaMode[1];
+  sigmaMode[1] = modeTmp;
+  setSigmaMode(0, sigmaMode[0], { keepValues: true });
+  setSigmaMode(1, sigmaMode[1], { keepValues: true });
+
+  if (scoreEditIdx !== null) scoreEditIdx = 1 - scoreEditIdx;
+  if (typeof playerEditIdx === 'number') playerEditIdx = 1 - playerEditIdx;
+
+  render();
 }
 
 // ── Saved players (localStorage) ─────────────────────────────────────────
@@ -3979,6 +4030,9 @@ function runPrescribedDrill(code) {
 
 document.getElementById('btnUndo').addEventListener('click', () => {
   if (undoMatch(match)) render();
+});
+document.getElementById('btnSwapSides').addEventListener('click', () => {
+  swapPlayerSides();
 });
 document.getElementById('btnLeg').addEventListener('click', () => {
   syncNames();
