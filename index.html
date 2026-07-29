@@ -869,7 +869,7 @@
       </div>
     </div>
     <button type="button" class="swap-sides" id="btnSwapSides"
-            title="Swap players — first to throw stays on the left" aria-label="Swap left and right players">⇄</button>
+            title="Swap left/right players (seats stay fixed for the match)" aria-label="Swap left and right players">⇄</button>
     <div class="card" id="card1">
       <input class="name" id="name1" value="Player 2" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
@@ -1870,7 +1870,7 @@ function newMatch(startScore, doubleIn, names, game) {
       makePlayer(names[0], startScore, doubleIn, game),
       makePlayer(names[1], startScore, doubleIn, game),
     ],
-    current: 0, legStarter: 0, dartsLeft: 3, turnStart: startScore,
+    current: 0, legStarter: 0, legNumber: 1, dartsLeft: 3, turnStart: startScore,
     visitDarts: [], visitPoints: 0,
     winner: null, archiveId: null,
     message: names[0] + ' to throw', undo: [],
@@ -2094,7 +2094,9 @@ function throwDart(m, label) {
 
 function newLeg(m) {
   pushUndo(m);
-  const starter = (m.winner === null) ? 0 : (1 - m.winner);
+  // Seats stay fixed for the match. Odd legs: left throws first; even: right.
+  const legNo = (m.players[0].legsWon | 0) + (m.players[1].legsWon | 0) + 1;
+  const starter = (legNo % 2 === 1) ? 0 : 1;
   for (const p of m.players) {
     if (m.game === 'cricket') {
       p.remaining = 0;
@@ -2105,6 +2107,7 @@ function newLeg(m) {
       p.opened = !m.doubleIn;
     }
   }
+  m.legNumber = legNo;
   m.current = starter;
   m.legStarter = starter;
   m.dartsLeft = 3;
@@ -2113,7 +2116,7 @@ function newLeg(m) {
   m.visitPoints = 0;
   m.winner = null;
   m.archiveId = null;
-  m.message = m.players[m.current].name + ' to throw';
+  m.message = m.players[m.current].name + ' to throw (leg ' + legNo + ')';
 }
 
 // ── UI state ─────────────────────────────────────────────────────────────
@@ -2168,38 +2171,18 @@ function exchangePlayerSeats() {
 }
 
 /**
- * Left card = first to throw this leg. Call only at leg/match boundaries —
- * never mid-leg when it's the other player's turn.
+ * Swap who sits left/right. Seats stay fixed during the match afterward.
+ * Odd legs still start on the left, even legs on the right.
  */
-function seatLegStarterOnLeft() {
-  if (!match) return;
-  if ((match.legStarter | 0) === 0) return;
-  exchangePlayerSeats();
-  match.current = 1 - match.current;
-  match.legStarter = 0;
-  if (match.winner === null)
-    match.message = match.players[match.current].name + ' to throw';
-}
-
-/** Swap who sits left/right; left remains the first-to-throw seat. */
 function swapPlayerSides() {
   if (!match) return;
   syncNames();
-  const midLeg = match.winner === null && (
-    (match.current | 0) !== (match.legStarter | 0)
-    || match.dartsLeft < 3
-    || (match.visitDarts && match.visitDarts.length > 0)
-  );
   exchangePlayerSeats();
-  if (midLeg) {
-    // Keep the same thrower and keep first-to-throw on the left (no mid-leg flip).
+  // Keep the same person throwing after the seat swap.
+  if (match.winner === null) {
     match.current = 1 - match.current;
     match.legStarter = 1 - (match.legStarter | 0);
-    seatLegStarterOnLeft();
-  } else {
-    match.legStarter = 0;
-    match.current = 0;
-    match.message = match.players[0].name + ' to throw';
+    match.message = match.players[match.current].name + ' to throw';
   }
   render();
 }
@@ -4102,7 +4085,6 @@ document.getElementById('btnSwapSides').addEventListener('click', () => {
 document.getElementById('btnLeg').addEventListener('click', () => {
   syncNames();
   newLeg(match);
-  seatLegStarterOnLeft();
   render();
 });
 document.getElementById('btnMatch').addEventListener('click', () => {
