@@ -3821,7 +3821,7 @@ function commitLabel(label) {
   }
   if (match.winner !== null) {
     const id = archiveFinishedMatch(match);
-    if (id) match.message += ' · saved ' + id;
+    if (id) match.message += ' · saved ' + formatHistWhen(id);
   }
   pendingMult = 'S';
   updatePending();
@@ -3879,7 +3879,8 @@ function renderStats() {
   }
   if (match.archiveId) {
     html += '<div class="msg" style="margin-top:8px;font-size:11px;color:var(--mute)">'
-      + 'Match saved · ' + match.archiveId + '</div>';
+      + 'Match saved · ' + formatHistWhen(match.archiveId)
+      + ' · tap a name → History to review</div>';
   }
   elStats.innerHTML = html;
   const shareBtn = document.getElementById('statsShareBtn');
