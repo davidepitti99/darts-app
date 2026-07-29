@@ -869,7 +869,7 @@
       </div>
     </div>
     <button type="button" class="swap-sides" id="btnSwapSides"
-            title="Swap players — thrower stays on the left" aria-label="Swap left and right players">⇄</button>
+            title="Swap players — first to throw stays on the left" aria-label="Swap left and right players">⇄</button>
     <div class="card" id="card1">
       <input class="name" id="name1" value="Player 2" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
@@ -1870,7 +1870,7 @@ function newMatch(startScore, doubleIn, names, game) {
       makePlayer(names[0], startScore, doubleIn, game),
       makePlayer(names[1], startScore, doubleIn, game),
     ],
-    current: 0, dartsLeft: 3, turnStart: startScore,
+    current: 0, legStarter: 0, dartsLeft: 3, turnStart: startScore,
     visitDarts: [], visitPoints: 0,
     winner: null, archiveId: null,
     message: names[0] + ' to throw', undo: [],
@@ -2106,6 +2106,7 @@ function newLeg(m) {
     }
   }
   m.current = starter;
+  m.legStarter = starter;
   m.dartsLeft = 3;
   m.turnStart = m.game === 'cricket' ? 0 : m.startScore;
   m.visitDarts = [];
@@ -2166,24 +2167,37 @@ function exchangePlayerSeats() {
   if (typeof playerEditIdx === 'number') playerEditIdx = 1 - playerEditIdx;
 }
 
-/** Left card is always the player to throw (or the winner). */
-function ensureThrowerOnLeft() {
+/**
+ * Left card = first to throw this leg. Call only at leg/match boundaries —
+ * never mid-leg when it's the other player's turn.
+ */
+function seatLegStarterOnLeft() {
   if (!match) return;
-  if (match.winner !== null) {
-    if (match.winner === 1) exchangePlayerSeats();
-    return;
-  }
-  if (match.current === 0) return;
+  if ((match.legStarter | 0) === 0) return;
   exchangePlayerSeats();
-  match.current = 0;
+  match.current = 1 - match.current;
+  match.legStarter = 0;
+  if (match.winner === null)
+    match.message = match.players[match.current].name + ' to throw';
 }
 
-/** Swap who sits left/right; left seat stays the thrower. */
+/** Swap who sits left/right; left remains the first-to-throw seat. */
 function swapPlayerSides() {
   if (!match) return;
   syncNames();
+  const midLeg = match.winner === null && (
+    (match.current | 0) !== (match.legStarter | 0)
+    || match.dartsLeft < 3
+    || (match.visitDarts && match.visitDarts.length > 0)
+  );
   exchangePlayerSeats();
-  if (match.winner === null) {
+  if (midLeg) {
+    // Keep the same thrower and keep first-to-throw on the left (no mid-leg flip).
+    match.current = 1 - match.current;
+    match.legStarter = 1 - (match.legStarter | 0);
+    seatLegStarterOnLeft();
+  } else {
+    match.legStarter = 0;
     match.current = 0;
     match.message = match.players[0].name + ' to throw';
   }
@@ -3889,7 +3903,6 @@ function renderStats() {
 
 function render() {
   syncNames();
-  ensureThrowerOnLeft();
   syncCricketChrome();
   const m = mode();
 
@@ -4088,6 +4101,7 @@ document.getElementById('btnSwapSides').addEventListener('click', () => {
 document.getElementById('btnLeg').addEventListener('click', () => {
   syncNames();
   newLeg(match);
+  seatLegStarterOnLeft();
   render();
 });
 document.getElementById('btnMatch').addEventListener('click', () => {
