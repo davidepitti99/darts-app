@@ -492,6 +492,25 @@
     border-radius: 10px; padding: 12px 16px; font-size: 14px; font-weight: 700; cursor: pointer;
   }
 
+  .entry-toggle {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 10px;
+    background: var(--panel); border-radius: 10px; padding: 4px;
+  }
+  .entry-toggle.hidden { display: none !important; }
+  .entry-toggle button {
+    background: transparent; color: var(--mute); border: none;
+    border-radius: 8px; padding: 10px 6px; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+  }
+  .entry-toggle button.active {
+    background: var(--field); color: var(--accent);
+  }
+  .visit-display {
+    margin-top: 8px; text-align: center; font-size: 28px; font-weight: 800;
+    color: var(--accent); letter-spacing: 0.04em; min-height: 1.2em;
+  }
+  .visit-display .hint { font-size: 12px; color: var(--mute); font-weight: 600; }
+
   .actions {
     display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px;
   }
@@ -909,6 +928,10 @@
     scoring on numbers they still have open.
   </div>
 
+  <div class="entry-toggle cricket-hide" id="entryToggle">
+    <button type="button" class="active" data-entry="dart">By dart</button>
+    <button type="button" data-entry="visit">Visit total</button>
+  </div>
   <div class="pad" id="pad"></div>
 
   <div class="actions">
@@ -1224,6 +1247,13 @@ const elPad = document.getElementById('pad');
 
 let currentModeKey = DATA.default_mode;
 let pendingMult = 'S';
+/** 'dart' = per-dart pad (default); 'visit' = enter 3-dart visit total. */
+let scoreEntryMode = 'dart';
+let visitDigits = '';
+try {
+  const savedEntry = localStorage.getItem('dartsScoreEntryMode');
+  if (savedEntry === 'dart' || savedEntry === 'visit') scoreEntryMode = savedEntry;
+} catch (_) {}
 
 function mode() { return DATA.modes.find(m => m.key === currentModeKey); }
 
@@ -2089,6 +2119,103 @@ function throwDart(m, label) {
   record(result);
   m.message = p.name + ': ' + label + ' → ' + newRem;
   afterDart(m);
+  return result;
+}
+
+/**
+ * Apply a full 3-dart visit total (x01). Counts 3 darts for averages.
+ * Checkout when score === remaining (2–170). Bust when score too high or leaves 1.
+ */
+function throwVisitTotal(m, score, opts) {
+  opts = opts || {};
+  if (m.game === 'cricket')
+    throw new Error('Visit total is for 501 / 301 only');
+  if (m.winner !== null) throw new Error('Leg already finished');
+  const forceBust = !!opts.bust;
+  score = forceBust ? -1 : (score | 0);
+  if (!forceBust && (score < 0 || score > 180))
+    throw new Error('Visit score must be 0–180');
+
+  pushUndo(m);
+  const p = m.players[m.current];
+  const remBefore = p.remaining;
+  const atDouble = isCheckoutChance(remBefore);
+
+  // Clear any partial dart-mode visit before applying a visit total.
+  m.visitDarts = [];
+  m.visitPoints = 0;
+  m.dartsLeft = 3;
+
+  function countVisitDarts(n) {
+    p.dartsThrown += n;
+    if (atDouble) p.checkoutAttempts += 1;
+  }
+
+  if (m.doubleIn && !p.opened) {
+    if (forceBust || score === 0) {
+      countVisitDarts(3);
+      const result = {
+        label: 'Visit 0', points: 0, isDouble: false,
+        outcome: 'no_score', remainingAfter: remBefore,
+      };
+      m.visitDarts.push(result);
+      finishVisit(m, false);
+      m.message = p.name + ' needs a double to start';
+      nextPlayer(m);
+      return result;
+    }
+    // Approximate: any positive visit opens and scores that amount.
+    p.opened = true;
+  }
+
+  if (forceBust || score > remBefore || (remBefore - score) === 1) {
+    countVisitDarts(3);
+    p.remaining = m.turnStart;
+    p.busts += 1;
+    const result = {
+      label: forceBust ? 'Bust' : ('Visit ' + score),
+      points: 0, isDouble: false, outcome: 'bust', remainingAfter: m.turnStart,
+    };
+    m.visitDarts.push(result);
+    finishVisit(m, true);
+    m.message = p.name + ' busts — back to ' + m.turnStart;
+    nextPlayer(m);
+    return result;
+  }
+
+  if (score === remBefore) {
+    if (!isCheckoutChance(remBefore))
+      throw new Error('Cannot check out ' + remBefore + ' with a visit total');
+    countVisitDarts(3);
+    p.remaining = 0;
+    p.checkoutHits += 1;
+    if (remBefore > p.highestCheckout) p.highestCheckout = remBefore;
+    p.pointsScored += score;
+    const result = {
+      label: 'Visit ' + score, points: score, isDouble: true,
+      outcome: 'checkout', remainingAfter: 0,
+    };
+    m.visitDarts.push(result);
+    m.visitPoints = score;
+    finishVisit(m, false);
+    p.legsWon += 1;
+    m.winner = m.current;
+    m.message = p.name + ' checks out ' + remBefore + '!';
+    return result;
+  }
+
+  countVisitDarts(3);
+  p.remaining = remBefore - score;
+  p.pointsScored += score;
+  const result = {
+    label: 'Visit ' + score, points: score, isDouble: false,
+    outcome: 'ok', remainingAfter: p.remaining,
+  };
+  m.visitDarts.push(result);
+  m.visitPoints = score;
+  finishVisit(m, false);
+  m.message = p.name + ': visit ' + score + ' → ' + p.remaining;
+  nextPlayer(m);
   return result;
 }
 
@@ -3684,6 +3811,7 @@ function syncCricketChrome() {
   if (board) board.classList.toggle('hidden', !cricket);
   const help = document.getElementById('cricketHelp');
   if (help) help.classList.toggle('hidden', !cricket);
+  syncEntryToggle();
 }
 
 function cricketCommit(target, mult) {
@@ -3735,17 +3863,63 @@ function renderCricketBoard() {
   });
 }
 
+function setScoreEntryMode(mode, opts) {
+  const next = (mode === 'visit') ? 'visit' : 'dart';
+  if (next === scoreEntryMode && !(opts && opts.force)) {
+    syncEntryToggle();
+    return;
+  }
+  // Switching away from a partial dart visit: clear those darts (with undo).
+  if (match && match.game !== 'cricket' && match.winner === null
+      && match.visitDarts && match.visitDarts.length
+      && scoreEntryMode === 'dart' && next === 'visit') {
+    pushUndo(match);
+    const p = match.players[match.current];
+    // Refund scored darts from this visit and restore remaining.
+    let refund = 0;
+    for (const d of match.visitDarts) {
+      if (d.outcome === 'ok' || d.outcome === 'checkout') refund += (d.points | 0);
+    }
+    p.pointsScored = Math.max(0, (p.pointsScored | 0) - refund);
+    p.remaining = match.turnStart;
+    match.visitDarts = [];
+    match.visitPoints = 0;
+    match.dartsLeft = 3;
+    match.message = 'Switched to visit total — visit cleared';
+  }
+  scoreEntryMode = next;
+  visitDigits = '';
+  try { localStorage.setItem('dartsScoreEntryMode', scoreEntryMode); } catch (_) {}
+  syncEntryToggle();
+  buildPad();
+  updatePending();
+  if (opts && opts.render !== false) render();
+}
+
+function syncEntryToggle() {
+  const box = document.getElementById('entryToggle');
+  if (!box) return;
+  const cricket = !!(match && match.game === 'cricket') || isCricket();
+  box.classList.toggle('hidden', cricket);
+  for (const b of box.querySelectorAll('button[data-entry]'))
+    b.classList.toggle('active', b.dataset.entry === scoreEntryMode);
+}
+
 function buildPad() {
   elPad.innerHTML = '';
   const cricket = !!(match && match.game === 'cricket') || isCricket();
+  syncEntryToggle();
   // Cricket: D / number / T are on the scoreboard; pad is Miss only.
-  // X01: full number pad + S/D/T + Bull + Miss.
   if (cricket) {
     elPad.style.gridTemplateColumns = '1fr';
     const miss = document.createElement('button');
     miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss';
     miss.addEventListener('click', () => commitLabel('Miss'));
     elPad.appendChild(miss);
+    return;
+  }
+  if (scoreEntryMode === 'visit') {
+    buildVisitPad();
     return;
   }
   elPad.style.gridTemplateColumns = 'repeat(5, 1fr)';
@@ -3785,6 +3959,67 @@ function buildPad() {
   elPad.appendChild(miss);
 }
 
+function buildVisitPad() {
+  elPad.style.gridTemplateColumns = 'repeat(3, 1fr)';
+  const disp = document.createElement('div');
+  disp.className = 'visit-display';
+  disp.id = 'visitDisplay';
+  disp.style.gridColumn = '1 / -1';
+  disp.innerHTML = (visitDigits || '0')
+    + '<div class="hint">3-dart visit total · OK to apply · Bust if needed</div>';
+  elPad.appendChild(disp);
+
+  for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = String(n);
+    b.addEventListener('click', () => visitAppendDigit(String(n)));
+    elPad.appendChild(b);
+  }
+  const clr = document.createElement('button');
+  clr.type = 'button'; clr.textContent = 'C'; clr.className = 'miss';
+  clr.addEventListener('click', () => { visitDigits = ''; syncVisitDisplay(); });
+  elPad.appendChild(clr);
+  const zero = document.createElement('button');
+  zero.type = 'button'; zero.textContent = '0';
+  zero.addEventListener('click', () => visitAppendDigit('0'));
+  elPad.appendChild(zero);
+  const bk = document.createElement('button');
+  bk.type = 'button'; bk.textContent = '⌫';
+  bk.addEventListener('click', () => {
+    visitDigits = visitDigits.slice(0, -1);
+    syncVisitDisplay();
+  });
+  elPad.appendChild(bk);
+
+  const bust = document.createElement('button');
+  bust.type = 'button'; bust.textContent = 'Bust'; bust.className = 'miss';
+  bust.addEventListener('click', () => commitVisitTotal(null, { bust: true }));
+  elPad.appendChild(bust);
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.textContent = 'OK'; ok.className = 'special';
+  ok.style.gridColumn = 'span 2';
+  ok.addEventListener('click', () => {
+    const n = visitDigits === '' ? 0 : parseInt(visitDigits, 10);
+    commitVisitTotal(n, {});
+  });
+  elPad.appendChild(ok);
+}
+
+function visitAppendDigit(d) {
+  if (visitDigits.length >= 3) return;
+  if (visitDigits === '0') visitDigits = d;
+  else visitDigits += d;
+  syncVisitDisplay();
+}
+
+function syncVisitDisplay() {
+  const disp = document.getElementById('visitDisplay');
+  if (!disp) return;
+  disp.innerHTML = (visitDigits || '0')
+    + '<div class="hint">3-dart visit total · OK to apply · Bust if needed</div>';
+}
+
 function updatePending() {
   for (const b of elPad.querySelectorAll('.mult'))
     b.classList.toggle('sel', b.dataset.mult === pendingMult);
@@ -3809,6 +4044,24 @@ function commitLabel(label) {
   pendingMult = 'S';
   updatePending();
   render();
+}
+
+function commitVisitTotal(score, opts) {
+  if (match.winner !== null) return;
+  if (match.game === 'cricket') return;
+  syncNames();
+  try {
+    throwVisitTotal(match, score, opts || {});
+    visitDigits = '';
+  } catch (e) {
+    match.message = String(e.message || e);
+  }
+  if (match.winner !== null) {
+    const id = archiveFinishedMatch(match);
+    if (id) match.message += ' · saved ' + formatHistWhen(id);
+  }
+  render();
+  if (scoreEntryMode === 'visit') syncVisitDisplay();
 }
 
 function fmt(v, dig) {
@@ -4077,7 +4330,11 @@ function runPrescribedDrill(code) {
 }
 
 document.getElementById('btnUndo').addEventListener('click', () => {
-  if (undoMatch(match)) render();
+  if (undoMatch(match)) {
+    visitDigits = '';
+    render();
+    if (scoreEntryMode === 'visit') buildPad();
+  }
 });
 document.getElementById('btnSwapSides').addEventListener('click', () => {
   swapPlayerSides();
@@ -4085,14 +4342,25 @@ document.getElementById('btnSwapSides').addEventListener('click', () => {
 document.getElementById('btnLeg').addEventListener('click', () => {
   syncNames();
   newLeg(match);
+  visitDigits = '';
   render();
+  if (scoreEntryMode === 'visit') buildPad();
 });
 document.getElementById('btnMatch').addEventListener('click', () => {
   const m = mode();
   match = newMatch(m.start_score, m.double_in, names(), m.game || 'x01');
+  visitDigits = '';
   buildPad();
   render();
 });
+const elEntryToggle = document.getElementById('entryToggle');
+if (elEntryToggle) {
+  elEntryToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-entry]');
+    if (!btn) return;
+    setScoreEntryMode(btn.dataset.entry);
+  });
+}
 elSigma0.addEventListener('change', () => commitSigmaInput(elSigma0));
 elSigma1.addEventListener('change', () => commitSigmaInput(elSigma1));
 for (const el of [elSigma0, elSigma1]) {
