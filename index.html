@@ -675,6 +675,17 @@
     cursor: pointer; line-height: 1;
   }
   .zone-row button.plus { background: #2a3a2a; border-color: #3a5a3a; }
+  .zone-row .zsec {
+    display: block; font-size: 10px; color: #9ab; font-weight: 500; margin-top: 2px;
+  }
+  .sector-pad {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 4px 0 8px;
+  }
+  .sector-pad button {
+    background: var(--field); color: #fff; border: 1px solid #555;
+    border-radius: 10px; padding: 12px 4px; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .sector-pad button:active { background: var(--accent); color: #1a1a1a; }
 
   .gate {
     position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center;
@@ -1088,12 +1099,26 @@
 
     <div class="fit-panel hidden" id="fitPanelZones">
     <div class="fit-help">
-      Aim at the <b>bull</b>. Tap the <b>score belt</b> each dart hit.
-      Isotropic Gaussian σ is inferred by maximum likelihood from the belt counts
-      (red bull → green bull → inner single → triple → outer single → double → miss).
+      Aim at the <b>bull</b>. Tap <b>+</b> for the belt each dart hit.
+      Optionally pick the <b>sector number</b> (1–20) on singles / triples / doubles —
+      with enough numbered hits the app runs a multinomial MLE for the
+      <b>tilted</b> Gaussian (σ₁, σ₂, φ) by integrating the density over annular sectors.
+      Belt-only counts (no number) still estimate isotropic σ.
     </div>
     <div class="zone-grid" id="zoneGrid"></div>
     </div><!-- /fitPanelZones -->
+
+    <div class="player-modal hidden" id="sectorModal">
+      <div class="player-box">
+        <h2 id="sectorModalTitle">Sector number</h2>
+        <p class="hint" id="sectorModalHint">Which number did it hit? Optional — needed for tilted σ₁/σ₂/φ.</p>
+        <div class="sector-pad" id="sectorPad"></div>
+        <div class="player-actions" style="grid-template-columns:1fr 1fr">
+          <button type="button" id="sectorSkip">No number</button>
+          <button type="button" id="sectorCancel">Cancel</button>
+        </div>
+      </div>
+    </div>
 
     <div class="fit-help" id="fitError" style="display:none;color:#ff8a8a;margin-top:0;margin-bottom:8px"></div>
     <div class="fit-result" id="fitResult">
@@ -4946,7 +4971,8 @@ function startDrillWarmup() {
 
 // ── Live Gaussian σ fit from bull landings ───────────────────────────────
 // Measure: { r, theta? } — angle optional → isotropic or general.
-// Zones: annular score-belt counts → isotropic multinomial MLE.
+// Zones: belt hits (+ optional sector) → isotropic belt MLE or tilted
+// annular-sector multinomial MLE (∫ N(0,Σ) over each observed region).
 const fitThrows = [];
 const FIT_ANNULI = [
   { key: 'red_bull', label: 'Red bull', sub: '50 · 0–6.35 mm', lo: 0, hi: BULL_RADIUS },
@@ -4957,8 +4983,14 @@ const FIT_ANNULI = [
   { key: 'double', label: 'Double belt', sub: '162–170 mm', lo: DOUBLE_INNER, hi: DOUBLE_OUTER },
   { key: 'miss', label: 'Miss / off', sub: '> 170 mm', lo: DOUBLE_OUTER, hi: null },
 ];
+const FIT_ANNULUS_BY_KEY = Object.fromEntries(FIT_ANNULI.map(a => [a.key, a]));
+/** Belts that carry a sector number (1–20). */
+const FIT_SECTORAL_KEYS = new Set(['single_inner', 'triple', 'single_outer', 'double']);
+/** Zone hits: { key, sector: null | 1..20 }. */
+const fitZoneHits = [];
 const fitZoneCounts = Object.fromEntries(FIT_ANNULI.map(a => [a.key, 0]));
 let fitMethod = 'measure'; // 'measure' | 'zones'
+let pendingZoneKey = null; // belt awaiting optional sector pick
 
 const FIT_HISTORY_KEY = 'dartsFitHistory';
 const FIT_HISTORY_MAX = 100;
@@ -5033,6 +5065,9 @@ function buildFitSaveRecord(name, fit) {
       ? fitThrows.map(t => ({ r: t.r, theta: t.theta }))
       : [],
     zoneCounts: fitMethod === 'zones' ? Object.assign({}, fitZoneCounts) : null,
+    zoneHits: fitMethod === 'zones'
+      ? fitZoneHits.map(h => ({ key: h.key, sector: h.sector }))
+      : null,
   };
   if (fit.mode === 'general') {
     rec.sigma1 = fit.sigma1;
@@ -5075,12 +5110,27 @@ function loadSavedFit(id) {
   if (!rec) return;
   elFitPlayerName.value = rec.name || '';
   fitThrows.length = 0;
+  fitZoneHits.length = 0;
   for (const a of FIT_ANNULI) fitZoneCounts[a.key] = 0;
-  if (rec.method === 'zones' && rec.zoneCounts) {
+  if (rec.method === 'zones' && (rec.zoneHits || rec.zoneCounts)) {
     setFitMethod('zones');
-    for (const a of FIT_ANNULI) {
-      fitZoneCounts[a.key] = Math.max(0, parseInt(rec.zoneCounts[a.key], 10) || 0);
+    if (Array.isArray(rec.zoneHits) && rec.zoneHits.length) {
+      for (const h of rec.zoneHits) {
+        if (!h || !FIT_ANNULUS_BY_KEY[h.key]) continue;
+        let sector = null;
+        if (h.sector != null && FIT_SECTORAL_KEYS.has(h.key)) {
+          const s = parseInt(h.sector, 10);
+          if (SECTORS.includes(s)) sector = s;
+        }
+        fitZoneHits.push({ key: h.key, sector: sector });
+      }
+    } else if (rec.zoneCounts) {
+      for (const a of FIT_ANNULI) {
+        const n = Math.max(0, parseInt(rec.zoneCounts[a.key], 10) || 0);
+        for (let i = 0; i < n; i++) fitZoneHits.push({ key: a.key, sector: null });
+      }
     }
+    syncZoneCountsFromHits();
   } else {
     setFitMethod('measure');
     for (const t of (rec.throws || [])) {
@@ -5177,29 +5227,95 @@ function setFitMethod(method) {
 for (const b of elFitMethodToggle.children)
   b.addEventListener('click', () => setFitMethod(b.dataset.fitMethod));
 
+function syncZoneCountsFromHits() {
+  for (const a of FIT_ANNULI) fitZoneCounts[a.key] = 0;
+  for (const h of fitZoneHits)
+    fitZoneCounts[h.key] = (fitZoneCounts[h.key] || 0) + 1;
+}
+
 function zoneTotal() {
-  let n = 0;
-  for (const a of FIT_ANNULI) n += fitZoneCounts[a.key] || 0;
-  return n;
+  return fitZoneHits.length;
+}
+
+function zoneSectorSummary(key) {
+  const hits = fitZoneHits.filter(h => h.key === key);
+  const numbered = hits.filter(h => h.sector != null);
+  if (!numbered.length) return '';
+  const tallies = {};
+  for (const h of numbered) tallies[h.sector] = (tallies[h.sector] || 0) + 1;
+  const parts = Object.keys(tallies).map(Number).sort((a, b) => a - b)
+    .map(s => (tallies[s] > 1 ? (s + '×' + tallies[s]) : String(s)));
+  const plain = hits.length - numbered.length;
+  return parts.join(' ') + (plain ? (' · ' + plain + ' plain') : '');
+}
+
+function openSectorModal(key) {
+  pendingZoneKey = key;
+  const a = FIT_ANNULUS_BY_KEY[key];
+  document.getElementById('sectorModalTitle').textContent = a.label + ' — sector';
+  document.getElementById('sectorModalHint').textContent =
+    'Pick the number for a tilted (σ₁, σ₂, φ) fit, or skip for isotropic belt-only.';
+  const pad = document.getElementById('sectorPad');
+  pad.innerHTML = '';
+  for (const n of SECTORS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = String(n);
+    b.addEventListener('click', () => commitZoneHit(key, n));
+    pad.appendChild(b);
+  }
+  document.getElementById('sectorModal').classList.remove('hidden');
+}
+
+function closeSectorModal() {
+  pendingZoneKey = null;
+  document.getElementById('sectorModal').classList.add('hidden');
+}
+
+function commitZoneHit(key, sector) {
+  fitZoneHits.push({ key: key, sector: sector });
+  syncZoneCountsFromHits();
+  closeSectorModal();
+  renderFit();
+}
+
+function removeZoneHit(key) {
+  for (let i = fitZoneHits.length - 1; i >= 0; i--) {
+    if (fitZoneHits[i].key === key) {
+      fitZoneHits.splice(i, 1);
+      syncZoneCountsFromHits();
+      return true;
+    }
+  }
+  return false;
 }
 
 function renderZoneGrid() {
-  elZoneGrid.innerHTML = FIT_ANNULI.map(a => (
-    '<div class="zone-row" data-key="' + a.key + '">'
-    + '<div class="zlab">' + a.label
-    + '<span class="zsub">' + a.sub + '</span></div>'
-    + '<button type="button" class="minus" data-delta="-1" aria-label="minus">−</button>'
-    + '<span class="zcount">' + (fitZoneCounts[a.key] || 0) + '</span>'
-    + '<button type="button" class="plus" data-delta="1" aria-label="plus">+</button>'
-    + '</div>'
-  )).join('');
+  syncZoneCountsFromHits();
+  elZoneGrid.innerHTML = FIT_ANNULI.map(a => {
+    const sec = FIT_SECTORAL_KEYS.has(a.key) ? zoneSectorSummary(a.key) : '';
+    return '<div class="zone-row" data-key="' + a.key + '">'
+      + '<div class="zlab">' + a.label
+      + '<span class="zsub">' + a.sub + '</span>'
+      + (sec ? ('<span class="zsec">' + sec + '</span>') : '')
+      + '</div>'
+      + '<button type="button" class="minus" data-delta="-1" aria-label="minus">−</button>'
+      + '<span class="zcount">' + (fitZoneCounts[a.key] || 0) + '</span>'
+      + '<button type="button" class="plus" data-delta="1" aria-label="plus">+</button>'
+      + '</div>';
+  }).join('');
   elZoneGrid.querySelectorAll('.zone-row').forEach(row => {
     const key = row.dataset.key;
     row.querySelectorAll('button').forEach(btn => {
       btn.addEventListener('click', () => {
         const d = parseInt(btn.dataset.delta, 10);
-        fitZoneCounts[key] = Math.max(0, (fitZoneCounts[key] || 0) + d);
-        renderFit();
+        if (d > 0) {
+          if (FIT_SECTORAL_KEYS.has(key)) openSectorModal(key);
+          else commitZoneHit(key, null);
+        } else {
+          removeZoneHit(key);
+          renderFit();
+        }
       });
     });
   });
@@ -5283,6 +5399,258 @@ function fitAnnuli(counts) {
   };
 }
 
+/** Board angle bounds (deg) for a face value; θ=0 at 20 (top), clockwise. */
+function sectorAngleBounds(num) {
+  const i = SECTORS.indexOf(num);
+  if (i < 0) return null;
+  const c = i * 18;
+  return [c - 9, c + 9];
+}
+
+/**
+ * Cartesian density of zero-mean tilted Gaussian used by the policy model:
+ * u ~ N(0,σ₁²), v ~ N(0,σ₂²) in the φ-frame, then
+ * x = u sin φ + v cos φ,  y = u cos φ − v sin φ.
+ */
+function tiltedGaussDensity(x, y, s1, s2, phiDeg) {
+  const ph = (phiDeg || 0) * Math.PI / 180;
+  const sp = Math.sin(ph), cp = Math.cos(ph);
+  const u = x * sp + y * cp;
+  const v = x * cp - y * sp;
+  const a = Math.max(s1, 1e-6), b = Math.max(s2, 1e-6);
+  return Math.exp(-0.5 * (u * u / (a * a) + v * v / (b * b)))
+    / (2 * Math.PI * a * b);
+}
+
+/**
+ * ∫∫_R N(0,Σ) dx dy over an annular sector via polar mid-point quadrature.
+ * Uses dx dy = r dr dθ with θ in degrees on the board (0° = top/20, clockwise).
+ */
+const FIT_QUAD_NR = 12;
+const FIT_QUAD_NT = 16;
+
+function integrateAnnularSector(rLo, rHi, th0Deg, th1Deg, s1, s2, phiDeg) {
+  const rA = Math.max(0, rLo);
+  const rB = Math.max(rA, rHi);
+  if (rB <= rA) return 0;
+  let dTh = th1Deg - th0Deg;
+  if (dTh <= 0) dTh += 360;
+  let mass = 0;
+  const NR = FIT_QUAD_NR, NT = FIT_QUAD_NT;
+  for (let i = 0; i < NR; i++) {
+    const ra = rA + (rB - rA) * i / NR;
+    const rb = rA + (rB - rA) * (i + 1) / NR;
+    const r = 0.5 * (ra + rb);
+    const dr = rb - ra;
+    for (let j = 0; j < NT; j++) {
+      const ta = th0Deg + dTh * j / NT;
+      const tb = th0Deg + dTh * (j + 1) / NT;
+      const t = 0.5 * (ta + tb);
+      const dt = (tb - ta) * Math.PI / 180;
+      const [x, y] = polarToXY(r, t);
+      mass += tiltedGaussDensity(x, y, s1, s2, phiDeg) * r * dr * dt;
+    }
+  }
+  return Math.max(0, mass);
+}
+
+function zoneEventProb(hit, s1, s2, phiDeg, cache) {
+  const key = hit.key;
+  const a = FIT_ANNULUS_BY_KEY[key];
+  if (!a) return 1e-300;
+  if (hit.sector != null && FIT_SECTORAL_KEYS.has(key)) {
+    const ck = key + '#' + hit.sector;
+    if (cache[ck] == null) {
+      const b = sectorAngleBounds(hit.sector);
+      cache[ck] = b
+        ? integrateAnnularSector(a.lo, a.hi, b[0], b[1], s1, s2, phiDeg)
+        : 1e-300;
+    }
+    return Math.max(cache[ck], 1e-300);
+  }
+  // Belt / bull without sector: full annulus. Miss = exterior of the board.
+  const ck = key + '#*';
+  if (cache[ck] == null) {
+    if (key === 'miss') {
+      const inside = integrateAnnularSector(0, DOUBLE_OUTER, 0, 360, s1, s2, phiDeg);
+      cache[ck] = Math.max(1e-300, 1 - Math.min(1, inside));
+    } else {
+      cache[ck] = integrateAnnularSector(a.lo, a.hi, 0, 360, s1, s2, phiDeg);
+    }
+  }
+  return Math.max(cache[ck], 1e-300);
+}
+
+function zoneHitsNll(hits, s1, s2, phiDeg) {
+  if (!(s1 > 0.4 && s1 < 450 && s2 > 0.4 && s2 < 450)) return 1e12;
+  const cache = Object.create(null);
+  let nll = 0;
+  for (const h of hits) nll -= Math.log(zoneEventProb(h, s1, s2, phiDeg, cache));
+  return nll;
+}
+
+let _zoneFitCache = { sig: null, fit: null };
+function zoneHitsSignature(hits) {
+  return hits.map(h => h.key + ':' + (h.sector == null ? '-' : h.sector)).join('|');
+}
+
+/** 2-D Nelder–Mead on (x,y) → minimise f. */
+function nelderMead2D(f, x0, y0, opts) {
+  opts = opts || {};
+  const maxIter = opts.maxIter || 60;
+  const alpha = 1, gamma = 2, rho = 0.5, sigma = 0.5;
+  const step = opts.step || 0.35;
+  let pts = [
+    { x: x0, y: y0, f: f(x0, y0) },
+    { x: x0 + step, y: y0, f: f(x0 + step, y0) },
+    { x: x0, y: y0 + step, f: f(x0, y0 + step) },
+  ];
+  for (let iter = 0; iter < maxIter; iter++) {
+    pts.sort((a, b) => a.f - b.f);
+    const spread = Math.abs(pts[2].f - pts[0].f)
+      + Math.abs(pts[0].x - pts[2].x) + Math.abs(pts[0].y - pts[2].y);
+    if (spread < 1e-5) break;
+    const cx = 0.5 * (pts[0].x + pts[1].x);
+    const cy = 0.5 * (pts[0].y + pts[1].y);
+    const xr = cx + alpha * (cx - pts[2].x);
+    const yr = cy + alpha * (cy - pts[2].y);
+    const fr = f(xr, yr);
+    if (fr < pts[0].f) {
+      const xe = cx + gamma * (xr - cx);
+      const ye = cy + gamma * (yr - cy);
+      const fe = f(xe, ye);
+      pts[2] = fe < fr ? { x: xe, y: ye, f: fe } : { x: xr, y: yr, f: fr };
+    } else if (fr < pts[1].f) {
+      pts[2] = { x: xr, y: yr, f: fr };
+    } else {
+      const xc = cx + rho * (pts[2].x - cx);
+      const yc = cy + rho * (pts[2].y - cy);
+      const fc = f(xc, yc);
+      if (fc < pts[2].f) pts[2] = { x: xc, y: yc, f: fc };
+      else {
+        for (let i = 1; i < 3; i++) {
+          pts[i].x = pts[0].x + sigma * (pts[i].x - pts[0].x);
+          pts[i].y = pts[0].y + sigma * (pts[i].y - pts[0].y);
+          pts[i].f = f(pts[i].x, pts[i].y);
+        }
+      }
+    }
+  }
+  pts.sort((a, b) => a.f - b.f);
+  return pts[0];
+}
+
+/**
+ * Multinomial MLE of tilted Gaussian from zone hits with optional sectors.
+ * Integrates N(0,Σ) over annular sectors (not midpoint approximation).
+ * Falls back to isotropic belt MLE if angular information is insufficient.
+ */
+function fitZonesFromHits(hits) {
+  if (!hits.length) {
+    _zoneFitCache = { sig: null, fit: null };
+    return null;
+  }
+  const sig = zoneHitsSignature(hits);
+  if (_zoneFitCache.sig === sig) return _zoneFitCache.fit;
+
+  syncZoneCountsFromHits();
+  const numbered = hits.filter(h => h.sector != null && FIT_SECTORAL_KEYS.has(h.key));
+  const nSec = new Set(numbered.map(h => h.sector)).size;
+  if (numbered.length < 4 || nSec < 2) {
+    const iso = fitAnnuli(fitZoneCounts);
+    if (iso) iso.zoneTilt = false;
+    _zoneFitCache = { sig: sig, fit: iso };
+    return iso;
+  }
+
+  // Params: σ_eq > 0, aspect ≥ 1 → σ1 = σ_eq√a, σ2 = σ_eq/√a; φ ∈ [0,180).
+  function optAtPhi(phi, logSeq0, logAsp0, maxIter) {
+    const f = (logSeq, logAsp) => {
+      const seq = Math.exp(logSeq);
+      const asp = Math.exp(Math.max(0, logAsp));
+      return zoneHitsNll(hits, seq * Math.sqrt(asp), seq / Math.sqrt(asp), phi);
+    };
+    return nelderMead2D(f, logSeq0, logAsp0, { maxIter: maxIter, step: 0.35 });
+  }
+
+  let best = null; // { phiRaw, logSeq, logAsp, nll }
+  let bestNll = Infinity;
+  // Coarse φ grid, then refine ±10° around the winner (canonicalize σ₁≥σ₂ after).
+  for (let phi = 0; phi < 180; phi += 15) {
+    const opt = optAtPhi(phi, Math.log(20), Math.log(1.4), 40);
+    if (opt.f < bestNll) {
+      bestNll = opt.f;
+      best = { phiRaw: phi, logSeq: opt.x, logAsp: opt.y, nll: opt.f };
+    }
+  }
+  if (best) {
+    const phi0 = best.phiRaw;
+    for (const dphi of [-10, -5, 5, 10]) {
+      const phi = (phi0 + dphi + 180) % 180;
+      const opt = optAtPhi(phi, best.logSeq, best.logAsp, 35);
+      if (opt.f < bestNll) {
+        bestNll = opt.f;
+        best = { phiRaw: phi, logSeq: opt.x, logAsp: opt.y, nll: opt.f };
+      }
+    }
+  }
+  if (!best) {
+    const iso = fitAnnuli(fitZoneCounts);
+    _zoneFitCache = { sig: sig, fit: iso };
+    return iso;
+  }
+
+  const seq = Math.exp(best.logSeq);
+  const asp = Math.exp(Math.max(0, best.logAsp));
+  let sigma1 = seq * Math.sqrt(asp);
+  let sigma2 = seq / Math.sqrt(asp);
+  let phiDeg = best.phiRaw;
+  if (sigma2 > sigma1) {
+    const t = sigma1; sigma1 = sigma2; sigma2 = t;
+    phiDeg = (phiDeg + 90) % 180;
+  }
+  const sigmaEq = Math.sqrt(0.5 * (sigma1 * sigma1 + sigma2 * sigma2));
+  // Observed information on log σ_eq at the MLE (aspect & φ fixed).
+  const logSeq = Math.log(sigmaEq);
+  const aspect = (sigma2 > 1e-9) ? (sigma1 / sigma2) : 1;
+  const nll1 = (ls) => zoneHitsNll(hits, Math.exp(ls) * Math.sqrt(aspect),
+    Math.exp(ls) / Math.sqrt(aspect), phiDeg);
+  const h = 1e-3;
+  const f0 = nll1(logSeq);
+  const d2 = (nll1(logSeq + h) - 2 * f0 + nll1(logSeq - h)) / (h * h);
+  const se = d2 > 1e-12 ? sigmaEq / Math.sqrt(d2) : sigmaEq / Math.sqrt(hits.length);
+
+  // Chart points: sector midpoints (display only; fit used integrals).
+  const xs = [], ys = [];
+  for (const hit of numbered) {
+    const a = FIT_ANNULUS_BY_KEY[hit.key];
+    const b = sectorAngleBounds(hit.sector);
+    if (!a || !b) continue;
+    const rHi = a.hi == null ? DOUBLE_OUTER + 40 : a.hi;
+    const r = 0.5 * (a.lo + rHi);
+    const th = 0.5 * (b[0] + b[1]);
+    const [x, y] = polarToXY(r, th);
+    xs.push(x); ys.push(y);
+  }
+
+  const out = {
+    mode: 'general',
+    zoneTilt: true,
+    n: hits.length,
+    nSector: numbered.length,
+    sigma: sigmaEq, sigma1: sigma1, sigma2: sigma2, phiDeg: phiDeg, sigmaEq: sigmaEq,
+    se: se,
+    ciLo: Math.max(0, sigmaEq - 1.96 * se), ciHi: sigmaEq + 1.96 * se,
+    r50: sigmaEq * Math.sqrt(-2 * Math.log(0.5)),
+    r95: sigmaEq * Math.sqrt(-2 * Math.log(0.05)),
+    counts: Object.assign({}, fitZoneCounts),
+    xs: xs, ys: ys,
+    nll: best.nll,
+  };
+  _zoneFitCache = { sig: sig, fit: out };
+  return out;
+}
+
 function fitGeneral(xs, ys) {
   const n = xs.length;
   if (n < 2) return null;
@@ -5318,7 +5686,7 @@ function fitGeneral(xs, ys) {
 }
 
 function fitCurrent() {
-  if (fitMethod === 'zones') return fitAnnuli(fitZoneCounts);
+  if (fitMethod === 'zones') return fitZonesFromHits(fitZoneHits);
   if (!fitThrows.length) return null;
   const allAngled = fitThrows.every(t => t.theta !== null && t.theta !== undefined);
   if (allAngled && fitThrows.length >= 2) {
@@ -5527,6 +5895,7 @@ function fitQuality(fit) {
   let detail = '±' + pct.toFixed(0) + '% on σ (95% CI) · n=' + n;
   if (aniso && n < 40) detail += ' · need more throws for tilt';
   if (fit.mode === 'annuli') detail += ' · belt MLE';
+  if (fit.zoneTilt) detail += ' · sector ∫ MLE';
   return { level, label, detail, pct };
 }
 
@@ -5724,9 +6093,15 @@ elFitAngle.addEventListener('keydown', (e) => {
 });
 document.getElementById('fitClear').addEventListener('click', () => {
   fitThrows.length = 0;
+  fitZoneHits.length = 0;
   for (const a of FIT_ANNULI) fitZoneCounts[a.key] = 0;
+  closeSectorModal();
   renderFit();
 });
+document.getElementById('sectorSkip').addEventListener('click', () => {
+  if (pendingZoneKey) commitZoneHit(pendingZoneKey, null);
+});
+document.getElementById('sectorCancel').addEventListener('click', closeSectorModal);
 document.getElementById('fitApply0').addEventListener('click', () => applyFitToPlayer(0));
 document.getElementById('fitApply1').addEventListener('click', () => applyFitToPlayer(1));
 if (elFitSave) elFitSave.addEventListener('click', saveCurrentFit);
