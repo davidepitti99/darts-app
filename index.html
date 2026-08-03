@@ -272,18 +272,9 @@
     color: #8cda7a; margin: -2px 0 4px;
   }
   .card.bot-seat .bot-tag { display: block; }
-  .vs-bot-toggle {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 0;
-  }
-  .vs-bot-toggle button {
-    background: var(--field); color: #cfcfcf; border: 1px solid #555;
-    border-radius: 10px; padding: 10px 8px; font-size: 13px; font-weight: 700;
-    cursor: pointer;
-  }
-  .vs-bot-toggle button.active {
-    background: #2a3a24; color: #b8e0a8; border-color: #4a6a3a;
-  }
   .pad.bot-locked { opacity: 0.45; pointer-events: none; }
+  .player-list button.bot-entry { color: #b8e0a8; }
+  .player-list button.bot-entry .sub { color: #8cda7a; }
   .card .acc-toggle {
     display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px;
   }
@@ -810,7 +801,7 @@
     </div>
     <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
     <div class="player-panel" id="playerRosterPanel">
-      <p class="hint">Shared roster for both sides. Tap a name to use it, or type a new one and Save.</p>
+      <p class="hint">Shared roster for both sides. Tap a name to use it, or type a new one and Save. <b>Bot</b> is always listed — CPU opponent (cannot delete).</p>
       <div class="player-list" id="playerList"></div>
       <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr">
         <button type="button" id="playerDelete" class="danger">Delete</button>
@@ -963,10 +954,6 @@
   <div class="entry-toggle cricket-hide" id="entryToggle">
     <button type="button" class="active" data-entry="dart">By dart</button>
     <button type="button" data-entry="visit">Visit total</button>
-  </div>
-  <div class="vs-bot-toggle" id="vsBotToggle">
-    <button type="button" class="active" data-vs="human">2 players</button>
-    <button type="button" data-vs="bot">Vs Bot</button>
   </div>
   <div class="pad" id="pad"></div>
 
@@ -1301,14 +1288,14 @@ let pendingMult = 'S';
 /** 'dart' = per-dart pad (default); 'visit' = enter 3-dart visit total. */
 let scoreEntryMode = 'dart';
 let visitDigits = '';
-/** When true, right seat (1) is a bot using that seat's σ / σ₁σ₂φ. */
-let vsBot = false;
+/** Built-in roster name: selecting it for a seat makes that seat the CPU. */
+const BOT_PLAYER_NAME = 'Bot';
 let botThrowTimer = null;
 let botThrowInFlight = false;
 try {
   const savedEntry = localStorage.getItem('dartsScoreEntryMode');
   if (savedEntry === 'dart' || savedEntry === 'visit') scoreEntryMode = savedEntry;
-  if (localStorage.getItem('dartsVsBot') === '1') vsBot = true;
+  try { localStorage.removeItem('dartsVsBot'); } catch (_) {}
 } catch (_) {}
 
 function mode() { return DATA.modes.find(m => m.key === currentModeKey); }
@@ -1846,7 +1833,8 @@ function saveMatchPlayersAsContacts(m, opts) {
   if (!m || !Array.isArray(m.players)) return [];
   const saved = [];
   for (const p of m.players) {
-    if (!p || !p.name || isPlaceholderPlayerName(p.name)) continue;
+    if (!p || !p.name || isPlaceholderPlayerName(p.name) || isBotPlayerName(p.name))
+      continue;
     upsertContact(p.name, { bumpPlay: !!opts.bumpPlay });
     saved.push(p.name);
   }
@@ -2028,15 +2016,40 @@ function newMatch(startScore, doubleIn, names, game) {
     ],
     current: 0, legStarter: 0, legNumber: 1, dartsLeft: 3, turnStart: startScore,
     visitDarts: [], visitPoints: 0, visitCheckoutCounted: false,
-    botSeat: vsBot ? 1 : null,
+    botSeat: null,
     winner: null, archiveId: null,
     message: names[0] + ' to throw', undo: [],
   };
 }
 
+function isBotPlayerName(name) {
+  return normPlayerName(name) === normPlayerName(BOT_PLAYER_NAME);
+}
+
+/** Seat index that currently has the built-in Bot roster name, or null. */
+function syncBotSeatFromNames() {
+  if (!match) return null;
+  let seat = null;
+  for (let i = 0; i < 2; i++) {
+    const n = (document.getElementById('name' + i)
+      && document.getElementById('name' + i).value)
+      || (match.players[i] && match.players[i].name) || '';
+    if (isBotPlayerName(n)) {
+      seat = i;
+      // Canonical display name.
+      document.getElementById('name' + i).value = BOT_PLAYER_NAME;
+      match.players[i].name = BOT_PLAYER_NAME;
+    }
+  }
+  if (match.botSeat !== seat) cancelBotThrow();
+  match.botSeat = seat;
+  return seat;
+}
+
 function botSeatIndex() {
-  if (!match || match.botSeat == null) return null;
-  return match.botSeat | 0;
+  if (!match) return null;
+  if (match.botSeat == null) syncBotSeatFromNames();
+  return match.botSeat == null ? null : (match.botSeat | 0);
 }
 
 function isBotSeat(idx) {
@@ -2063,31 +2076,13 @@ function clearBotTimerOnly() {
   }
 }
 
-function syncVsBotUi() {
-  const box = document.getElementById('vsBotToggle');
-  if (box) {
-    for (const b of box.querySelectorAll('button[data-vs]'))
-      b.classList.toggle('active', (b.dataset.vs === 'bot') === vsBot);
-  }
+function syncBotUi() {
+  syncBotSeatFromNames();
   for (const idx of [0, 1]) {
     const card = document.getElementById('card' + idx);
     if (card) card.classList.toggle('bot-seat', isBotSeat(idx));
   }
   if (elPad) elPad.classList.toggle('bot-locked', !!isBotTurn());
-}
-
-function setVsBot(on) {
-  vsBot = !!on;
-  try { localStorage.setItem('dartsVsBot', vsBot ? '1' : '0'); } catch (_) {}
-  if (match) match.botSeat = vsBot ? 1 : null;
-  if (vsBot) {
-    const el = document.getElementById('name1');
-    if (el && (!el.value.trim() || el.value === 'Player 2')) el.value = 'Bot';
-    if (match) match.players[1].name = (el && el.value.trim()) || 'Bot';
-  }
-  syncVsBotUi();
-  cancelBotThrow();
-  if (typeof render === 'function') render();
 }
 
 /**
@@ -2613,7 +2608,7 @@ function swapPlayerSides() {
     match.legStarter = 1 - (match.legStarter | 0);
     match.message = match.players[match.current].name + ' to throw';
   }
-  if (match.botSeat != null) match.botSeat = 1 - (match.botSeat | 0);
+  syncBotSeatFromNames();
   cancelBotThrow();
   render();
 }
@@ -2974,12 +2969,14 @@ function loadSavedPlayers() {
     const arr = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(arr)) return [];
     // Names only (strip any old σ fields from earlier versions).
+    // Never treat built-in Bot as a saved/deletable roster row.
     const seen = new Set();
     const out = [];
     for (const p of arr) {
       const name = String((p && p.name) || '').trim().slice(0, 16);
       const key = normPlayerName(name);
       if (!name || !key || seen.has(key)) continue;
+      if (key === 'bot') continue;
       seen.add(key);
       out.push({ name });
     }
@@ -2991,7 +2988,7 @@ function loadSavedPlayers() {
 
 function storeSavedPlayers(list) {
   const clean = (list || []).map(p => ({ name: String(p.name || '').trim().slice(0, 16) }))
-    .filter(p => p.name);
+    .filter(p => p.name && normPlayerName(p.name) !== 'bot');
   localStorage.setItem(PLAYERS_KEY, JSON.stringify(clean));
 }
 
@@ -3651,8 +3648,12 @@ function findSavedPlayer(name) {
 }
 
 function applyPlayerName(idx, name) {
-  document.getElementById('name' + idx).value = String(name || '').trim().slice(0, 16);
+  let n = String(name || '').trim().slice(0, 16);
+  if (isBotPlayerName(n)) n = BOT_PLAYER_NAME;
+  document.getElementById('name' + idx).value = n;
   syncNames();
+  syncBotSeatFromNames();
+  cancelBotThrow();
 }
 
 function otherPlayerNameKey(idx) {
@@ -3670,27 +3671,30 @@ function nameTakenByOther(name, idx) {
 
 function renderPlayerList(filterName) {
   const list = document.getElementById('playerList');
-  const players = loadSavedPlayers()
+  const saved = loadSavedPlayers()
+    .filter(p => !isBotPlayerName(p.name))
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  // Built-in Bot always first — not stored, cannot be deleted.
+  const players = [{ name: BOT_PLAYER_NAME, builtin: true }].concat(saved);
   const q = normPlayerName(filterName);
   const shown = q
     ? players.filter(p => normPlayerName(p.name).includes(q))
     : players;
   const takenKey = otherPlayerNameKey(playerEditIdx);
   if (!shown.length) {
-    list.innerHTML = '<div class="empty">'
-      + (players.length ? 'No match — Save to create this player' : 'No saved players yet')
-      + '</div>';
+    list.innerHTML = '<div class="empty">No match — Save to create this player</div>';
     return;
   }
   list.innerHTML = shown.map(p => {
     const key = normPlayerName(p.name);
     const taken = takenKey && key === takenKey;
-    const sub = taken ? 'in use' : '';
+    const bot = !!p.builtin || isBotPlayerName(p.name);
+    const sub = taken ? 'in use' : (bot ? 'CPU · cannot delete' : '');
     const cls = [
       playerListSel === key ? 'sel' : '',
       taken ? 'taken' : '',
+      bot ? 'bot-entry' : '',
     ].filter(Boolean).join(' ');
     return '<button type="button" data-name="' + encodeURIComponent(p.name) + '"'
       + (cls ? (' class="' + cls + '"') : '')
@@ -3704,6 +3708,12 @@ function renderPlayerList(filterName) {
       if (btn.disabled || btn.classList.contains('taken')) return;
       const name = decodeURIComponent(btn.dataset.name);
       if (nameTakenByOther(name, playerEditIdx)) return;
+      if (isBotPlayerName(name)) {
+        applyPlayerName(playerEditIdx, BOT_PLAYER_NAME);
+        closePlayerModal();
+        render();
+        return;
+      }
       const prof = findSavedPlayer(name);
       if (!prof) return;
       applyPlayerName(playerEditIdx, prof.name);
@@ -3723,8 +3733,13 @@ function openPlayerModal(idx) {
   const nameIn = document.getElementById('playerModalName');
   title.textContent = 'Player ' + (idx + 1);
   nameIn.value = names()[idx];
-  const existing = findSavedPlayer(nameIn.value);
-  if (existing) playerListSel = normPlayerName(existing.name);
+  if (isBotPlayerName(nameIn.value)) {
+    nameIn.value = BOT_PLAYER_NAME;
+    playerListSel = normPlayerName(BOT_PLAYER_NAME);
+  } else {
+    const existing = findSavedPlayer(nameIn.value);
+    if (existing) playerListSel = normPlayerName(existing.name);
+  }
   const c = findContact(nameIn.value);
   if (c) contactListSel = normPlayerName(c.name);
   const handleIn = document.getElementById('contactHandle');
@@ -3843,9 +3858,17 @@ function saveCurrentPlayerFromModal() {
   if (name.length > 16) {
     nameIn.value = name.slice(0, 16);
   }
+  // Built-in Bot: assign to this seat, never persist/delete from roster.
+  if (isBotPlayerName(name)) {
+    applyPlayerName(playerEditIdx, BOT_PLAYER_NAME);
+    playerListSel = normPlayerName(BOT_PLAYER_NAME);
+    closePlayerModal();
+    render();
+    return;
+  }
   applyPlayerName(playerEditIdx, name.slice(0, 16));
   const profile = { name: name.slice(0, 16) };
-  const list = loadSavedPlayers();
+  const list = loadSavedPlayers().filter(p => !isBotPlayerName(p.name));
   const key = normPlayerName(profile.name);
   const i = list.findIndex(p => normPlayerName(p.name) === key);
   if (i >= 0) list[i] = profile;
@@ -3882,7 +3905,13 @@ function deleteSelectedPlayerFromModal() {
   const nameIn = document.getElementById('playerModalName');
   const key = playerListSel || normPlayerName(nameIn.value);
   if (!key) return;
-  const list = loadSavedPlayers().filter(p => normPlayerName(p.name) !== key);
+  if (key === normPlayerName(BOT_PLAYER_NAME) || isBotPlayerName(nameIn.value)) {
+    // Built-in Bot cannot be removed from the roster.
+    renderPlayerList(nameIn.value);
+    return;
+  }
+  const list = loadSavedPlayers().filter(p =>
+    normPlayerName(p.name) !== key && !isBotPlayerName(p.name));
   storeSavedPlayers(list);
   playerListSel = null;
   renderPlayerList(nameIn.value);
@@ -4451,7 +4480,7 @@ function renderStats() {
 }
 
 function finishRenderBotHooks() {
-  syncVsBotUi();
+  syncBotUi();
   if (match && match.lastBotLanding && match.game !== 'cricket') {
     drawLandingMark(match.lastBotLanding.x, match.lastBotLanding.y);
   }
@@ -4460,9 +4489,9 @@ function finishRenderBotHooks() {
 
 function render() {
   syncNames();
+  syncBotSeatFromNames();
   syncCricketChrome();
   const m = mode();
-  if (match && vsBot && match.botSeat == null) match.botSeat = 1;
 
   for (let i = 0; i < 2; i++) {
     const p = match.players[i];
@@ -4685,11 +4714,8 @@ document.getElementById('btnLeg').addEventListener('click', () => {
 document.getElementById('btnMatch').addEventListener('click', () => {
   cancelBotThrow();
   const m = mode();
-  if (vsBot) {
-    const el = document.getElementById('name1');
-    if (el && (!el.value.trim() || el.value === 'Player 2')) el.value = 'Bot';
-  }
   match = newMatch(m.start_score, m.double_in, names(), m.game || 'x01');
+  syncBotSeatFromNames();
   visitDigits = '';
   buildPad();
   render();
@@ -4700,14 +4726,6 @@ if (elEntryToggle) {
     const btn = e.target.closest('button[data-entry]');
     if (!btn) return;
     setScoreEntryMode(btn.dataset.entry);
-  });
-}
-const elVsBotToggle = document.getElementById('vsBotToggle');
-if (elVsBotToggle) {
-  elVsBotToggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-vs]');
-    if (!btn) return;
-    setVsBot(btn.dataset.vs === 'bot');
   });
 }
 elSigma0.addEventListener('change', () => commitSigmaInput(elSigma0));
@@ -4841,15 +4859,11 @@ const pagePractice = document.getElementById('pagePractice');
 
 buildModeToggle();
 populateSigmas();
-if (vsBot) {
-  const elBotName = document.getElementById('name1');
-  if (elBotName && (!elBotName.value.trim() || elBotName.value === 'Player 2'))
-    elBotName.value = 'Bot';
-}
 match = newMatch(mode().start_score, mode().double_in, names(), mode().game || 'x01');
+syncBotSeatFromNames();
 buildPad();
 updatePending();
-syncVsBotUi();
+syncBotUi();
 sizeCanvas();
 
 function showPage(id) {
