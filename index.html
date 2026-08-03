@@ -275,6 +275,12 @@
   .pad.bot-locked { opacity: 0.45; pointer-events: none; }
   .player-list button.bot-entry { color: #b8e0a8; }
   .player-list button.bot-entry .sub { color: #8cda7a; }
+  .app-version {
+    margin: 18px 0 8px; padding: 10px 4px 4px;
+    text-align: center; font-size: 11px; color: #666;
+    letter-spacing: 0.02em;
+  }
+  .app-version span { color: #888; }
   .card .acc-toggle {
     display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px;
   }
@@ -1152,10 +1158,13 @@
       <div class="empty">No saved fits yet</div>
     </div>
   </div><!-- /pageFit -->
+
+  <div class="app-version" id="appVersion">v<span>0.1.0 / 2026-08-02 / 3f8c23f</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}}};
+const APP_VERSION = '0.1.0 / 2026-08-02 / 3f8c23f';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
