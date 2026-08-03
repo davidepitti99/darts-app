@@ -265,6 +265,25 @@
   .card .rem:hover { background: rgba(255,255,255,0.06); }
   .card .rem:active { background: rgba(255,255,255,0.1); }
   .card .meta { font-size: 11px; color: var(--mute); margin-bottom: 6px; }
+  .card.bot-seat { border-color: #4a6a3a; }
+  .card.bot-seat .name { color: #b8e0a8; }
+  .card .bot-tag {
+    display: none; font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    color: #8cda7a; margin: -2px 0 4px;
+  }
+  .card.bot-seat .bot-tag { display: block; }
+  .vs-bot-toggle {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 0;
+  }
+  .vs-bot-toggle button {
+    background: var(--field); color: #cfcfcf; border: 1px solid #555;
+    border-radius: 10px; padding: 10px 8px; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+  }
+  .vs-bot-toggle button.active {
+    background: #2a3a24; color: #b8e0a8; border-color: #4a6a3a;
+  }
+  .pad.bot-locked { opacity: 0.45; pointer-events: none; }
   .card .acc-toggle {
     display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px;
   }
@@ -872,6 +891,7 @@
     <div class="card" id="card0">
       <input class="name" id="name0" value="Player 1" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
+      <div class="bot-tag" id="botTag0">BOT · uses this σ / σ₁σ₂φ</div>
       <div class="rem cricket-hide" id="rem0" title="Tap to set remaining score">0</div>
       <div class="meta" id="meta0">Legs 0</div>
       <div class="acc-toggle cricket-hide" data-player="0">
@@ -903,6 +923,7 @@
     <div class="card" id="card1">
       <input class="name" id="name1" value="Player 2" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
+      <div class="bot-tag" id="botTag1">BOT · uses this σ / σ₁σ₂φ</div>
       <div class="rem cricket-hide" id="rem1" title="Tap to set remaining score">0</div>
       <div class="meta" id="meta1">Legs 0</div>
       <div class="acc-toggle cricket-hide" data-player="1">
@@ -942,6 +963,10 @@
   <div class="entry-toggle cricket-hide" id="entryToggle">
     <button type="button" class="active" data-entry="dart">By dart</button>
     <button type="button" data-entry="visit">Visit total</button>
+  </div>
+  <div class="vs-bot-toggle" id="vsBotToggle">
+    <button type="button" class="active" data-vs="human">2 players</button>
+    <button type="button" data-vs="bot">Vs Bot</button>
   </div>
   <div class="pad" id="pad"></div>
 
@@ -1254,6 +1279,7 @@ function updateAccountBar() {
 const OUTER_BULL_RADIUS = 15.9, BULL_RADIUS = 6.35;
 const TRIPLE_INNER = 99.0, TRIPLE_OUTER = 107.0;
 const DOUBLE_INNER = 162.0, DOUBLE_OUTER = 170.0;
+const WIRE_BOUNCE_HALF_WIDTH_MM = 0.4;
 const SECTORS = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
 const SECTOR = 2 * Math.PI / 20;
 const VIEW = 210;
@@ -1275,9 +1301,14 @@ let pendingMult = 'S';
 /** 'dart' = per-dart pad (default); 'visit' = enter 3-dart visit total. */
 let scoreEntryMode = 'dart';
 let visitDigits = '';
+/** When true, right seat (1) is a bot using that seat's σ / σ₁σ₂φ. */
+let vsBot = false;
+let botThrowTimer = null;
+let botThrowInFlight = false;
 try {
   const savedEntry = localStorage.getItem('dartsScoreEntryMode');
   if (savedEntry === 'dart' || savedEntry === 'visit') scoreEntryMode = savedEntry;
+  if (localStorage.getItem('dartsVsBot') === '1') vsBot = true;
 } catch (_) {}
 
 function mode() { return DATA.modes.find(m => m.key === currentModeKey); }
@@ -1427,6 +1458,72 @@ function nearestScoringLabel(x, y) {
     for (const [r, lab] of beds) consider(r * sx, r * sy, lab);
   }
   return best;
+}
+
+function getSectorIndex(thetaRad) {
+  const adjusted = (thetaRad + SECTOR / 2) % (2 * Math.PI);
+  return Math.floor(((adjusted % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / SECTOR);
+}
+
+function angularDistToSectorWire(thetaRad) {
+  const shifted = ((thetaRad + SECTOR / 2) % SECTOR + SECTOR) % SECTOR;
+  return Math.min(shifted, SECTOR - shifted);
+}
+
+function isOnBounceWire(r, thetaRad) {
+  const hw = WIRE_BOUNCE_HALF_WIDTH_MM;
+  if (hw <= 0 || r > DOUBLE_OUTER) return false;
+  const rings = [BULL_RADIUS, OUTER_BULL_RADIUS, TRIPLE_INNER, TRIPLE_OUTER,
+    DOUBLE_INNER, DOUBLE_OUTER];
+  for (const rr of rings) if (Math.abs(r - rr) <= hw) return true;
+  if (r > OUTER_BULL_RADIUS && r * angularDistToSectorWire(thetaRad) <= hw)
+    return true;
+  return false;
+}
+
+/** Exact board classifier → scorekeeper label (Bull / 25 / T20 / Miss…). */
+function scoreLabelFromXY(x, y) {
+  const r = Math.hypot(x, y);
+  const theta = Math.atan2(x, y); // 0 at top, clockwise
+  if (r > DOUBLE_OUTER || isOnBounceWire(r, theta)) return 'Miss';
+  if (r <= BULL_RADIUS) return 'Bull';
+  if (r <= OUTER_BULL_RADIUS) return '25';
+  const val = SECTORS[getSectorIndex(theta)];
+  if (r >= TRIPLE_INNER && r <= TRIPLE_OUTER) return 'T' + val;
+  if (r >= DOUBLE_INNER && r <= DOUBLE_OUTER) return 'D' + val;
+  return 'S' + val;
+}
+
+/** Sample landing ~ N(aim, Σ) with the same φ-frame as policies / Fit σ. */
+function sampleGaussianLanding(ax, ay, shape) {
+  const s1 = Math.max(0.5, Number(shape.sigma1) || 25);
+  const s2 = Math.max(0.5, Number(shape.sigma2 != null ? shape.sigma2 : s1) || s1);
+  const ph = ((Number(shape.phiDeg) || 0) * Math.PI) / 180;
+  // Box–Muller
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  const mag = Math.sqrt(-2 * Math.log(u));
+  const z0 = mag * Math.cos(2 * Math.PI * v);
+  const z1 = mag * Math.sin(2 * Math.PI * v);
+  const du = z0 * s1;
+  const dv = z1 * s2;
+  const sp = Math.sin(ph), cp = Math.cos(ph);
+  const dx = du * sp + dv * cp;
+  const dy = du * cp - dv * sp;
+  return [ax + dx, ay + dy];
+}
+
+function drawLandingMark(x, y) {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  const [pxX, pxY] = px(x, y);
+  ctx.beginPath();
+  ctx.arc(pxX, pxY, Math.max(4, scale() * 2.2), 0, 2 * Math.PI);
+  ctx.fillStyle = 'rgba(255, 220, 80, 0.95)';
+  ctx.fill();
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 }
 
 function displayAim(label, x, y) {
@@ -1931,9 +2028,154 @@ function newMatch(startScore, doubleIn, names, game) {
     ],
     current: 0, legStarter: 0, legNumber: 1, dartsLeft: 3, turnStart: startScore,
     visitDarts: [], visitPoints: 0, visitCheckoutCounted: false,
+    botSeat: vsBot ? 1 : null,
     winner: null, archiveId: null,
     message: names[0] + ' to throw', undo: [],
   };
+}
+
+function botSeatIndex() {
+  if (!match || match.botSeat == null) return null;
+  return match.botSeat | 0;
+}
+
+function isBotSeat(idx) {
+  const b = botSeatIndex();
+  return b != null && (idx | 0) === b;
+}
+
+function isBotTurn() {
+  return match && match.winner === null && isBotSeat(match.current);
+}
+
+function cancelBotThrow() {
+  if (botThrowTimer != null) {
+    clearTimeout(botThrowTimer);
+    botThrowTimer = null;
+  }
+  botThrowInFlight = false;
+}
+
+function clearBotTimerOnly() {
+  if (botThrowTimer != null) {
+    clearTimeout(botThrowTimer);
+    botThrowTimer = null;
+  }
+}
+
+function syncVsBotUi() {
+  const box = document.getElementById('vsBotToggle');
+  if (box) {
+    for (const b of box.querySelectorAll('button[data-vs]'))
+      b.classList.toggle('active', (b.dataset.vs === 'bot') === vsBot);
+  }
+  for (const idx of [0, 1]) {
+    const card = document.getElementById('card' + idx);
+    if (card) card.classList.toggle('bot-seat', isBotSeat(idx));
+  }
+  if (elPad) elPad.classList.toggle('bot-locked', !!isBotTurn());
+}
+
+function setVsBot(on) {
+  vsBot = !!on;
+  try { localStorage.setItem('dartsVsBot', vsBot ? '1' : '0'); } catch (_) {}
+  if (match) match.botSeat = vsBot ? 1 : null;
+  if (vsBot) {
+    const el = document.getElementById('name1');
+    if (el && (!el.value.trim() || el.value === 'Player 2')) el.value = 'Bot';
+    if (match) match.players[1].name = (el && el.value.trim()) || 'Bot';
+  }
+  syncVsBotUi();
+  cancelBotThrow();
+  if (typeof render === 'function') render();
+}
+
+/**
+ * Bot: look up optimal aim for (remaining, darts left), sample N(aim, Σ) from
+ * this seat's Simple σ or σ₁σ₂φ, classify landing, score like a human dart.
+ */
+function runBotThrow() {
+  botThrowTimer = null;
+  if (!isBotTurn() || botThrowInFlight) return;
+  const idx = match.current;
+  const m = mode();
+  if (!m) return;
+
+  const sigmaEl = document.getElementById('sigma' + idx);
+  const sigma = sigmaEl ? (parseInt(sigmaEl.value, 10) || 25) : 25;
+  const shape = playerShape(idx) || { sigma1: sigma, sigma2: sigma, phiDeg: 0 };
+  const shapeForPolicy = snapPolicyShape(shape);
+  const resolved = resolvePolicy(m.key, shapeForPolicy);
+  if (resolved.status === 'loading' || !resolved.policy) {
+    match.message = 'Bot waiting for aim table (σ '
+      + shapeForPolicy.sigma1
+      + (shapeForPolicy.sigma1 !== shapeForPolicy.sigma2
+          ? ('/' + shapeForPolicy.sigma2 + ' φ' + shapeForPolicy.phiDeg + '°')
+          : '')
+      + ')…';
+    scheduleBotThrow(500);
+    return;
+  }
+
+  let ax = 0, ay = 0;
+  let aimLab = 'Bull';
+  if (m.game === 'cricket') {
+    let cr = resolvePolicy('cricket', shapeForPolicy);
+    if (cr.status === 'loading') {
+      match.message = 'Bot waiting for Cricket aim table…';
+      scheduleBotThrow(500);
+      return;
+    }
+    if (!cr.policy) {
+      const bookKey = policyCacheKey('cricket', 1, 1, 0);
+      if (policyCache[bookKey])
+        cr = { policy: policyCache[bookKey], snap: { sigma1: 1, sigma2: 1, phiDeg: 0 }, status: 'ready' };
+    }
+    const me = match.players[idx];
+    const opp = match.players[1 - idx];
+    const bundle = cr.policy || null;
+    const aimsMap = (bundle && bundle.policy) ? bundle.policy
+      : (bundle && !bundle.game ? bundle : null);
+    const dmax = (bundle && bundle.delta_max != null) ? bundle.delta_max : 40;
+    const key = cricketStateKey(
+      me.marks, opp.marks, me.points | 0, opp.points | 0, match.dartsLeft, dmax);
+    const entry = aimsMap ? aimsMap[key] : null;
+    const heur = cricketHeuristicAim(
+      me.marks, opp.marks, me.points | 0, opp.points | 0);
+    if (entry && Number.isFinite(entry[1]) && Number.isFinite(entry[2])) {
+      aimLab = entry[0]; ax = entry[1]; ay = entry[2];
+    } else {
+      aimLab = (entry && entry[0]) || heur.aim || 'Bull';
+      ax = heur.x != null ? heur.x : 0;
+      ay = heur.y != null ? heur.y : 0;
+    }
+  } else {
+    const score = match.players[idx].remaining;
+    const darts = match.dartsLeft;
+    const entry = resolved.policy[score + ',' + darts];
+    if (entry && entry.length >= 3) {
+      aimLab = entry[0]; ax = entry[1]; ay = entry[2];
+    } else {
+      match.message = 'Bot: no aim for ' + score + '×' + darts + ' — aiming bull';
+      ax = 0; ay = 0; aimLab = 'Bull';
+    }
+  }
+
+  const [lx, ly] = sampleGaussianLanding(ax, ay, shapeForPolicy);
+  const label = scoreLabelFromXY(lx, ly);
+  match.lastBotLanding = { x: lx, y: ly, aimX: ax, aimY: ay, aim: aimLab, label: label };
+  botThrowInFlight = true;
+  try {
+    commitLabel(label);
+  } finally {
+    botThrowInFlight = false;
+  }
+}
+
+function scheduleBotThrow(delayMs) {
+  clearBotTimerOnly();
+  if (!isBotTurn() || botThrowInFlight) return;
+  botThrowTimer = setTimeout(runBotThrow, delayMs == null ? 700 : delayMs);
 }
 
 function cricketTarget(label) {
@@ -2371,6 +2613,8 @@ function swapPlayerSides() {
     match.legStarter = 1 - (match.legStarter | 0);
     match.message = match.players[match.current].name + ' to throw';
   }
+  if (match.botSeat != null) match.botSeat = 1 - (match.botSeat | 0);
+  cancelBotThrow();
   render();
 }
 
@@ -4096,6 +4340,7 @@ function onNum(n) {
 
 function commitLabel(label) {
   if (match.winner !== null) return;
+  if (isBotTurn() && !botThrowInFlight) return;
   syncNames();
   try {
     throwDart(match, label);
@@ -4114,6 +4359,7 @@ function commitLabel(label) {
 function commitVisitTotal(score, opts) {
   if (match.winner !== null) return;
   if (match.game === 'cricket') return;
+  if (isBotTurn()) return;
   syncNames();
   try {
     throwVisitTotal(match, score, opts || {});
@@ -4204,10 +4450,19 @@ function renderStats() {
   });
 }
 
+function finishRenderBotHooks() {
+  syncVsBotUi();
+  if (match && match.lastBotLanding && match.game !== 'cricket') {
+    drawLandingMark(match.lastBotLanding.x, match.lastBotLanding.y);
+  }
+  if (isBotTurn()) scheduleBotThrow(700);
+}
+
 function render() {
   syncNames();
   syncCricketChrome();
   const m = mode();
+  if (match && vsBot && match.botSeat == null) match.botSeat = 1;
 
   for (let i = 0; i < 2; i++) {
     const p = match.players[i];
@@ -4273,6 +4528,7 @@ function render() {
       const why = explainCricketWhy(aimLab, pWin, heur.why);
       match.lastCoachAim = { aim: aimLab, why: why, score: null, darts: match.dartsLeft };
       let html = '<div class="turn">' + me.name
+        + (isBotTurn() ? ' (bot)' : '')
         + ' · dart ' + dartN + '/3 · ' + match.dartsLeft + ' left'
         + ' · visit pts ' + match.visitPoints
         + ' · σ ' + sigma + ' mm</div>';
@@ -4280,11 +4536,14 @@ function render() {
       html += '<div class="why">' + why + '</div>';
       if (resolved.status === 'loading')
         html += '<div class="row warn">Loading Cricket aim table…</div>';
+      if (isBotTurn())
+        html += '<div class="row">Bot throwing with this seat’s σ…</div>';
       html += '<div class="row"><span class="k">This visit:</span> ' + visit + '</div>';
       html += '<div class="msg">' + match.message + '</div>';
       elInfo.innerHTML = html;
     }
     renderStats();
+    finishRenderBotHooks();
     return;
   }
 
@@ -4316,6 +4575,7 @@ function render() {
       + renderMatchReviewHtml();
     bindMatchReviewButtons();
     renderStats();
+    finishRenderBotHooks();
     return;
   }
 
@@ -4323,6 +4583,7 @@ function render() {
   const darts = match.dartsLeft;
   const entry = policy[score + ',' + darts];
   let html = '<div class="turn">' + match.players[match.current].name
+    + (isBotTurn() ? ' (bot)' : '')
     + ' · dart ' + dartN + '/3 · ' + darts + ' left · visit ' + match.visitPoints
     + ' · ' + aimSource
     + '</div>';
@@ -4351,10 +4612,18 @@ function render() {
     html += '<div class="row"><span class="k">Expected turns:</span> ' + et.toFixed(3) + '</div>';
     match.lastCoachAim = { aim: aimClean, why: why, score: score, darts: darts, et: et };
   }
+  if (isBotTurn())
+    html += '<div class="row">Bot throwing — pad locked. Set Bot’s σ or σ₁σ₂φ on its card.</div>';
+  if (match.lastBotLanding && match.lastBotLanding.label)
+    html += '<div class="row"><span class="k">Last bot dart:</span> '
+      + match.lastBotLanding.label
+      + ' (aimed ' + displayAim(match.lastBotLanding.aim,
+        match.lastBotLanding.aimX, match.lastBotLanding.aimY) + ')</div>';
   html += '<div class="row"><span class="k">This visit:</span> ' + visit + '</div>';
   html += '<div class="msg">' + match.message + '</div>';
   elInfo.innerHTML = html;
   renderStats();
+  finishRenderBotHooks();
 }
 
 function bindMatchReviewButtons() {
@@ -4396,6 +4665,7 @@ function runPrescribedDrill(code) {
 }
 
 document.getElementById('btnUndo').addEventListener('click', () => {
+  cancelBotThrow();
   if (undoMatch(match)) {
     visitDigits = '';
     render();
@@ -4413,7 +4683,12 @@ document.getElementById('btnLeg').addEventListener('click', () => {
   if (scoreEntryMode === 'visit') buildPad();
 });
 document.getElementById('btnMatch').addEventListener('click', () => {
+  cancelBotThrow();
   const m = mode();
+  if (vsBot) {
+    const el = document.getElementById('name1');
+    if (el && (!el.value.trim() || el.value === 'Player 2')) el.value = 'Bot';
+  }
   match = newMatch(m.start_score, m.double_in, names(), m.game || 'x01');
   visitDigits = '';
   buildPad();
@@ -4425,6 +4700,14 @@ if (elEntryToggle) {
     const btn = e.target.closest('button[data-entry]');
     if (!btn) return;
     setScoreEntryMode(btn.dataset.entry);
+  });
+}
+const elVsBotToggle = document.getElementById('vsBotToggle');
+if (elVsBotToggle) {
+  elVsBotToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-vs]');
+    if (!btn) return;
+    setVsBot(btn.dataset.vs === 'bot');
   });
 }
 elSigma0.addEventListener('change', () => commitSigmaInput(elSigma0));
@@ -4558,9 +4841,15 @@ const pagePractice = document.getElementById('pagePractice');
 
 buildModeToggle();
 populateSigmas();
+if (vsBot) {
+  const elBotName = document.getElementById('name1');
+  if (elBotName && (!elBotName.value.trim() || elBotName.value === 'Player 2'))
+    elBotName.value = 'Bot';
+}
 match = newMatch(mode().start_score, mode().double_in, names(), mode().game || 'x01');
 buildPad();
 updatePending();
+syncVsBotUi();
 sizeCanvas();
 
 function showPage(id) {
