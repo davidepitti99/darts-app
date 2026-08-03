@@ -1794,6 +1794,8 @@ function buildMatchShareText(m) {
     lines.push(padShare('', 14) + padShare(a.name, 10) + b.name);
     lines.push(padShare('3-dart avg', 14)
       + padShare(fmtShareStat(avg3(a), 1), 10) + fmtShareStat(avg3(b), 1));
+    lines.push(padShare('First 9', 14)
+      + padShare(fmtShareStat(avgFirst9(a), 1), 10) + fmtShareStat(avgFirst9(b), 1));
     lines.push(padShare('Checkout %', 14)
       + padShare(
         (checkoutPct(a) == null ? '—' : fmtShareStat(checkoutPct(a), 0) + '%'), 10)
@@ -1845,6 +1847,7 @@ function renderMatchReviewHtml() {
       CRICKET_KEYS.filter(k => ((loser.marks || {})[k] || 0) >= 3).length + '/7']);
   } else {
     rows.push(['Winner 3-dart avg', avg3(winner) != null ? avg3(winner).toFixed(1) : '—']);
+    rows.push(['Winner first 9', avgFirst9(winner) != null ? avgFirst9(winner).toFixed(1) : '—']);
     rows.push(['Checkout %', checkoutPct(winner) != null ? checkoutPct(winner).toFixed(0) + '%' : '—']);
     rows.push(['Highest checkout', String(winner.highestCheckout | 0)]);
     rows.push(['Busts (both)', String((winner.busts | 0) + (loser.busts | 0))]);
@@ -1898,6 +1901,7 @@ function makePlayer(name, start, doubleIn, game) {
   const p = {
     name, remaining: start, opened: !doubleIn,
     dartsThrown: 0, pointsScored: 0, visitScores: [],
+    first9Points: 0, first9Darts: 0,
     checkoutHits: 0, checkoutAttempts: 0, highestCheckout: 0, highestVisit: 0,
     scores180: 0, scores140: 0, scores100: 0, busts: 0, legsWon: 0,
   };
@@ -1926,7 +1930,7 @@ function newMatch(startScore, doubleIn, names, game) {
       makePlayer(names[1], startScore, doubleIn, game),
     ],
     current: 0, legStarter: 0, legNumber: 1, dartsLeft: 3, turnStart: startScore,
-    visitDarts: [], visitPoints: 0,
+    visitDarts: [], visitPoints: 0, visitCheckoutCounted: false,
     winner: null, archiveId: null,
     message: names[0] + ' to throw', undo: [],
   };
@@ -2012,10 +2016,39 @@ function throwCricketDart(m, label) {
 function avg3(p) {
   return p.dartsThrown ? (p.pointsScored / p.dartsThrown * 3) : null;
 }
+/** 3-dart average over the first 9 darts of the match (null until 9 thrown). */
+function avgFirst9(p) {
+  if ((p.first9Darts | 0) < 9) return null;
+  return p.first9Points / p.first9Darts * 3;
+}
 function checkoutPct(p) {
   return p.checkoutAttempts ? (100 * p.checkoutHits / p.checkoutAttempts) : null;
 }
 function isCheckoutChance(rem) { return rem >= 2 && rem <= 170; }
+
+/** One checkout attempt per visit that starts on a finishable leave (2–170). */
+function countCheckoutAttemptIfNeeded(m, p) {
+  if (m.visitCheckoutCounted) return;
+  if (!isCheckoutChance(m.turnStart)) return;
+  p.checkoutAttempts += 1;
+  m.visitCheckoutCounted = true;
+}
+
+function visitDartCount(m) {
+  if (!m.visitDarts.length) return 0;
+  if (m.visitDarts.length === 1) {
+    const lab = m.visitDarts[0].label || '';
+    if (lab.startsWith('Visit') || lab === 'Bust') return 3;
+  }
+  return m.visitDarts.length;
+}
+
+function creditFirst9Visit(p, score, dartsInVisit) {
+  if (!dartsInVisit || (p.first9Darts | 0) >= 9) return;
+  const take = Math.min(dartsInVisit, 9 - (p.first9Darts | 0));
+  p.first9Points = (p.first9Points || 0) + score * (take / dartsInVisit);
+  p.first9Darts = (p.first9Darts | 0) + take;
+}
 
 function pushUndo(m) {
   const snap = cloneMatch(m);
@@ -2047,6 +2080,7 @@ function finishVisit(m, busted) {
   } else {
     score = m.visitPoints;
   }
+  creditFirst9Visit(p, score, visitDartCount(m));
   p.visitScores.push(score);
   if (score > p.highestVisit) p.highestVisit = score;
   if (score === 180) p.scores180++;
@@ -2061,6 +2095,7 @@ function nextPlayer(m) {
   m.turnStart = m.players[m.current].remaining;
   m.visitDarts = [];
   m.visitPoints = 0;
+  m.visitCheckoutCounted = false;
   m.message = m.players[m.current].name + ' to throw';
 }
 
@@ -2079,11 +2114,10 @@ function throwDart(m, label) {
   pushUndo(m);
   const p = m.players[m.current];
   const remBefore = p.remaining;
-  const atDouble = isCheckoutChance(remBefore);
 
   function countDart() {
     p.dartsThrown += 1;
-    if (atDouble) p.checkoutAttempts += 1;
+    countCheckoutAttemptIfNeeded(m, p);
   }
   function record(result) {
     m.visitDarts.push(result);
@@ -2164,16 +2198,16 @@ function throwVisitTotal(m, score, opts) {
   pushUndo(m);
   const p = m.players[m.current];
   const remBefore = p.remaining;
-  const atDouble = isCheckoutChance(remBefore);
 
   // Clear any partial dart-mode visit before applying a visit total.
   m.visitDarts = [];
   m.visitPoints = 0;
   m.dartsLeft = 3;
+  m.visitCheckoutCounted = false;
 
   function countVisitDarts(n) {
     p.dartsThrown += n;
-    if (atDouble) p.checkoutAttempts += 1;
+    countCheckoutAttemptIfNeeded(m, p);
   }
 
   if (m.doubleIn && !p.opened) {
@@ -2266,6 +2300,7 @@ function newLeg(m) {
   m.turnStart = m.game === 'cricket' ? 0 : m.startScore;
   m.visitDarts = [];
   m.visitPoints = 0;
+  m.visitCheckoutCounted = false;
   m.winner = null;
   m.archiveId = null;
   m.message = m.players[m.current].name + ' to throw (leg ' + legNo + ')';
@@ -2367,6 +2402,9 @@ function playerStatsSnapshot(p, game) {
   } else {
     snap.pointsScored = p.pointsScored | 0;
     snap.avg3 = avg3(p);
+    snap.avgFirst9 = avgFirst9(p);
+    snap.first9Points = p.first9Points || 0;
+    snap.first9Darts = p.first9Darts | 0;
     snap.checkoutHits = p.checkoutHits | 0;
     snap.checkoutAttempts = p.checkoutAttempts | 0;
     snap.checkoutPct = checkoutPct(p);
@@ -2656,6 +2694,8 @@ function renderMatchDetailHtml(rec, focusName) {
     : [
         ['3-dart avg', a.avg3 == null ? '—' : Number(a.avg3).toFixed(1),
                       b.avg3 == null ? '—' : Number(b.avg3).toFixed(1)],
+        ['First 9', a.avgFirst9 == null ? '—' : Number(a.avgFirst9).toFixed(1),
+                   b.avgFirst9 == null ? '—' : Number(b.avgFirst9).toFixed(1)],
         ['Darts', a.dartsThrown, b.dartsThrown],
         ['100–139', a.scores100, b.scores100],
         ['140–179', a.scores140, b.scores140],
@@ -4108,6 +4148,7 @@ function renderStats() {
   } else {
     rows = [
       ['3-dart avg', fmt(avg3(a), 1), fmt(avg3(b), 1)],
+      ['First 9', fmt(avgFirst9(a), 1), fmt(avgFirst9(b), 1)],
       ['Darts', a.dartsThrown, b.dartsThrown],
       ['Visits 100–139', a.scores100, b.scores100],
       ['Visits 140–179', a.scores140, b.scores140],
