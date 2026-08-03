@@ -1159,12 +1159,12 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.0 / 2026-08-02 / 3f8c23f</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.1 / 2026-08-02 / 1b2a24a</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}}};
-const APP_VERSION = '0.1.0 / 2026-08-02 / 3f8c23f';
+const APP_VERSION = '0.1.1 / 2026-08-02 / 1b2a24a';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2174,12 +2174,23 @@ function runBotThrow() {
   } finally {
     botThrowInFlight = false;
   }
+  // render() inside commitLabel may have skipped scheduling while in-flight —
+  // queue the next dart now if it is still the bot's turn.
+  if (isBotTurn()) scheduleBotThrow(700);
 }
 
 function scheduleBotThrow(delayMs) {
   clearBotTimerOnly();
-  if (!isBotTurn() || botThrowInFlight) return;
-  botThrowTimer = setTimeout(runBotThrow, delayMs == null ? 700 : delayMs);
+  if (!isBotTurn()) return;
+  // Do not gate on botThrowInFlight: commitLabel → render calls this while the
+  // current dart is still committing; blocking here froze the bot after dart 1.
+  botThrowTimer = setTimeout(() => {
+    if (botThrowInFlight) {
+      scheduleBotThrow(120);
+      return;
+    }
+    runBotThrow();
+  }, delayMs == null ? 700 : delayMs);
 }
 
 function cricketTarget(label) {
