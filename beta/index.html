@@ -1189,12 +1189,12 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.1-beta / 2026-08-02 / 0fef04e</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.1-beta / 2026-08-03 / e993f40</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.1-beta / 2026-08-02 / 0fef04e';
+const APP_VERSION = '0.1.1-beta / 2026-08-03 / e993f40';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 const AUTH_CONFIG = DATA.auth || {
@@ -1307,7 +1307,11 @@ function updateAccountBar() {
 const OUTER_BULL_RADIUS = 15.9, BULL_RADIUS = 6.35;
 const TRIPLE_INNER = 99.0, TRIPLE_OUTER = 107.0;
 const DOUBLE_INNER = 162.0, DOUBLE_OUTER = 170.0;
-const WIRE_BOUNCE_HALF_WIDTH_MM = 0.4;
+// Winmau Blade 6: staple-free 60° blade wire; bull rings 25% thinner.
+// Effective = geom half-width × P(bounce|wire) → ~0.15 / ~0.10 mm.
+const WIRE_SPIDER_BOUNCE_HALF_MM = 0.15;
+const WIRE_BULL_BOUNCE_HALF_MM = 0.10;
+const WIRE_BOUNCE_HALF_WIDTH_MM = WIRE_SPIDER_BOUNCE_HALF_MM; // back-compat
 const SECTORS = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
 const SECTOR = 2 * Math.PI / 20;
 const VIEW = 210;
@@ -1499,21 +1503,27 @@ function angularDistToSectorWire(thetaRad) {
 }
 
 function isOnBounceWire(r, thetaRad) {
-  const hw = WIRE_BOUNCE_HALF_WIDTH_MM;
-  if (hw <= 0 || r > DOUBLE_OUTER) return false;
-  const rings = [BULL_RADIUS, OUTER_BULL_RADIUS, TRIPLE_INNER, TRIPLE_OUTER,
-    DOUBLE_INNER, DOUBLE_OUTER];
-  for (const rr of rings) if (Math.abs(r - rr) <= hw) return true;
-  if (r > OUTER_BULL_RADIUS && r * angularDistToSectorWire(thetaRad) <= hw)
+  if (r > DOUBLE_OUTER) return false;
+  const bullHw = WIRE_BULL_BOUNCE_HALF_MM;
+  const spiderHw = WIRE_SPIDER_BOUNCE_HALF_MM;
+  if (bullHw > 0) {
+    if (Math.abs(r - BULL_RADIUS) <= bullHw) return true;
+    if (Math.abs(r - OUTER_BULL_RADIUS) <= bullHw) return true;
+  }
+  if (spiderHw <= 0) return false;
+  const rings = [TRIPLE_INNER, TRIPLE_OUTER, DOUBLE_INNER, DOUBLE_OUTER];
+  for (const rr of rings) if (Math.abs(r - rr) <= spiderHw) return true;
+  if (r > OUTER_BULL_RADIUS && r * angularDistToSectorWire(thetaRad) <= spiderHw)
     return true;
   return false;
 }
 
-/** Exact board classifier → scorekeeper label (Bull / 25 / T20 / Miss…). */
+/** Exact board classifier → scorekeeper label (Bull / 25 / T20 / Miss / Bounce). */
 function scoreLabelFromXY(x, y) {
   const r = Math.hypot(x, y);
   const theta = Math.atan2(x, y); // 0 at top, clockwise
-  if (r > DOUBLE_OUTER || isOnBounceWire(r, theta)) return 'Miss';
+  if (r > DOUBLE_OUTER) return 'Miss';
+  if (isOnBounceWire(r, theta)) return 'Bounce';
   if (r <= BULL_RADIUS) return 'Bull';
   if (r <= OUTER_BULL_RADIUS) return '25';
   const val = SECTORS[getSectorIndex(theta)];
@@ -1556,8 +1566,8 @@ function drawLandingMark(x, y) {
 
 function displayAim(label, x, y) {
   const lab = label.replace(/\*$/, '').trim();
-  if (lab === 'Miss' || lab === 'M')
-    return nearestScoringLabel(x, y) + ' (miss)';
+  if (lab === 'Miss' || lab === 'M' || lab === 'Bounce')
+    return nearestScoringLabel(x, y) + (lab === 'Bounce' ? ' (bounce)' : ' (miss)');
   return lab;
 }
 
@@ -1661,7 +1671,7 @@ function applySuggestedAim(result, suggested) {
 
 function aimPoints(label) {
   const lab = label.replace(/\*$/, '').trim();
-  if (lab === 'Miss' || lab === 'M') return [0, false];
+  if (lab === 'Miss' || lab === 'M' || lab === 'Bounce') return [0, false];
   if (lab.startsWith('Bull')) {
     if (lab.indexOf('25') >= 0) return [25, false];
     return [50, true];
@@ -2326,7 +2336,7 @@ function scheduleBotThrow(delayMs) {
 }
 
 function cricketTarget(label) {
-  if (!label || label === 'Miss') return null;
+  if (!label || label === 'Miss' || label === 'Bounce') return null;
   if (label === 'Bull') return { key: 'Bull', value: 25, marks: 2 };
   if (label === '25') return { key: 'Bull', value: 25, marks: 1 };
   const m = String(label).match(/^([SDT])(\d+)$/i);
@@ -2375,7 +2385,7 @@ function throwCricketDart(m, label) {
     if (scored) note = label + ' +' + scored;
     else if (t && (p.marks[t.key] || 0) >= 3 && !note.includes('dead'))
       note = label + (before < 3 ? ' closed' : '');
-  } else if (label !== 'Miss') {
+  } else if (label !== 'Miss' && label !== 'Bounce') {
     note = label + ' (inactive)';
   }
   const result = applySuggestedAim({
@@ -4509,13 +4519,18 @@ function buildPad() {
   elPad.innerHTML = '';
   const cricket = !!(match && match.game === 'cricket') || isCricket();
   syncEntryToggle();
-  // Cricket: D / number / T are on the scoreboard; pad is Miss only.
+  // Cricket: D / number / T are on the scoreboard; pad is Miss / Bounce.
   if (cricket) {
-    elPad.style.gridTemplateColumns = '1fr';
+    elPad.style.gridTemplateColumns = '1fr 1fr';
     const miss = document.createElement('button');
     miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss';
     miss.addEventListener('click', () => commitLabel('Miss'));
     elPad.appendChild(miss);
+    const bounce = document.createElement('button');
+    bounce.type = 'button'; bounce.textContent = 'Bounce'; bounce.className = 'miss';
+    bounce.title = 'Wire bounce-out (Blade 6)';
+    bounce.addEventListener('click', () => commitLabel('Bounce'));
+    elPad.appendChild(bounce);
     return;
   }
   if (scoreEntryMode === 'visit') {
@@ -4555,8 +4570,15 @@ function buildPad() {
 
   const miss = document.createElement('button');
   miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss';
+  miss.title = 'Off the board (r > 170 mm)';
   miss.addEventListener('click', () => commitLabel('Miss'));
   elPad.appendChild(miss);
+
+  const bounce = document.createElement('button');
+  bounce.type = 'button'; bounce.textContent = 'Bounce'; bounce.className = 'miss';
+  bounce.title = 'Wire bounce-out (Blade 6)';
+  bounce.addEventListener('click', () => commitLabel('Bounce'));
+  elPad.appendChild(bounce);
 }
 
 function buildVisitPad() {
