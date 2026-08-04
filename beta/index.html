@@ -836,7 +836,7 @@
     </div>
     <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
     <div class="player-panel" id="playerRosterPanel">
-      <p class="hint">Shared roster for both sides. Tap a name to use it, or type a new one and Save. <b>Bot</b> is always listed — CPU opponent (cannot delete).</p>
+      <p class="hint">Shared roster for both sides. Tap a name to use it, or type a new one and Save. <b>Bot</b> is always listed as the CPU opponent.</p>
       <div class="player-list" id="playerList"></div>
       <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr">
         <button type="button" id="playerDelete" class="danger">Delete</button>
@@ -3960,7 +3960,7 @@ function renderPlayerList(filterName) {
     const key = normPlayerName(p.name);
     const taken = takenKey && key === takenKey;
     const bot = !!p.builtin || isBotPlayerName(p.name);
-    const sub = taken ? 'in use' : (bot ? 'CPU · cannot delete' : '');
+    const sub = taken ? 'in use' : '';
     const cls = [
       playerListSel === key ? 'sel' : '',
       taken ? 'taken' : '',
