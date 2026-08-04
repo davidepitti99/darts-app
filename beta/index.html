@@ -1190,6 +1190,8 @@ const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":
 const APP_VERSION = '0.1.1-beta / 2026-08-03 / e993f40';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
+/** Cache-bust query for policy JSON (rebuild changes this). */
+const POLICY_CACHE_BUST = '0.1.1-beta-2026-08-03-e993f40';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -4322,8 +4324,13 @@ function policyCacheKey(modeKey, s1, s2, phi) {
 }
 function policyUrl(modeKey, s1, s2, phi) {
   // Beta builds use POLICY_BASE='../' to share root policies/ with prod.
-  return (typeof POLICY_BASE === 'string' ? POLICY_BASE : '')
+  const base = (typeof POLICY_BASE === 'string' ? POLICY_BASE : '')
     + 'policies/' + modeKey + '/s' + s1 + '_s' + s2 + '_p' + phi + '.json';
+  const bust = (typeof POLICY_CACHE_BUST === 'string' && POLICY_CACHE_BUST
+                && POLICY_CACHE_BUST.indexOf('__') !== 0)
+    ? POLICY_CACHE_BUST
+    : String(Date.now());
+  return base + '?v=' + encodeURIComponent(bust);
 }
 
 /** Return cached policy or null; kick off fetch if needed. */
@@ -4363,7 +4370,9 @@ function resolvePolicy(modeKey, shape) {
   }
   if (!policyInflight[key]) {
     policyStatus = 'Loading aim table (' + label + ')…';
-    policyInflight[key] = fetch(policyUrl(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg))
+    policyInflight[key] = fetch(policyUrl(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg), {
+      cache: 'no-store',
+    })
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
@@ -4525,18 +4534,15 @@ function buildPad() {
   elPad.innerHTML = '';
   const cricket = !!(match && match.game === 'cricket') || isCricket();
   syncEntryToggle();
-  // Cricket: D / number / T are on the scoreboard; pad is Miss / Bounce.
+  // Cricket: D / number / T are on the scoreboard; pad is Miss only
+  // (wire bounce-outs are entered as Miss; Bounce stays a policy region).
   if (cricket) {
-    elPad.style.gridTemplateColumns = '1fr 1fr';
+    elPad.style.gridTemplateColumns = '1fr';
     const miss = document.createElement('button');
     miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss';
+    miss.title = 'Miss or wire bounce-out (0)';
     miss.addEventListener('click', () => commitLabel('Miss'));
     elPad.appendChild(miss);
-    const bounce = document.createElement('button');
-    bounce.type = 'button'; bounce.textContent = 'Bounce'; bounce.className = 'miss';
-    bounce.title = 'Wire bounce-out (Blade 6)';
-    bounce.addEventListener('click', () => commitLabel('Bounce'));
-    elPad.appendChild(bounce);
     return;
   }
   if (scoreEntryMode === 'visit') {
@@ -4576,15 +4582,9 @@ function buildPad() {
 
   const miss = document.createElement('button');
   miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss';
-  miss.title = 'Off the board (r > 170 mm)';
+  miss.title = 'Miss or wire bounce-out (0)';
   miss.addEventListener('click', () => commitLabel('Miss'));
   elPad.appendChild(miss);
-
-  const bounce = document.createElement('button');
-  bounce.type = 'button'; bounce.textContent = 'Bounce'; bounce.className = 'miss';
-  bounce.title = 'Wire bounce-out (Blade 6)';
-  bounce.addEventListener('click', () => commitLabel('Bounce'));
-  elPad.appendChild(bounce);
 }
 
 function buildVisitPad() {
@@ -4657,12 +4657,19 @@ function onNum(n) {
   commitLabel(pendingMult + n);
 }
 
+/** Scorekeeper entry: Bounce has no pad key — record as Miss (0 pts).
+ *  Policy / board model still treat Bounce as its own region. */
+function scorekeeperLabel(label) {
+  if (label === 'Bounce' || label === 'B' || label === 'b') return 'Miss';
+  return label;
+}
+
 function commitLabel(label) {
   if (match.winner !== null) return;
   if (isBotTurn() && !botThrowInFlight) return;
   syncNames();
   try {
-    throwDart(match, label);
+    throwDart(match, scorekeeperLabel(label));
   } catch (e) {
     match.message = String(e.message || e);
   }
