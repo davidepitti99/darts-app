@@ -2046,7 +2046,7 @@ function buildMatchShareText(m) {
 }
 
 function shareMatchResults() {
-  if (!match || match.winner === null) return;
+  if (!match || match.winner === null || matchHasBot(match)) return;
   // Keep players in the circle when sharing — next rematch is one tap.
   saveMatchPlayersAsContacts(match, { bumpPlay: false });
   const text = shareGreetingFor(match) + buildMatchShareText(match);
@@ -2093,21 +2093,26 @@ function renderMatchReviewHtml() {
   let grid = rows.map(([a, b]) =>
     '<div class="lbl">' + a + '</div><div>' + b + '</div>').join('');
   const drill = diag && diag.drill ? diag.drill : 'practice';
+  const vsBot = matchHasBot(match);
+  let shareBlock = '';
+  if (!vsBot) {
+    shareBlock = '<div class="invite">Save '
+      + loser.name + ' as a contact, then share the scorecard — rematch next time in one tap.</div>'
+      + '<div class="share-row">'
+      + '<button type="button" class="primary" data-review="share">Share results with '
+      + loser.name + '</button>'
+      + '<button type="button" data-review="saveContact">Save '
+      + loser.name + ' to contacts</button>'
+      + '<div class="row" id="shareMatchFeedback" style="margin:0;text-align:center;color:var(--mute);font-size:12px"></div>'
+      + '</div>';
+  }
   return '<div class="review" id="matchReview">'
     + '<h3>Match review</h3>'
     + '<div class="grid">' + grid + '</div>'
     + aimLine
     + diagHtml
-    + '<div class="invite">Save '
-    + loser.name + ' as a contact, then share the scorecard — rematch next time in one tap.</div>'
     + '<div class="ctas triple">'
-    + '<div class="share-row">'
-    + '<button type="button" class="primary" data-review="share">Share results with '
-    + loser.name + '</button>'
-    + '<button type="button" data-review="saveContact">Save '
-    + loser.name + ' to contacts</button>'
-    + '<div class="row" id="shareMatchFeedback" style="margin:0;text-align:center;color:var(--mute);font-size:12px"></div>'
-    + '</div>'
+    + shareBlock
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
     + '<button type="button" data-review="coach">Open Coach</button>'
     + '<button type="button" data-review-drill="' + drill + '">Prescribed drill</button>'
@@ -2199,6 +2204,13 @@ function botSeatIndex() {
 function isBotSeat(idx) {
   const b = botSeatIndex();
   return b != null && (idx | 0) === b;
+}
+
+function matchHasBot(m) {
+  m = m || match;
+  if (!m || !Array.isArray(m.players)) return false;
+  if (m.botSeat != null) return true;
+  return m.players.some(p => p && isBotPlayerName(p.name));
 }
 
 function isBotTurn() {
@@ -3342,9 +3354,10 @@ function deleteContact(name) {
 }
 
 function recordMatchContacts(m) {
-  if (!m || !Array.isArray(m.players)) return;
+  if (!m || !Array.isArray(m.players) || matchHasBot(m)) return;
   for (const p of m.players) {
-    if (p && p.name) upsertContact(p.name, { bumpPlay: true });
+    if (p && p.name && !isBotPlayerName(p.name) && !isPlaceholderPlayerName(p.name))
+      upsertContact(p.name, { bumpPlay: true });
   }
 }
 
@@ -4720,7 +4733,7 @@ function renderStats() {
     html += '<div class="lbl">'+lab+'</div><div>'+va+'</div><div>'+vb+'</div>';
   }
   html += '</div>';
-  if (match.winner !== null) {
+  if (match.winner !== null && !matchHasBot(match)) {
     const oppName = match.players[1 - match.winner].name;
     html += '<div class="share-bar">'
       + '<button type="button" id="statsShareBtn">Share results with '
