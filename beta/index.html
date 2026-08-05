@@ -305,40 +305,17 @@
     font-size: 13px; font-weight: 600; line-height: 1.35; text-align: center;
   }
   .beta-banner a { color: var(--accent); }
-  .card .acc-toggle {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px;
-  }
-  .card .acc-toggle button {
-    background: var(--field); color: #cfcfcf; border: 1px solid #555;
-    border-radius: 8px; padding: 6px 4px; font-size: 11px; font-weight: 600;
-    cursor: pointer;
-  }
-  .card .acc-toggle button.active {
-    background: var(--accent); color: #1a1a1a; border-color: var(--accent);
-  }
   .card .sigma-row {
     display: flex; align-items: center; justify-content: center; gap: 6px;
     margin-top: 6px;
   }
-  .card .sigma-row.hidden, .card .shape-row.hidden { display: none; }
+  .card .sigma-row.hidden { display: none; }
   .card .sigma-row label { font-size: 11px; color: var(--mute); white-space: nowrap; }
   .card .sigma-row select,
   .card .sigma-row input {
     flex: 1; max-width: 120px; padding: 6px 8px; font-size: 13px;
     background: var(--field); color: #fff; border: 1px solid #555;
     border-radius: 8px; text-align: center; width: 100%;
-  }
-  .card .shape-row {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-top: 6px;
-  }
-  .card .shape-row .mini {
-    display: flex; flex-direction: column; gap: 2px; align-items: stretch;
-  }
-  .card .shape-row label { font-size: 10px; color: var(--mute); text-align: center; }
-  .card .shape-row input {
-    background: var(--field); color: #fff; border: 1px solid #555;
-    border-radius: 8px; padding: 6px 4px; font-size: 12px; width: 100%;
-    text-align: center;
   }
   /* Hide up/down spinners on every number field. */
   input[type=number]::-webkit-outer-spin-button,
@@ -915,28 +892,10 @@
              inputmode="none" title="Tap to load or save player">
       <div class="rem cricket-hide" id="rem0" title="Tap to set remaining score">0</div>
       <div class="meta" id="meta0">Legs 0</div>
-      <div class="acc-toggle cricket-hide" data-player="0">
-        <button type="button" class="active" data-mode="simple">Simple σ</button>
-        <button type="button" data-mode="complex">σ₁ σ₂ φ</button>
-      </div>
       <div class="sigma-row cricket-hide" id="simpleRow0">
         <label for="sigma0">σ</label>
         <input id="sigma0" type="number" inputmode="numeric" min="1" max="50" step="1"
                value="25" placeholder="1–50">
-      </div>
-      <div class="shape-row hidden cricket-hide" id="complexRow0">
-        <div class="mini">
-          <label for="s1_0">σ₁</label>
-          <input id="s1_0" type="number" inputmode="numeric" min="1" max="50" step="1" placeholder="1–50">
-        </div>
-        <div class="mini">
-          <label for="s2_0">σ₂</label>
-          <input id="s2_0" type="number" inputmode="numeric" min="1" max="50" step="1" placeholder="1–50">
-        </div>
-        <div class="mini">
-          <label for="phi_0">φ°</label>
-          <input id="phi_0" type="number" inputmode="numeric" min="0" max="160" step="20" placeholder="0–160">
-        </div>
       </div>
     </div>
     <button type="button" class="swap-sides" id="btnSwapSides"
@@ -946,28 +905,10 @@
              inputmode="none" title="Tap to load or save player">
       <div class="rem cricket-hide" id="rem1" title="Tap to set remaining score">0</div>
       <div class="meta" id="meta1">Legs 0</div>
-      <div class="acc-toggle cricket-hide" data-player="1">
-        <button type="button" class="active" data-mode="simple">Simple σ</button>
-        <button type="button" data-mode="complex">σ₁ σ₂ φ</button>
-      </div>
       <div class="sigma-row cricket-hide" id="simpleRow1">
         <label for="sigma1">σ</label>
         <input id="sigma1" type="number" inputmode="numeric" min="1" max="50" step="1"
                value="25" placeholder="1–50">
-      </div>
-      <div class="shape-row hidden cricket-hide" id="complexRow1">
-        <div class="mini">
-          <label for="s1_1">σ₁</label>
-          <input id="s1_1" type="number" inputmode="numeric" min="1" max="50" step="1" placeholder="1–50">
-        </div>
-        <div class="mini">
-          <label for="s2_1">σ₂</label>
-          <input id="s2_1" type="number" inputmode="numeric" min="1" max="50" step="1" placeholder="1–50">
-        </div>
-        <div class="mini">
-          <label for="phi_1">φ°</label>
-          <input id="phi_1" type="number" inputmode="numeric" min="0" max="160" step="20" placeholder="0–160">
-        </div>
       </div>
     </div>
   </div>
@@ -1124,10 +1065,9 @@
     <div class="fit-panel" id="fitPanelMeasure">
     <div class="fit-help">
       Aim at the <b>bull</b>. Enter each dart’s <b>distance</b> from the centre (mm).
-      Optionally add the <b>angle</b> (degrees from the top / 20, clockwise) for a
-      tilted Gaussian (σ₁, σ₂, φ). Distance-only → σ₁=σ₂ (no φ needed).
-      Aim tables load on demand: <code>sσ1_sσ2_pφ.json</code>
-      (when σ₁=σ₂ only <code>p0</code> exists).
+      Optionally add the <b>angle</b> (degrees from the top / 20, clockwise) for notes —
+      the fit is always isotropic σ. Aim tables load on demand:
+      <code>sσ_sσ_p0.json</code> (σ = 1…50 mm).
     </div>
     <div class="fit-entry" style="grid-template-columns:1fr 1fr auto">
       <input id="fitRadius" type="number" inputmode="decimal" min="0" max="170" step="0.1"
@@ -1141,10 +1081,8 @@
     <div class="fit-panel hidden" id="fitPanelZones">
     <div class="fit-help">
       Aim at the <b>bull</b>. Tap <b>+</b> for the belt each dart hit.
-      Optionally pick the <b>sector number</b> (1–20) on singles / triples / doubles —
-      with enough numbered hits the app runs a multinomial MLE for the
-      <b>tilted</b> Gaussian (σ₁, σ₂, φ) by integrating the density over annular sectors.
-      Belt-only counts (no number) still estimate isotropic σ.
+      Optionally pick the <b>sector number</b> (1–20) for labeling —
+      the fit always estimates isotropic σ from belt counts (annular MLE).
     </div>
     <div class="zone-grid" id="zoneGrid"></div>
     </div><!-- /fitPanelZones -->
@@ -1152,7 +1090,7 @@
     <div class="player-modal hidden" id="sectorModal">
       <div class="player-box">
         <h2 id="sectorModalTitle">Sector number</h2>
-        <p class="hint" id="sectorModalHint">Which number did it hit? Optional — needed for tilted σ₁/σ₂/φ.</p>
+        <p class="hint" id="sectorModalHint">Which number did it hit? Optional — for labeling only (fit stays isotropic σ).</p>
         <div class="sector-pad" id="sectorPad"></div>
         <div class="player-actions" style="grid-template-columns:1fr 1fr">
           <button type="button" id="sectorSkip">No number</button>
@@ -1182,16 +1120,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.1-beta / 2026-08-05 / 2c5a001</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.1-beta / 2026-08-05 / 6cd0456</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.1-beta / 2026-08-05 / 2c5a001';
+const APP_VERSION = '0.1.1-beta / 2026-08-05 / 6cd0456';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.1-beta-2026-08-05-2c5a001';
+const POLICY_CACHE_BUST = '0.1.1-beta-2026-08-05-6cd0456';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -1393,34 +1331,19 @@ function drawBoard() {
 function drawAim(x, y, sigmaOrShape) {
   const s = scale();
   const [X, Y] = px(x, y);
-  const shape = (sigmaOrShape && typeof sigmaOrShape === 'object')
-    ? sigmaOrShape : null;
-  const sigma = shape ? null : Number(sigmaOrShape);
+  let sigma;
+  if (sigmaOrShape && typeof sigmaOrShape === 'object')
+    sigma = Number(sigmaOrShape.sigma1 != null ? sigmaOrShape.sigma1 : sigmaOrShape.sigma);
+  else
+    sigma = Number(sigmaOrShape);
+  if (!Number.isFinite(sigma) || sigma <= 0) sigma = 25;
 
   for (const [k, a, w] of [[1, 0.95, 3], [2, 0.55, 2]]) {
     ctx.strokeStyle = 'rgba(255,210,63,' + a + ')';
     ctx.lineWidth = Math.max(w, cv.width * 0.003);
     ctx.beginPath();
-    let rPix;
-    if (shape) {
-      const ph = (shape.phiDeg || 0) * Math.PI / 180;
-      const a1 = k * shape.sigma1 * s;
-      const a2 = k * shape.sigma2 * s;
-      rPix = Math.max(a1, a2);
-      for (let i = 0; i <= 64; i++) {
-        const t = (i / 64) * 2 * Math.PI;
-        const u = a1 * Math.cos(t), v = a2 * Math.sin(t);
-        const dx = u * Math.sin(ph) + v * Math.cos(ph);
-        const dy = u * Math.cos(ph) - v * Math.sin(ph);
-        const pxX = X + dx;
-        const pxY = Y - dy;
-        if (i === 0) ctx.moveTo(pxX, pxY); else ctx.lineTo(pxX, pxY);
-      }
-      ctx.closePath();
-    } else {
-      rPix = k * sigma * s;
-      ctx.arc(X, Y, Math.max(rPix, 2), 0, 2 * Math.PI);
-    }
+    const rPix = k * sigma * s;
+    ctx.arc(X, Y, Math.max(rPix, 2), 0, 2 * Math.PI);
     // Dashes vanish on tiny rings (preliminary small-σ policies).
     ctx.setLineDash(rPix < 18 ? [] : [6, 5]);
     ctx.stroke();
@@ -1527,11 +1450,11 @@ function scoreLabelFromXY(x, y) {
   return 'S' + val;
 }
 
-/** Sample landing ~ N(aim, Σ) with the same φ-frame as policies / Fit σ. */
+/** Sample landing ~ isotropic N(aim, σ² I). */
 function sampleGaussianLanding(ax, ay, shape) {
-  const s1 = Math.max(0.5, Number(shape.sigma1) || 25);
-  const s2 = Math.max(0.5, Number(shape.sigma2 != null ? shape.sigma2 : s1) || s1);
-  const ph = ((Number(shape.phiDeg) || 0) * Math.PI) / 180;
+  const s = Math.max(0.5, Number(
+    shape && shape.sigma1 != null ? shape.sigma1
+      : (shape && shape.sigma != null ? shape.sigma : 25)) || 25);
   // Box–Muller
   let u = 0, v = 0;
   while (u === 0) u = Math.random();
@@ -1539,12 +1462,7 @@ function sampleGaussianLanding(ax, ay, shape) {
   const mag = Math.sqrt(-2 * Math.log(u));
   const z0 = mag * Math.cos(2 * Math.PI * v);
   const z1 = mag * Math.sin(2 * Math.PI * v);
-  const du = z0 * s1;
-  const dv = z1 * s2;
-  const sp = Math.sin(ph), cp = Math.cos(ph);
-  const dx = du * sp + dv * cp;
-  const dy = du * cp - dv * sp;
-  return [ax + dx, ay + dy];
+  return [ax + z0 * s, ay + z1 * s];
 }
 
 function drawLandingMark(x, y) {
@@ -1559,8 +1477,15 @@ function drawLandingMark(x, y) {
   ctx.stroke();
 }
 
+/** UI label: drop * / i / o — the board crosshair shows the exact aim. */
+function prettyAimLabel(label) {
+  let lab = String(label || '').replace(/\*+$/, '').trim();
+  lab = lab.replace(/^([STD]\d+)[io]$/i, '$1');
+  return lab;
+}
+
 function displayAim(label, x, y) {
-  const lab = label.replace(/\*$/, '').trim();
+  const lab = prettyAimLabel(label);
   if (lab === 'Miss' || lab === 'M' || lab === 'Bounce')
     return nearestScoringLabel(x, y) + (lab === 'Bounce' ? ' (bounce)' : ' (miss)');
   return lab;
@@ -1665,7 +1590,7 @@ function applySuggestedAim(result, suggested) {
 }
 
 function aimPoints(label) {
-  const lab = label.replace(/\*$/, '').trim();
+  const lab = prettyAimLabel(label);
   if (lab === 'Miss' || lab === 'M' || lab === 'Bounce') return [0, false];
   if (lab.startsWith('Bull')) {
     if (lab.indexOf('25') >= 0) return [25, false];
@@ -1687,7 +1612,7 @@ function hitContinuation(policy, score, dartsLeft) {
     const entry = policy[s + ',' + d];
     if (!entry) break;
     const aim = entry[0];
-    const clean = aim.replace(/\*$/, '');
+    const clean = prettyAimLabel(aim);
     const [pts, isDbl] = aimPoints(aim);
     const nxt = s - pts;
     if (nxt === 0 && isDbl) { steps.push([s, d, clean, 0, 'checkout']); break; }
@@ -1710,7 +1635,7 @@ function formatHitPath(policy, steps) {
 function explainAimWhy(score, darts, entry, steps, aimSource) {
   if (!entry) return '';
   const [aim, , , et] = entry;
-  const clean = (aim || '').replace(/\*$/, '');
+  const clean = prettyAimLabel(aim);
   const step0 = steps && steps[0];
   const kind = step0 ? step0[4] : '';
   const leave = step0 ? step0[3] : null;
@@ -1729,7 +1654,7 @@ function explainAimWhy(score, darts, entry, steps, aimSource) {
       + sigmaBit + ' — a cleaner start next visit.';
   }
   if (kind === 'continue' && leave != null) {
-    const nextAim = steps[1] ? String(steps[1][2]).replace(/\*$/, '') : '';
+    const nextAim = steps[1] ? prettyAimLabel(steps[1][2]) : '';
     return 'Throw ' + clean + ' to leave ' + leave
       + (nextAim ? (', then ' + nextAim) : '')
       + sigmaBit
@@ -2244,8 +2169,8 @@ function syncBotUi() {
 }
 
 /**
- * Bot: look up optimal aim for (remaining, darts left), sample N(aim, Σ) from
- * this seat's Simple σ or σ₁σ₂φ, classify landing, score like a human dart.
+ * Bot: look up optimal aim for (remaining, darts left), sample N(aim, σ² I)
+ * from this seat's σ, classify landing, score like a human dart.
  */
 function runBotThrow() {
   botThrowTimer = null;
@@ -2254,18 +2179,11 @@ function runBotThrow() {
   const m = mode();
   if (!m) return;
 
-  const sigmaEl = document.getElementById('sigma' + idx);
-  const sigma = sigmaEl ? (parseInt(sigmaEl.value, 10) || 25) : 25;
-  const shape = playerShape(idx) || { sigma1: sigma, sigma2: sigma, phiDeg: 0 };
+  const shape = playerShape(idx);
   const shapeForPolicy = snapPolicyShape(shape);
   const resolved = resolvePolicy(m.key, shapeForPolicy);
   if (resolved.status === 'loading' || !resolved.policy) {
-    match.message = 'Bot waiting for aim table (σ '
-      + shapeForPolicy.sigma1
-      + (shapeForPolicy.sigma1 !== shapeForPolicy.sigma2
-          ? ('/' + shapeForPolicy.sigma2 + ' φ' + shapeForPolicy.phiDeg + '°')
-          : '')
-      + ')…';
+    match.message = 'Bot waiting for aim table (σ ' + shapeForPolicy.sigma1 + ')…';
     scheduleBotThrow(500);
     return;
   }
@@ -2767,14 +2685,6 @@ function exchangePlayerSeats() {
 
   swapDomValues('name0', 'name1');
   swapDomValues('sigma0', 'sigma1');
-  swapDomValues('s1_0', 's1_1');
-  swapDomValues('s2_0', 's2_1');
-  swapDomValues('phi_0', 'phi_1');
-  const modeTmp = sigmaMode[0];
-  sigmaMode[0] = sigmaMode[1];
-  sigmaMode[1] = modeTmp;
-  setSigmaMode(0, sigmaMode[0], { keepValues: true });
-  setSigmaMode(1, sigmaMode[1], { keepValues: true });
 
   if (typeof scoreEditIdx !== 'undefined' && scoreEditIdx !== null)
     scoreEditIdx = 1 - scoreEditIdx;
@@ -4224,12 +4134,6 @@ function populateSigmas() {
       pick = allowed.includes(25) ? 25 : lo;
     el.value = String(pick);
   }
-  // Free tier cannot stay on complex σ₁σ₂φ.
-  if (!isPro()) {
-    for (const idx of [0, 1]) {
-      if (sigmaMode[idx] === 'complex') setSigmaMode(idx, 'simple', { keepValues: true });
-    }
-  }
 }
 
 function commitSigmaInput(el) {
@@ -4251,67 +4155,30 @@ function activeSigma() {
   return nearestPolicySigma(parseFloat(el.value));
 }
 
-/** Per-player accuracy UI: 'simple' (one σ) or 'complex' (σ₁, σ₂, φ). */
-const sigmaMode = ['simple', 'simple'];
+/** Legacy stub — UI is isotropic-only (one σ per player). */
+function setSigmaMode(_idx, _mode, _opts) {}
 
-function setSigmaMode(idx, mode, opts) {
-  const clearOther = !(opts && opts.keepValues);
-  if (mode === 'complex' && !isPro()) {
-    showProBanner('Tilted aims (σ₁ σ₂ φ) are Pro.');
-    mode = 'simple';
-  }
-  sigmaMode[idx] = mode === 'complex' ? 'complex' : 'simple';
-  const simple = document.getElementById('simpleRow' + idx);
-  const complex = document.getElementById('complexRow' + idx);
-  simple.classList.toggle('hidden', sigmaMode[idx] === 'complex');
-  complex.classList.toggle('hidden', sigmaMode[idx] === 'simple');
-  const toggle = document.querySelector('.acc-toggle[data-player="' + idx + '"]');
-  if (toggle) {
-    for (const b of toggle.querySelectorAll('button'))
-      b.classList.toggle('active', b.dataset.mode === sigmaMode[idx]);
-  }
-  if (clearOther) {
-    if (sigmaMode[idx] === 'simple') setPlayerShape(idx, null);
-  }
-}
-
-/** Tilted Gaussian for player idx when in complex mode, else null. */
+/** Isotropic Gaussian shape from this seat's simple σ input. */
 function playerShape(idx) {
-  if (sigmaMode[idx] !== 'complex') return null;
-  const s1 = parseFloat(document.getElementById('s1_' + idx).value);
-  const s2 = parseFloat(document.getElementById('s2_' + idx).value);
-  let phi = parseFloat(document.getElementById('phi_' + idx).value);
-  if (!(s1 > 0) || !(s2 > 0)) return null;
-  if (!Number.isFinite(phi)) phi = 0;
-  if (phi < 0 || phi > 180) phi = ((phi % 180) + 180) % 180;
-  if (s1 >= s2) return { sigma1: s1, sigma2: s2, phiDeg: phi };
-  return { sigma1: s2, sigma2: s1, phiDeg: (phi + 90) % 180 };
+  const el = document.getElementById('sigma' + idx);
+  let s = parseFloat(el && el.value);
+  if (!Number.isFinite(s) || s <= 0) s = 25;
+  return { sigma1: s, sigma2: s, phiDeg: 0 };
 }
 
 function shapeSigmaEq(shape) {
-  return Math.sqrt(0.5 * (shape.sigma1 * shape.sigma1 + shape.sigma2 * shape.sigma2));
+  const snap = snapPolicyShape(shape || {});
+  return snap.sigma1;
 }
 
-/** Snap to the precomputed grid (σ1≥σ2, |σ1−σ2|≤5; φ=0 if σ1=σ2 else step 20°). */
+/** Snap to isotropic policy grid: clamp/round σ to 1..50 → sσ_sσ_p0. */
 function snapPolicyShape(shape) {
-  let s1 = Math.round(shape.sigma1);
-  let s2 = Math.round(shape.sigma2);
-  let phi = Number.isFinite(shape.phiDeg) ? shape.phiDeg : 0;
-  s1 = Math.max(1, Math.min(50, s1));
-  s2 = Math.max(1, Math.min(50, s2));
-  if (s2 > s1) {
-    const t = s1; s1 = s2; s2 = t;
-    phi = (phi + 90) % 180;
-  }
-  if (s1 - s2 > 5) s2 = Math.max(1, s1 - 5);
-  if (s1 === s2) {
-    phi = 0;
-  } else {
-    phi = ((phi % 180) + 180) % 180;
-    phi = Math.round(phi / 20) * 20;
-    if (phi >= 180) phi = 0;
-  }
-  return { sigma1: s1, sigma2: s2, phiDeg: phi };
+  let s = Math.round(Number(
+    shape && shape.sigma1 != null ? shape.sigma1
+      : (shape && shape.sigma != null ? shape.sigma : 25)));
+  if (!Number.isFinite(s)) s = 25;
+  s = Math.max(1, Math.min(50, s));
+  return { sigma1: s, sigma2: s, phiDeg: 0 };
 }
 
 // On-demand policies: policies/{mode}/s{s1}_s{s2}_p{phi}.json
@@ -4336,28 +4203,23 @@ function policyUrl(modeKey, s1, s2, phi) {
 /** Return cached policy or null; kick off fetch if needed. */
 function resolvePolicy(modeKey, shape) {
   let snap = snapPolicyShape(shape);
-  // Free tier: isotropic free σ only (no tilted / off-list σ).
+  // Free tier: free σ allow-list only (full 1–50 grid is Pro).
   if (!isPro()) {
     const allowed = freeSigmas();
-    const want = (snap.sigma1 === snap.sigma2)
-      ? snap.sigma1
-      : nearestPolicySigma(shapeSigmaEq(snap));
-    let s = want;
+    let s = snap.sigma1;
     if (!allowed.includes(s)) {
-      let best = allowed[0], bestD = Math.abs(allowed[0] - want);
+      let best = allowed[0], bestD = Math.abs(allowed[0] - s);
       for (const a of allowed) {
-        const d = Math.abs(a - want);
+        const d = Math.abs(a - s);
         if (d < bestD) { best = a; bestD = d; }
       }
       s = best;
-      showProBanner('Full σ grid & tilted aims are Pro. Using free σ = ' + s + ' mm.');
+      showProBanner('Full σ grid (1–50 mm) is Pro. Using free σ = ' + s + ' mm.');
     }
     snap = { sigma1: s, sigma2: s, phiDeg: 0 };
   }
   const key = policyCacheKey(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg);
-  const label = (snap.sigma1 === snap.sigma2)
-    ? ('σ=' + snap.sigma1 + ' mm')
-    : ('σ₁=' + snap.sigma1 + ' σ₂=' + snap.sigma2 + ' φ=' + snap.phiDeg + '°');
+  const label = 'σ=' + snap.sigma1 + ' mm';
   if (Object.prototype.hasOwnProperty.call(policyCache, key)) {
     const data = policyCache[key];
     if (data) {
@@ -4394,27 +4256,12 @@ function resolvePolicy(modeKey, shape) {
   return { policy: null, snap, status: 'loading' };
 }
 
-function setPlayerShape(idx, shapeOrNull) {
-  const el1 = document.getElementById('s1_' + idx);
-  const el2 = document.getElementById('s2_' + idx);
-  const elp = document.getElementById('phi_' + idx);
-  if (!shapeOrNull) {
-    el1.value = ''; el2.value = ''; elp.value = '';
-    return;
-  }
-  el1.value = String(Math.round(shapeOrNull.sigma1));
-  el2.value = String(Math.round(shapeOrNull.sigma2));
-  elp.value = String(Math.round(shapeOrNull.phiDeg || 0));
-}
-
+/** Legacy stubs — complex σ₁σ₂φ UI removed (isotropic only). */
+function setPlayerShape(_idx, _shapeOrNull) {}
 function syncPolicyFromShape(idx) {
-  const shape = playerShape(idx);
-  if (!shape) return;
-  const snap = snapPolicyShape(shape);
-  setPlayerShape(idx, snap);
+  const snap = snapPolicyShape(playerShape(idx));
   const el = idx === 0 ? elSigma0 : elSigma1;
-  el.value = String(snap.sigma1 === snap.sigma2 ? snap.sigma1
-    : nearestPolicySigma(shapeSigmaEq(snap)));
+  if (el) el.value = String(snap.sigma1);
 }
 
 function selectMode(key) {
@@ -4874,22 +4721,10 @@ function render() {
   }
 
   drawBoard();
-  const sigma = activeSigma();
-  const shape = playerShape(match.current);
-  // Always on-demand: simple σ → sσ_sσ_p0; complex → snapped (σ1,σ2,φ).
-  const shapeForPolicy = shape || { sigma1: sigma, sigma2: sigma, phiDeg: 0 };
+  const shapeForPolicy = playerShape(match.current);
   const resolved = resolvePolicy(m.key, shapeForPolicy);
   const policy = resolved.policy || {};
-  let aimSource;
-  if (shape) {
-    aimSource = 'σ₁ ' + resolved.snap.sigma1
-      + ' σ₂ ' + resolved.snap.sigma2
-      + (resolved.snap.sigma1 === resolved.snap.sigma2
-          ? ''
-          : (' φ ' + resolved.snap.phiDeg + '°'));
-  } else {
-    aimSource = 'σ ' + resolved.snap.sigma1 + ' mm';
-  }
+  const aimSource = 'σ ' + resolved.snap.sigma1 + ' mm';
 
   const visit = match.visitDarts.map(d => d.label).join(' ') || '—';
   const dartN = match.winner !== null ? '—' : (4 - match.dartsLeft);
@@ -4939,7 +4774,7 @@ function render() {
     match.lastCoachAim = { aim: aimClean, why: why, score: score, darts: darts, et: et };
   }
   if (isBotTurn())
-    html += '<div class="row">Bot throwing — pad locked. Set Bot’s σ or σ₁σ₂φ on its card.</div>';
+    html += '<div class="row">Bot throwing — pad locked. Set Bot’s σ on its card.</div>';
   if (match.lastBotLanding && match.lastBotLanding.label)
     html += '<div class="row"><span class="k">Last bot dart:</span> '
       + match.lastBotLanding.label
@@ -5030,22 +4865,6 @@ elSigma1.addEventListener('change', () => commitSigmaInput(elSigma1));
 for (const el of [elSigma0, elSigma1]) {
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); commitSigmaInput(el); el.blur(); }
-  });
-}
-for (const id of ['s1_0','s2_0','phi_0','s1_1','s2_1','phi_1']) {
-  document.getElementById(id).addEventListener('change', () => {
-    const idx = id.endsWith('_0') ? 0 : 1;
-    syncPolicyFromShape(idx);
-    render();
-  });
-}
-for (const toggle of document.querySelectorAll('.acc-toggle')) {
-  toggle.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-mode]');
-    if (!btn) return;
-    const idx = parseInt(toggle.dataset.player, 10);
-    setSigmaMode(idx, btn.dataset.mode);
-    render();
   });
 }
 for (const idx of [0, 1]) {
@@ -5261,20 +5080,8 @@ function drawCoachTrend(recs) {
 function applySavedFitRecordToPlayer(rec, idx) {
   if (!rec) return;
   const el = idx === 0 ? elSigma0 : elSigma1;
-  if (rec.mode === 'general' && rec.sigma1 != null && rec.sigma2 != null) {
-    const snap = snapPolicyShape({
-      sigma1: rec.sigma1, sigma2: rec.sigma2, phiDeg: rec.phiDeg || 0,
-    });
-    setSigmaMode(idx, 'complex', { keepValues: true });
-    setPlayerShape(idx, snap);
-    el.value = String(snap.sigma1 === snap.sigma2 ? snap.sigma1
-      : nearestPolicySigma(shapeSigmaEq(snap)));
-  } else {
-    const s = nearestPolicySigma(latestFitSigma(rec) || 15);
-    setSigmaMode(idx, 'simple', { keepValues: true });
-    setPlayerShape(idx, null);
-    el.value = String(s);
-  }
+  const s = nearestPolicySigma(latestFitSigma(rec) || 15);
+  el.value = String(s);
   if (rec.name) applyPlayerName(idx, rec.name);
   showPage('score');
   render();
@@ -5379,19 +5186,11 @@ function renderCoachPage() {
   const latest = fits[0];
   const prev = fits[1];
   const elSig = document.getElementById('coachSigma');
-  if (latest.mode === 'general') {
-    elSig.textContent = 'σ₁ ' + Number(latest.sigma1).toFixed(1)
-      + ' · σ₂ ' + Number(latest.sigma2).toFixed(1);
-    document.getElementById('coachSigmaSub').textContent =
-      'φ ' + Number(latest.phiDeg || 0).toFixed(0) + '° · σ_eq '
-      + Number(latest.sigmaEq != null ? latest.sigmaEq : sig).toFixed(1) + ' mm';
-  } else {
-    elSig.textContent = 'σ ' + Number(sig).toFixed(1) + ' mm';
-    document.getElementById('coachSigmaSub').textContent =
-      (latest.quality && latest.quality.pct != null)
-        ? ('±' + Number(latest.quality.pct).toFixed(0) + '% on σ (95% CI)')
-        : 'isotropic profile';
-  }
+  elSig.textContent = 'σ ' + Number(sig).toFixed(1) + ' mm';
+  document.getElementById('coachSigmaSub').textContent =
+    (latest.quality && latest.quality.pct != null)
+      ? ('±' + Number(latest.quality.pct).toFixed(0) + '% on σ (95% CI)')
+      : 'isotropic profile';
   const qEl = document.getElementById('coachQuality');
   const q = latest.quality || {};
   qEl.className = 'quality ' + (q.level || '');
@@ -5610,10 +5409,9 @@ function startDrillWarmup() {
   }
 })();
 
-// ── Live Gaussian σ fit from bull landings ───────────────────────────────
-// Measure: { r, theta? } — angle optional → isotropic or general.
-// Zones: belt hits (+ optional sector) → isotropic belt MLE or tilted
-// annular-sector multinomial MLE (∫ N(0,Σ) over each observed region).
+// ── Live Gaussian σ fit from bull landings (isotropic only) ──────────────
+// Measure: { r, theta? } — distance → isotropic σ (angle optional labeling).
+// Zones: belt hits (+ optional sector labels) → isotropic annular MLE.
 const fitThrows = [];
 const FIT_ANNULI = [
   { key: 'red_bull', label: 'Red bull', sub: '50 · 0–6.35 mm', lo: 0, hi: BULL_RADIUS },
@@ -5670,13 +5468,8 @@ function storeFitHistory(list) {
 
 function fitSummaryLabel(rec) {
   if (!rec) return '—';
-  if (rec.mode === 'general') {
-    return 'σ₁ ' + Number(rec.sigma1).toFixed(1)
-      + ' · σ₂ ' + Number(rec.sigma2).toFixed(1)
-      + ' · φ ' + Number(rec.phiDeg).toFixed(0) + '°';
-  }
-  const s = rec.sigma != null ? rec.sigma : rec.sigmaEq;
-  return 'σ ' + Number(s).toFixed(1) + ' mm';
+  const s = latestFitSigma(rec);
+  return Number.isFinite(s) ? ('σ ' + Number(s).toFixed(1) + ' mm') : '—';
 }
 
 function upsertSavedPlayerName(name) {
@@ -5710,16 +5503,11 @@ function buildFitSaveRecord(name, fit) {
       ? fitZoneHits.map(h => ({ key: h.key, sector: h.sector }))
       : null,
   };
-  if (fit.mode === 'general') {
-    rec.sigma1 = fit.sigma1;
-    rec.sigma2 = fit.sigma2;
-    rec.phiDeg = fit.phiDeg;
-    rec.sigmaEq = fit.sigmaEq;
-    rec.sigma = fit.sigmaEq;
-  } else {
-    rec.sigma = fit.sigma;
-    rec.sigmaEq = fit.sigma;
-  }
+  rec.sigma = fit.sigmaEq != null ? fit.sigmaEq : fit.sigma;
+  rec.sigmaEq = rec.sigma;
+  rec.sigma1 = rec.sigma;
+  rec.sigma2 = rec.sigma;
+  rec.phiDeg = 0;
   return rec;
 }
 
@@ -5895,7 +5683,7 @@ function openSectorModal(key) {
   const a = FIT_ANNULUS_BY_KEY[key];
   document.getElementById('sectorModalTitle').textContent = a.label + ' — sector';
   document.getElementById('sectorModalHint').textContent =
-    'Pick the number for a tilted (σ₁, σ₂, φ) fit, or skip for isotropic belt-only.';
+    'Optional sector label — the fit stays isotropic σ from belt counts.';
   const pad = document.getElementById('sectorPad');
   pad.innerHTML = '';
   for (const n of SECTORS) {
@@ -6040,152 +5828,12 @@ function fitAnnuli(counts) {
   };
 }
 
-/** Board angle bounds (deg) for a face value; θ=0 at 20 (top), clockwise. */
-function sectorAngleBounds(num) {
-  const i = SECTORS.indexOf(num);
-  if (i < 0) return null;
-  const c = i * 18;
-  return [c - 9, c + 9];
-}
-
-/**
- * Cartesian density of zero-mean tilted Gaussian used by the policy model:
- * u ~ N(0,σ₁²), v ~ N(0,σ₂²) in the φ-frame, then
- * x = u sin φ + v cos φ,  y = u cos φ − v sin φ.
- */
-function tiltedGaussDensity(x, y, s1, s2, phiDeg) {
-  const ph = (phiDeg || 0) * Math.PI / 180;
-  const sp = Math.sin(ph), cp = Math.cos(ph);
-  const u = x * sp + y * cp;
-  const v = x * cp - y * sp;
-  const a = Math.max(s1, 1e-6), b = Math.max(s2, 1e-6);
-  return Math.exp(-0.5 * (u * u / (a * a) + v * v / (b * b)))
-    / (2 * Math.PI * a * b);
-}
-
-/**
- * ∫∫_R N(0,Σ) dx dy over an annular sector via polar mid-point quadrature.
- * Uses dx dy = r dr dθ with θ in degrees on the board (0° = top/20, clockwise).
- */
-const FIT_QUAD_NR = 12;
-const FIT_QUAD_NT = 16;
-
-function integrateAnnularSector(rLo, rHi, th0Deg, th1Deg, s1, s2, phiDeg) {
-  const rA = Math.max(0, rLo);
-  const rB = Math.max(rA, rHi);
-  if (rB <= rA) return 0;
-  let dTh = th1Deg - th0Deg;
-  if (dTh <= 0) dTh += 360;
-  let mass = 0;
-  const NR = FIT_QUAD_NR, NT = FIT_QUAD_NT;
-  for (let i = 0; i < NR; i++) {
-    const ra = rA + (rB - rA) * i / NR;
-    const rb = rA + (rB - rA) * (i + 1) / NR;
-    const r = 0.5 * (ra + rb);
-    const dr = rb - ra;
-    for (let j = 0; j < NT; j++) {
-      const ta = th0Deg + dTh * j / NT;
-      const tb = th0Deg + dTh * (j + 1) / NT;
-      const t = 0.5 * (ta + tb);
-      const dt = (tb - ta) * Math.PI / 180;
-      const [x, y] = polarToXY(r, t);
-      mass += tiltedGaussDensity(x, y, s1, s2, phiDeg) * r * dr * dt;
-    }
-  }
-  return Math.max(0, mass);
-}
-
-function zoneEventProb(hit, s1, s2, phiDeg, cache) {
-  const key = hit.key;
-  const a = FIT_ANNULUS_BY_KEY[key];
-  if (!a) return 1e-300;
-  if (hit.sector != null && FIT_SECTORAL_KEYS.has(key)) {
-    const ck = key + '#' + hit.sector;
-    if (cache[ck] == null) {
-      const b = sectorAngleBounds(hit.sector);
-      cache[ck] = b
-        ? integrateAnnularSector(a.lo, a.hi, b[0], b[1], s1, s2, phiDeg)
-        : 1e-300;
-    }
-    return Math.max(cache[ck], 1e-300);
-  }
-  // Belt / bull without sector: full annulus. Miss = exterior of the board.
-  const ck = key + '#*';
-  if (cache[ck] == null) {
-    if (key === 'miss') {
-      const inside = integrateAnnularSector(0, DOUBLE_OUTER, 0, 360, s1, s2, phiDeg);
-      cache[ck] = Math.max(1e-300, 1 - Math.min(1, inside));
-    } else {
-      cache[ck] = integrateAnnularSector(a.lo, a.hi, 0, 360, s1, s2, phiDeg);
-    }
-  }
-  return Math.max(cache[ck], 1e-300);
-}
-
-function zoneHitsNll(hits, s1, s2, phiDeg) {
-  if (!(s1 > 0.4 && s1 < 450 && s2 > 0.4 && s2 < 450)) return 1e12;
-  const cache = Object.create(null);
-  let nll = 0;
-  for (const h of hits) nll -= Math.log(zoneEventProb(h, s1, s2, phiDeg, cache));
-  return nll;
-}
-
+/** Isotropic annular MLE from zone belt counts (sectors are labels only). */
 let _zoneFitCache = { sig: null, fit: null };
 function zoneHitsSignature(hits) {
   return hits.map(h => h.key + ':' + (h.sector == null ? '-' : h.sector)).join('|');
 }
 
-/** 2-D Nelder–Mead on (x,y) → minimise f. */
-function nelderMead2D(f, x0, y0, opts) {
-  opts = opts || {};
-  const maxIter = opts.maxIter || 60;
-  const alpha = 1, gamma = 2, rho = 0.5, sigma = 0.5;
-  const step = opts.step || 0.35;
-  let pts = [
-    { x: x0, y: y0, f: f(x0, y0) },
-    { x: x0 + step, y: y0, f: f(x0 + step, y0) },
-    { x: x0, y: y0 + step, f: f(x0, y0 + step) },
-  ];
-  for (let iter = 0; iter < maxIter; iter++) {
-    pts.sort((a, b) => a.f - b.f);
-    const spread = Math.abs(pts[2].f - pts[0].f)
-      + Math.abs(pts[0].x - pts[2].x) + Math.abs(pts[0].y - pts[2].y);
-    if (spread < 1e-5) break;
-    const cx = 0.5 * (pts[0].x + pts[1].x);
-    const cy = 0.5 * (pts[0].y + pts[1].y);
-    const xr = cx + alpha * (cx - pts[2].x);
-    const yr = cy + alpha * (cy - pts[2].y);
-    const fr = f(xr, yr);
-    if (fr < pts[0].f) {
-      const xe = cx + gamma * (xr - cx);
-      const ye = cy + gamma * (yr - cy);
-      const fe = f(xe, ye);
-      pts[2] = fe < fr ? { x: xe, y: ye, f: fe } : { x: xr, y: yr, f: fr };
-    } else if (fr < pts[1].f) {
-      pts[2] = { x: xr, y: yr, f: fr };
-    } else {
-      const xc = cx + rho * (pts[2].x - cx);
-      const yc = cy + rho * (pts[2].y - cy);
-      const fc = f(xc, yc);
-      if (fc < pts[2].f) pts[2] = { x: xc, y: yc, f: fc };
-      else {
-        for (let i = 1; i < 3; i++) {
-          pts[i].x = pts[0].x + sigma * (pts[i].x - pts[0].x);
-          pts[i].y = pts[0].y + sigma * (pts[i].y - pts[0].y);
-          pts[i].f = f(pts[i].x, pts[i].y);
-        }
-      }
-    }
-  }
-  pts.sort((a, b) => a.f - b.f);
-  return pts[0];
-}
-
-/**
- * Multinomial MLE of tilted Gaussian from zone hits with optional sectors.
- * Integrates N(0,Σ) over annular sectors (not midpoint approximation).
- * Falls back to isotropic belt MLE if angular information is insufficient.
- */
 function fitZonesFromHits(hits) {
   if (!hits.length) {
     _zoneFitCache = { sig: null, fit: null };
@@ -6193,151 +5841,15 @@ function fitZonesFromHits(hits) {
   }
   const sig = zoneHitsSignature(hits);
   if (_zoneFitCache.sig === sig) return _zoneFitCache.fit;
-
   syncZoneCountsFromHits();
-  const numbered = hits.filter(h => h.sector != null && FIT_SECTORAL_KEYS.has(h.key));
-  const nSec = new Set(numbered.map(h => h.sector)).size;
-  if (numbered.length < 4 || nSec < 2) {
-    const iso = fitAnnuli(fitZoneCounts);
-    if (iso) iso.zoneTilt = false;
-    _zoneFitCache = { sig: sig, fit: iso };
-    return iso;
-  }
-
-  // Params: σ_eq > 0, aspect ≥ 1 → σ1 = σ_eq√a, σ2 = σ_eq/√a; φ ∈ [0,180).
-  function optAtPhi(phi, logSeq0, logAsp0, maxIter) {
-    const f = (logSeq, logAsp) => {
-      const seq = Math.exp(logSeq);
-      const asp = Math.exp(Math.max(0, logAsp));
-      return zoneHitsNll(hits, seq * Math.sqrt(asp), seq / Math.sqrt(asp), phi);
-    };
-    return nelderMead2D(f, logSeq0, logAsp0, { maxIter: maxIter, step: 0.35 });
-  }
-
-  let best = null; // { phiRaw, logSeq, logAsp, nll }
-  let bestNll = Infinity;
-  // Coarse φ grid, then refine ±10° around the winner (canonicalize σ₁≥σ₂ after).
-  for (let phi = 0; phi < 180; phi += 15) {
-    const opt = optAtPhi(phi, Math.log(20), Math.log(1.4), 40);
-    if (opt.f < bestNll) {
-      bestNll = opt.f;
-      best = { phiRaw: phi, logSeq: opt.x, logAsp: opt.y, nll: opt.f };
-    }
-  }
-  if (best) {
-    const phi0 = best.phiRaw;
-    for (const dphi of [-10, -5, 5, 10]) {
-      const phi = (phi0 + dphi + 180) % 180;
-      const opt = optAtPhi(phi, best.logSeq, best.logAsp, 35);
-      if (opt.f < bestNll) {
-        bestNll = opt.f;
-        best = { phiRaw: phi, logSeq: opt.x, logAsp: opt.y, nll: opt.f };
-      }
-    }
-  }
-  if (!best) {
-    const iso = fitAnnuli(fitZoneCounts);
-    _zoneFitCache = { sig: sig, fit: iso };
-    return iso;
-  }
-
-  const seq = Math.exp(best.logSeq);
-  const asp = Math.exp(Math.max(0, best.logAsp));
-  let sigma1 = seq * Math.sqrt(asp);
-  let sigma2 = seq / Math.sqrt(asp);
-  let phiDeg = best.phiRaw;
-  if (sigma2 > sigma1) {
-    const t = sigma1; sigma1 = sigma2; sigma2 = t;
-    phiDeg = (phiDeg + 90) % 180;
-  }
-  const sigmaEq = Math.sqrt(0.5 * (sigma1 * sigma1 + sigma2 * sigma2));
-  // Observed information on log σ_eq at the MLE (aspect & φ fixed).
-  const logSeq = Math.log(sigmaEq);
-  const aspect = (sigma2 > 1e-9) ? (sigma1 / sigma2) : 1;
-  const nll1 = (ls) => zoneHitsNll(hits, Math.exp(ls) * Math.sqrt(aspect),
-    Math.exp(ls) / Math.sqrt(aspect), phiDeg);
-  const h = 1e-3;
-  const f0 = nll1(logSeq);
-  const d2 = (nll1(logSeq + h) - 2 * f0 + nll1(logSeq - h)) / (h * h);
-  const se = d2 > 1e-12 ? sigmaEq / Math.sqrt(d2) : sigmaEq / Math.sqrt(hits.length);
-
-  // Chart points: sector midpoints (display only; fit used integrals).
-  const xs = [], ys = [];
-  for (const hit of numbered) {
-    const a = FIT_ANNULUS_BY_KEY[hit.key];
-    const b = sectorAngleBounds(hit.sector);
-    if (!a || !b) continue;
-    const rHi = a.hi == null ? DOUBLE_OUTER + 40 : a.hi;
-    const r = 0.5 * (a.lo + rHi);
-    const th = 0.5 * (b[0] + b[1]);
-    const [x, y] = polarToXY(r, th);
-    xs.push(x); ys.push(y);
-  }
-
-  const out = {
-    mode: 'general',
-    zoneTilt: true,
-    n: hits.length,
-    nSector: numbered.length,
-    sigma: sigmaEq, sigma1: sigma1, sigma2: sigma2, phiDeg: phiDeg, sigmaEq: sigmaEq,
-    se: se,
-    ciLo: Math.max(0, sigmaEq - 1.96 * se), ciHi: sigmaEq + 1.96 * se,
-    r50: sigmaEq * Math.sqrt(-2 * Math.log(0.5)),
-    r95: sigmaEq * Math.sqrt(-2 * Math.log(0.05)),
-    counts: Object.assign({}, fitZoneCounts),
-    xs: xs, ys: ys,
-    nll: best.nll,
-  };
-  _zoneFitCache = { sig: sig, fit: out };
-  return out;
-}
-
-function fitGeneral(xs, ys) {
-  const n = xs.length;
-  if (n < 2) return null;
-  let cxx = 0, cyy = 0, cxy = 0;
-  for (let i = 0; i < n; i++) {
-    cxx += xs[i] * xs[i]; cyy += ys[i] * ys[i]; cxy += xs[i] * ys[i];
-  }
-  cxx /= n; cyy /= n; cxy /= n;
-  // Eigenvalues of [[cxx,cxy],[cxy,cyy]]
-  const tr = cxx + cyy, det = cxx * cyy - cxy * cxy;
-  const disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
-  const l1 = tr / 2 + disc, l2 = Math.max(0, tr / 2 - disc);
-  const sigma1 = Math.sqrt(Math.max(0, l1));
-  const sigma2 = Math.sqrt(Math.max(0, l2));
-  // Major-axis eigenvector for λ1
-  let vx, vy;
-  if (Math.abs(cxy) > 1e-12 || Math.abs(cxx - l1) > 1e-12) {
-    vx = l1 - cyy; vy = cxy;
-    if (Math.abs(vx) + Math.abs(vy) < 1e-12) { vx = cxy; vy = l1 - cxx; }
-  } else {
-    vx = 1; vy = 0;
-  }
-  const phiDeg = (Math.atan2(vx, vy) * 180 / Math.PI + 360) % 180;
-  const sigmaEq = Math.sqrt(0.5 * (sigma1 * sigma1 + sigma2 * sigma2));
-  const se = sigmaEq / (2 * Math.sqrt(n));
-  return {
-    mode: 'general', n, sigma: sigmaEq, sigma1, sigma2, phiDeg, sigmaEq, se,
-    ciLo: Math.max(0, sigmaEq - 1.96 * se), ciHi: sigmaEq + 1.96 * se,
-    r50: sigmaEq * Math.sqrt(-2 * Math.log(0.5)),
-    r95: sigmaEq * Math.sqrt(-2 * Math.log(0.05)),
-    xs, ys,
-  };
+  const iso = fitAnnuli(fitZoneCounts);
+  _zoneFitCache = { sig: sig, fit: iso };
+  return iso;
 }
 
 function fitCurrent() {
   if (fitMethod === 'zones') return fitZonesFromHits(fitZoneHits);
   if (!fitThrows.length) return null;
-  const allAngled = fitThrows.every(t => t.theta !== null && t.theta !== undefined);
-  if (allAngled && fitThrows.length >= 2) {
-    const xs = [], ys = [];
-    for (const t of fitThrows) {
-      const [x, y] = polarToXY(t.r, t.theta);
-      xs.push(x); ys.push(y);
-    }
-    return fitGeneral(xs, ys);
-  }
   return fitIsotropic(fitThrows.map(t => t.r));
 }
 
@@ -6378,7 +5890,6 @@ function drawFitChart(fit) {
     return;
   }
   if (fit.mode === 'annuli') drawAnnuliChart(fit, cssW, cssH);
-  else if (fit.mode === 'general') drawGeneralChart(fit, cssW, cssH);
   else drawIsoChart(fit, cssW, cssH);
 }
 
@@ -6450,93 +5961,26 @@ function drawIsoChart(fit, cssW, cssH) {
   fitCtx.fillText('Radial distance (mm) — isotropic', padL + W / 2, cssH - 6);
 }
 
-function drawGeneralChart(fit, cssW, cssH) {
-  const pad = 24;
-  const S = Math.min(cssW, cssH) - 2 * pad;
-  const cx = cssW / 2, cy = cssH / 2;
-  let lim = Math.max(fit.r95, 30);
-  for (let i = 0; i < fit.xs.length; i++)
-    lim = Math.max(lim, Math.abs(fit.xs[i]), Math.abs(fit.ys[i]));
-  lim *= 1.2;
-  const sc = (S / 2) / lim;
-  function px(x, y) { return [cx + x * sc, cy - y * sc]; }
-
-  // Axes
-  fitCtx.strokeStyle = '#333';
-  fitCtx.beginPath();
-  fitCtx.moveTo(cx - S / 2, cy); fitCtx.lineTo(cx + S / 2, cy);
-  fitCtx.moveTo(cx, cy - S / 2); fitCtx.lineTo(cx, cy + S / 2);
-  fitCtx.stroke();
-
-  // Ellipse (1σ): parametric in principal frame, then rotate by φ
-  const ph = fit.phiDeg * Math.PI / 180;
-  fitCtx.strokeStyle = '#ffd23f';
-  fitCtx.lineWidth = 2;
-  for (const nSig of [1, 2]) {
-    fitCtx.globalAlpha = nSig === 1 ? 1 : 0.45;
-    fitCtx.beginPath();
-    for (let i = 0; i <= 64; i++) {
-      const a = (i / 64) * 2 * Math.PI;
-      const u = nSig * fit.sigma1 * Math.cos(a);
-      const v = nSig * fit.sigma2 * Math.sin(a);
-      // principal → board: along φ = (sinφ, cosφ), perp = (cosφ, -sinφ)
-      const x = u * Math.sin(ph) + v * Math.cos(ph);
-      const y = u * Math.cos(ph) - v * Math.sin(ph);
-      const [X, Y] = px(x, y);
-      if (i === 0) fitCtx.moveTo(X, Y); else fitCtx.lineTo(X, Y);
-    }
-    fitCtx.closePath();
-    fitCtx.stroke();
-  }
-  fitCtx.globalAlpha = 1;
-
-  // Points
-  fitCtx.fillStyle = '#5a9bd4';
-  for (let i = 0; i < fit.xs.length; i++) {
-    const [X, Y] = px(fit.xs[i], fit.ys[i]);
-    fitCtx.beginPath();
-    fitCtx.arc(X, Y, 3.5, 0, 2 * Math.PI);
-    fitCtx.fill();
-  }
-  // Bull
-  fitCtx.strokeStyle = '#e05555';
-  fitCtx.lineWidth = 2;
-  const [bx, by] = px(0, 0);
-  fitCtx.beginPath();
-  fitCtx.moveTo(bx - 6, by); fitCtx.lineTo(bx + 6, by);
-  fitCtx.moveTo(bx, by - 6); fitCtx.lineTo(bx, by + 6);
-  fitCtx.stroke();
-
-  fitCtx.fillStyle = '#888';
-  fitCtx.font = '11px sans-serif';
-  fitCtx.textAlign = 'center';
-  fitCtx.fillText('Landing cloud — general Gaussian', cx, cssH - 8);
-}
-
 function fitQuality(fit) {
   const n = fit.n;
   const sigma = fit.sigmaEq || fit.sigma || 0;
   const se = fit.se || 0;
   const relSe = sigma > 1e-9 ? se / sigma : 1;
   const pct = 100 * 1.96 * relSe;
-  const aniso = fit.mode === 'general'
-    && Math.abs(fit.sigma1 - fit.sigma2) > 0.5;
-  const nEff = aniso ? n * 0.65 : n;
   let level, label;
   // Rel-SE cutoffs ≈ ±% on σ (95% CI): 0.08 → ±16%, 0.04 → ±8%.
-  if (n < 8 || (aniso && n < 12)) {
+  if (n < 8) {
     level = 'low'; label = 'Low confidence';
-  } else if (nEff < 40 || relSe > 0.08) {
+  } else if (n < 40 || relSe > 0.08) {
     level = 'fair'; label = 'Fair confidence';
-  } else if (nEff < 100 || relSe > 0.04) {
+  } else if (n < 100 || relSe > 0.04) {
     level = 'good'; label = 'Good confidence';
   } else {
     level = 'high'; label = 'High confidence';
   }
   let detail = '±' + pct.toFixed(0) + '% on σ (95% CI) · n=' + n;
-  if (aniso && n < 40) detail += ' · need more throws for tilt';
   if (fit.mode === 'annuli') detail += ' · belt MLE';
-  if (fit.zoneTilt) detail += ' · sector ∫ MLE';
+  else detail += ' · isotropic';
   return { level, label, detail, pct };
 }
 
@@ -6553,22 +5997,6 @@ function refreshFitSummary() {
         ? 'Fix invalid rows to estimate σ'
         : 'Add throws to estimate σ (angle optional)';
     }
-  } else if (fit.mode === 'general') {
-    const q = fitQuality(fit);
-    elFitSigma.textContent = 'σ₁ ' + fit.sigma1.toFixed(1)
-      + ' · σ₂ ' + fit.sigma2.toFixed(1) + ' mm'
-      + ' · φ=' + fit.phiDeg.toFixed(0) + '°';
-    elFitQuality.className = 'quality ' + q.level;
-    elFitQuality.textContent = q.label + ' — ' + q.detail;
-    elFitDetail.textContent =
-      'σ_eq=' + fit.sigmaEq.toFixed(1) + ' mm'
-      + ' · policy ' + (() => {
-          const s = snapPolicyShape({
-            sigma1: fit.sigma1, sigma2: fit.sigma2, phiDeg: fit.phiDeg,
-          });
-          return 's' + s.sigma1 + '_s' + s.sigma2 + '_p' + s.phiDeg;
-        })()
-      + ' · 95% within ~' + fit.r95.toFixed(0) + ' mm';
   } else {
     const q = fitQuality(fit);
     elFitSigma.textContent = 'σ ' + fit.sigma.toFixed(1) + ' mm';
@@ -6581,10 +6009,9 @@ function refreshFitSummary() {
         + '–' + fit.ciHi.toFixed(1) + ' mm'
         + ' · policy s' + s + '_s' + s + '_p0';
     } else {
-      const missingAng = fitThrows.some(t => t.theta === null || t.theta === undefined);
       elFitDetail.textContent =
-        (missingAng ? 'isotropic (add angles for σ₁/σ₂) · ' : '')
-        + '95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
+        'isotropic · 95% CI ' + fit.ciLo.toFixed(1)
+        + '–' + fit.ciHi.toFixed(1) + ' mm'
         + ' · policy s' + s + '_s' + s + '_p0';
     }
   }
@@ -6707,20 +6134,7 @@ function applyFitToPlayer(idx) {
   const fit = fitCurrent();
   if (!fit) return;
   const el = idx === 0 ? elSigma0 : elSigma1;
-  if (fit.mode === 'general') {
-    const snap = snapPolicyShape({
-      sigma1: fit.sigma1, sigma2: fit.sigma2, phiDeg: fit.phiDeg,
-    });
-    setSigmaMode(idx, 'complex', { keepValues: true });
-    setPlayerShape(idx, snap);
-    el.value = String(snap.sigma1 === snap.sigma2 ? snap.sigma1
-      : nearestPolicySigma(shapeSigmaEq(snap)));
-  } else {
-    const s = nearestPolicySigma(fit.sigma);
-    setSigmaMode(idx, 'simple', { keepValues: true });
-    setPlayerShape(idx, null);
-    el.value = String(s);
-  }
+  el.value = String(nearestPolicySigma(fit.sigma));
   showPage('score');
   render();
 }
