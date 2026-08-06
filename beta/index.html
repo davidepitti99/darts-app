@@ -645,7 +645,7 @@
   }
   .fit-list .empty { color: var(--mute); padding: 8px; }
   .fit-list .fit-row {
-    display: grid; grid-template-columns: 28px 1fr 1fr 36px; gap: 6px;
+    display: grid; grid-template-columns: 28px 1fr 36px; gap: 6px;
     align-items: center; margin-bottom: 6px;
   }
   .fit-list .fit-row .idx { color: var(--mute); text-align: right; font-size: 12px; }
@@ -661,7 +661,7 @@
     cursor: pointer;
   }
   .fit-list .hdr {
-    display: grid; grid-template-columns: 28px 1fr 1fr 36px; gap: 6px;
+    display: grid; grid-template-columns: 28px 1fr 36px; gap: 6px;
     font-size: 11px; color: var(--mute); margin-bottom: 4px; padding: 0 2px;
   }
   .fit-actions {
@@ -767,9 +767,54 @@
     padding: 1px 5px; border-radius: 999px; background: #3a2a10; color: #ffb84d;
     vertical-align: middle;
   }
-  body.free-tier .nav button .nav-pro { display: inline; }
-  body.free-tier #navFit,
-  body.free-tier #navPractice { opacity: 0.85; }
+  body.free-tier .nav button .nav-pro,
+  body.free-tier .coach-tabs .nav-pro { display: inline; }
+  body.free-tier #navFit { opacity: 0.85; }
+  .coach-tabs { margin-bottom: 10px; }
+  .coach-panel.hidden { display: none !important; }
+  .checkout-controls {
+    display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px;
+    margin-bottom: 10px; align-items: end;
+  }
+  .checkout-controls label {
+    display: flex; flex-direction: column; gap: 4px;
+    font-size: 11px; color: var(--mute); font-weight: 600;
+  }
+  .checkout-controls input, .checkout-controls select {
+    background: var(--field); color: var(--text); border: 1px solid #444;
+    border-radius: 8px; padding: 10px 12px; font-size: 15px; font-weight: 700;
+  }
+  .checkout-controls button {
+    background: var(--accent); color: #1a1a1a; border: none; border-radius: 10px;
+    padding: 12px 14px; font-weight: 800; cursor: pointer; white-space: nowrap;
+  }
+  .checkout-filters {
+    display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px;
+  }
+  .checkout-filters button {
+    background: var(--field); color: var(--mute); border: 1px solid #444;
+    border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700;
+    cursor: pointer;
+  }
+  .checkout-filters button.active { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
+  .checkout-wrap {
+    max-height: min(62vh, 520px); overflow: auto; border: 1px solid #333;
+    border-radius: 12px; background: #1c1c1c;
+  }
+  .checkout-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .checkout-table th, .checkout-table td {
+    padding: 7px 8px; border-bottom: 1px solid #2a2a2a; text-align: left;
+  }
+  .checkout-table th {
+    position: sticky; top: 0; background: #252525; color: var(--mute);
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; z-index: 1;
+  }
+  .checkout-table td.path { color: #ffe08a; font-weight: 700; }
+  .checkout-table td.et { color: var(--mute); white-space: nowrap; }
+  .checkout-status { color: var(--mute); font-size: 12px; margin: 8px 0 0; line-height: 1.4; }
   .pro-banner {
     display: none; margin: 0 0 10px; padding: 8px 10px; border-radius: 10px;
     background: #2a2410; border: 1px solid #665520; color: #ffe08a; font-size: 12px; line-height: 1.35;
@@ -880,7 +925,6 @@
     <button type="button" class="active" data-page="score">Play</button>
     <button type="button" data-page="coach" id="navCoach">Coach</button>
     <button type="button" data-page="fit" id="navFit">Fit σ <span class="nav-pro" title="Pro">Pro</span></button>
-    <button type="button" data-page="practice" id="navPractice">Practice <span class="nav-pro" title="Pro">Pro</span></button>
   </div>
 
   <div class="page active" id="pageScore">
@@ -942,6 +986,13 @@
   </div><!-- /pageScore -->
 
   <div class="page" id="pageCoach">
+    <div class="segmented coach-tabs" id="coachTabToggle">
+      <button type="button" class="active" data-coach-tab="profile">Profile</button>
+      <button type="button" data-coach-tab="practice">Practice <span class="nav-pro" title="Pro">Pro</span></button>
+      <button type="button" data-coach-tab="checkout">Checkout</button>
+    </div>
+
+    <div class="coach-panel" id="coachPanelProfile">
     <div class="coach-name-row">
       <input id="coachPlayerName" type="text" maxlength="16" placeholder="Player name" autocomplete="off">
       <button type="button" class="primary" id="coachRefresh" style="background:var(--accent);color:#1a1a1a;border:1px solid var(--accent);border-radius:10px;padding:12px 14px;font-weight:700;cursor:pointer">Refresh</button>
@@ -984,7 +1035,7 @@
       <p class="promise" id="coachPayoffDetail" style="margin-top:8px"></p>
       <div class="coach-actions">
         <button type="button" id="coachGoPlay">Play a match</button>
-        <button type="button" id="coachGoPractice">Practice</button>
+        <button type="button" id="coachGoPractice">Practice drills</button>
       </div>
       <div class="coach-actions" style="margin-top:8px">
         <button type="button" id="coachShare">Share profile</button>
@@ -1010,9 +1061,9 @@
       <p class="promise" id="coachGroupsPromise">Build a crew from contacts — ranked standings from every match they play.</p>
       <div id="coachGroupsBody"></div>
     </div>
-  </div><!-- /pageCoach -->
+    </div><!-- /coachPanelProfile -->
 
-  <div class="page" id="pagePractice">
+    <div class="coach-panel hidden" id="coachPanelPractice">
     <div class="coach-card">
       <h2>Deliberate practice</h2>
       <p class="promise">Drills tied to your profile and last match diagnosis. Finish a fit, then train the leak.</p>
@@ -1050,7 +1101,44 @@
     <div class="coach-card" id="practiceStatus">
       <div class="subline" id="practiceStatusText">Pick a drill. Pro unlocks Fit-backed practice.</div>
     </div>
-  </div><!-- /pagePractice -->
+    </div><!-- /coachPanelPractice -->
+
+    <div class="coach-panel hidden" id="coachPanelCheckout">
+    <div class="coach-card">
+      <h2>Checkout table</h2>
+      <p class="promise">Pick σ — see the most likely visit path for every leave and darts left (hit the aimed bed each dart).</p>
+      <div class="checkout-controls">
+        <label>σ (mm)
+          <input id="checkoutSigma" type="number" inputmode="numeric" min="1" max="50" step="1" value="15">
+        </label>
+        <label>Game
+          <select id="checkoutMode">
+            <option value="501">501</option>
+            <option value="301di">301 DI</option>
+          </select>
+        </label>
+        <button type="button" id="checkoutLoad">Show</button>
+      </div>
+      <div class="checkout-filters" id="checkoutDartFilter">
+        <button type="button" class="active" data-darts="all">All darts</button>
+        <button type="button" data-darts="3">3 left</button>
+        <button type="button" data-darts="2">2 left</button>
+        <button type="button" data-darts="1">1 left</button>
+      </div>
+      <div class="checkout-wrap">
+        <table class="checkout-table">
+          <thead>
+            <tr><th>Score</th><th>Darts</th><th>Path</th><th>E[turns]</th></tr>
+          </thead>
+          <tbody id="checkoutTableBody">
+            <tr><td colspan="4" class="et">Tap Show to load the aim table for this σ.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="checkout-status" id="checkoutStatus"></p>
+    </div>
+    </div><!-- /coachPanelCheckout -->
+  </div><!-- /pageCoach -->
 
   <div class="page" id="pageFit">
     <div class="fit-save-bar">
@@ -1065,15 +1153,12 @@
     <div class="fit-panel" id="fitPanelMeasure">
     <div class="fit-help">
       Aim at the <b>bull</b>. Enter each dart’s <b>distance</b> from the centre (mm).
-      Optionally add the <b>angle</b> (degrees from the top / 20, clockwise) for notes —
-      the fit is always isotropic σ. Aim tables load on demand:
+      The fit estimates isotropic σ (Rayleigh MLE). Aim tables load on demand:
       <code>sσ_sσ_p0.json</code> (σ = 1…50 mm).
     </div>
-    <div class="fit-entry" style="grid-template-columns:1fr 1fr auto">
+    <div class="fit-entry" style="grid-template-columns:1fr auto">
       <input id="fitRadius" type="number" inputmode="decimal" min="0" max="170" step="0.1"
              placeholder="Distance 0–170 mm">
-      <input id="fitAngle" type="number" inputmode="decimal" min="0" max="360" step="0.1"
-             placeholder="Angle 0–360° (opt.)">
       <button type="button" class="primary" id="fitAdd">Add</button>
     </div>
     </div><!-- /fitPanelMeasure -->
@@ -1081,8 +1166,8 @@
     <div class="fit-panel hidden" id="fitPanelZones">
     <div class="fit-help">
       Aim at the <b>bull</b>. Tap <b>+</b> for the belt each dart hit.
-      Optionally pick the <b>sector number</b> (1–20) for labeling —
-      the fit always estimates isotropic σ from belt counts (annular MLE).
+      Optionally pick the <b>sector number</b> (1–20) for notes only —
+      the fit uses belt counts only (isotropic annular MLE).
     </div>
     <div class="zone-grid" id="zoneGrid"></div>
     </div><!-- /fitPanelZones -->
@@ -1174,10 +1259,6 @@ function syncTierChrome() {
   const navFit = document.getElementById('navFit');
   if (navFit) {
     navFit.title = isPro() ? 'Fit throwing accuracy σ' : 'Fit σ is Pro';
-  }
-  const navPractice = document.getElementById('navPractice');
-  if (navPractice) {
-    navPractice.title = isPro() ? 'Practice drills from your profile' : 'Practice is Pro';
   }
 }
 function refreshEntitlement() {
@@ -1333,7 +1414,7 @@ function drawAim(x, y, sigmaOrShape) {
   const [X, Y] = px(x, y);
   let sigma;
   if (sigmaOrShape && typeof sigmaOrShape === 'object')
-    sigma = Number(sigmaOrShape.sigma1 != null ? sigmaOrShape.sigma1 : sigmaOrShape.sigma);
+    sigma = Number(sigmaOrShape.sigma != null ? sigmaOrShape.sigma : sigmaOrShape.sigma1);
   else
     sigma = Number(sigmaOrShape);
   if (!Number.isFinite(sigma) || sigma <= 0) sigma = 25;
@@ -1453,7 +1534,7 @@ function scoreLabelFromXY(x, y) {
 /** Sample landing ~ isotropic N(aim, σ² I). */
 function sampleGaussianLanding(ax, ay, shape) {
   const s = Math.max(0.5, Number(
-    shape && shape.sigma1 != null ? shape.sigma1
+    shape && shape.sigma != null ? shape.sigma
       : (shape && shape.sigma != null ? shape.sigma : 25)) || 25);
   // Box–Muller
   let u = 0, v = 0;
@@ -1487,7 +1568,7 @@ function prettyAimLabel(label) {
 function displayAim(label, x, y) {
   const lab = prettyAimLabel(label);
   if (lab === 'Miss' || lab === 'M' || lab === 'Bounce')
-    return nearestScoringLabel(x, y) + (lab === 'Bounce' ? ' (bounce)' : ' (miss)');
+    return nearestScoringLabel(x, y) + (lab === 'Bounce' ? '' : ' (miss)');
   return lab;
 }
 
@@ -1506,18 +1587,18 @@ function suggestedAimForMatch(m) {
     if (el) sigma = parseInt(el.value, 10) || 25;
   } catch (_) {}
   const shape = (typeof playerShape === 'function' && playerShape(idx))
-    || { sigma1: sigma, sigma2: sigma, phiDeg: 0 };
+    || { sigma: sigma };
   const snap = (typeof snapPolicyShape === 'function')
     ? snapPolicyShape(shape) : shape;
 
   if (m.game === 'cricket') {
     let resolved = resolvePolicy('cricket', snap);
     if (!resolved.policy) {
-      const bookKey = policyCacheKey('cricket', 1, 1, 0);
+      const bookKey = policyCacheKey('cricket', 1);
       if (policyCache[bookKey])
         resolved = {
           policy: policyCache[bookKey],
-          snap: { sigma1: 1, sigma2: 1, phiDeg: 0 },
+          snap: { sigma: 1 },
           status: 'ready',
         };
     }
@@ -1617,8 +1698,6 @@ function hitContinuation(policy, score, dartsLeft) {
     const nxt = s - pts;
     if (nxt === 0 && isDbl) { steps.push([s, d, clean, 0, 'checkout']); break; }
     if (nxt < 0 || nxt === 0) { steps.push([s, d, clean, null, 'bust']); break; }
-    // Bounce / Miss score 0 — show once; do not chain D20 (bounce) × N.
-    if (pts === 0) { steps.push([s, d, clean, s, 'end_turn']); break; }
     if (d === 1) { steps.push([s, d, clean, nxt, 'end_turn']); break; }
     steps.push([s, d, clean, nxt, 'continue']);
     s = nxt; d = d - 1;
@@ -2185,7 +2264,7 @@ function runBotThrow() {
   const shapeForPolicy = snapPolicyShape(shape);
   const resolved = resolvePolicy(m.key, shapeForPolicy);
   if (resolved.status === 'loading' || !resolved.policy) {
-    match.message = 'Bot waiting for aim table (σ ' + shapeForPolicy.sigma1 + ')…';
+    match.message = 'Bot waiting for aim table (σ ' + shapeForPolicy.sigma + ')…';
     scheduleBotThrow(500);
     return;
   }
@@ -2200,9 +2279,9 @@ function runBotThrow() {
       return;
     }
     if (!cr.policy) {
-      const bookKey = policyCacheKey('cricket', 1, 1, 0);
+      const bookKey = policyCacheKey('cricket', 1);
       if (policyCache[bookKey])
-        cr = { policy: policyCache[bookKey], snap: { sigma1: 1, sigma2: 1, phiDeg: 0 }, status: 'ready' };
+        cr = { policy: policyCache[bookKey], snap: { sigma: 1 }, status: 'ready' };
     }
     const me = match.players[idx];
     const opp = match.players[1 - idx];
@@ -4157,44 +4236,40 @@ function activeSigma() {
   return nearestPolicySigma(parseFloat(el.value));
 }
 
-/** Legacy stub — UI is isotropic-only (one σ per player). */
-function setSigmaMode(_idx, _mode, _opts) {}
-
-/** Isotropic Gaussian shape from this seat's simple σ input. */
+/** Isotropic σ (mm) from this seat's input. */
 function playerShape(idx) {
   const el = document.getElementById('sigma' + idx);
   let s = parseFloat(el && el.value);
   if (!Number.isFinite(s) || s <= 0) s = 25;
-  return { sigma1: s, sigma2: s, phiDeg: 0 };
+  return { sigma: s };
 }
 
 function shapeSigmaEq(shape) {
-  const snap = snapPolicyShape(shape || {});
-  return snap.sigma1;
+  return snapPolicyShape(shape || {}).sigma;
 }
 
 /** Snap to isotropic policy grid: clamp/round σ to 1..50 → sσ_sσ_p0. */
 function snapPolicyShape(shape) {
   let s = Math.round(Number(
-    shape && shape.sigma1 != null ? shape.sigma1
+    shape && shape.sigma != null ? shape.sigma
       : (shape && shape.sigma != null ? shape.sigma : 25)));
   if (!Number.isFinite(s)) s = 25;
   s = Math.max(1, Math.min(50, s));
-  return { sigma1: s, sigma2: s, phiDeg: 0 };
+  return { sigma: s };
 }
 
-// On-demand policies: policies/{mode}/s{s1}_s{s2}_p{phi}.json
+// On-demand policies: policies/{mode}/s{σ}_s{σ}_p0.json (compat stem)
 const policyCache = Object.create(null);   // key -> policy object | false (404)
 const policyInflight = Object.create(null);
 let policyStatus = '';
 
-function policyCacheKey(modeKey, s1, s2, phi) {
-  return modeKey + '|s' + s1 + '_s' + s2 + '_p' + phi;
+function policyCacheKey(modeKey, s) {
+  return modeKey + '|s' + s + '_s' + s + '_p0';
 }
-function policyUrl(modeKey, s1, s2, phi) {
+function policyUrl(modeKey, s) {
   // Beta builds use POLICY_BASE='../' to share root policies/ with prod.
   const base = (typeof POLICY_BASE === 'string' ? POLICY_BASE : '')
-    + 'policies/' + modeKey + '/s' + s1 + '_s' + s2 + '_p' + phi + '.json';
+    + 'policies/' + modeKey + '/s' + s + '_s' + s + '_p0.json';
   const bust = (typeof POLICY_CACHE_BUST === 'string' && POLICY_CACHE_BUST
                 && POLICY_CACHE_BUST.indexOf('__') !== 0)
     ? POLICY_CACHE_BUST
@@ -4208,7 +4283,7 @@ function resolvePolicy(modeKey, shape) {
   // Free tier: free σ allow-list only (full 1–50 grid is Pro).
   if (!isPro()) {
     const allowed = freeSigmas();
-    let s = snap.sigma1;
+    let s = snap.sigma;
     if (!allowed.includes(s)) {
       let best = allowed[0], bestD = Math.abs(allowed[0] - s);
       for (const a of allowed) {
@@ -4218,10 +4293,10 @@ function resolvePolicy(modeKey, shape) {
       s = best;
       showProBanner('Full σ grid (1–50 mm) is Pro. Using free σ = ' + s + ' mm.');
     }
-    snap = { sigma1: s, sigma2: s, phiDeg: 0 };
+    snap = { sigma: s };
   }
-  const key = policyCacheKey(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg);
-  const label = 'σ=' + snap.sigma1 + ' mm';
+  const key = policyCacheKey(modeKey, snap.sigma);
+  const label = 'σ=' + snap.sigma + ' mm';
   if (Object.prototype.hasOwnProperty.call(policyCache, key)) {
     const data = policyCache[key];
     if (data) {
@@ -4234,7 +4309,7 @@ function resolvePolicy(modeKey, shape) {
   }
   if (!policyInflight[key]) {
     policyStatus = 'Loading aim table (' + label + ')…';
-    policyInflight[key] = fetch(policyUrl(modeKey, snap.sigma1, snap.sigma2, snap.phiDeg), {
+    policyInflight[key] = fetch(policyUrl(modeKey, snap.sigma), {
       cache: 'no-store',
     })
       .then(r => {
@@ -4246,11 +4321,17 @@ function resolvePolicy(modeKey, shape) {
         delete policyInflight[key];
         // resolvePolicy on render clears or sets status for the *current* σ.
         render();
+        if (typeof coachTab !== 'undefined' && coachTab === 'checkout'
+            && typeof renderCheckoutTable === 'function')
+          renderCheckoutTable();
       })
       .catch(() => {
         policyCache[key] = false;
         delete policyInflight[key];
         render();
+        if (typeof coachTab !== 'undefined' && coachTab === 'checkout'
+            && typeof renderCheckoutTable === 'function')
+          renderCheckoutTable();
       });
   } else {
     policyStatus = 'Loading aim table (' + label + ')…';
@@ -4258,12 +4339,10 @@ function resolvePolicy(modeKey, shape) {
   return { policy: null, snap, status: 'loading' };
 }
 
-/** Legacy stubs — complex σ₁σ₂φ UI removed (isotropic only). */
-function setPlayerShape(_idx, _shapeOrNull) {}
 function syncPolicyFromShape(idx) {
   const snap = snapPolicyShape(playerShape(idx));
   const el = idx === 0 ? elSigma0 : elSigma1;
-  if (el) el.value = String(snap.sigma1);
+  if (el) el.value = String(snap.sigma);
 }
 
 function selectMode(key) {
@@ -4672,15 +4751,15 @@ function render() {
       const opp = match.players[1 - match.current];
       const sigma = activeSigma();
       const shape = playerShape(match.current)
-        || { sigma1: sigma, sigma2: sigma, phiDeg: 0 };
+        || { sigma: sigma };
       let resolved = resolvePolicy('cricket', shape);
       // Prefer player's table; else published opening book (σ=1).
       if (!resolved.policy) {
-        const bookKey = policyCacheKey('cricket', 1, 1, 0);
+        const bookKey = policyCacheKey('cricket', 1);
         if (!Object.prototype.hasOwnProperty.call(policyCache, bookKey))
-          resolvePolicy('cricket', { sigma1: 1, sigma2: 1, phiDeg: 0 });
+          resolvePolicy('cricket', { sigma: 1 });
         else if (policyCache[bookKey])
-          resolved = { policy: policyCache[bookKey], snap: { sigma1: 1, sigma2: 1, phiDeg: 0 }, status: 'ready' };
+          resolved = { policy: policyCache[bookKey], snap: { sigma: 1 }, status: 'ready' };
       }
       const bundle = resolved.policy || null;
       const aimsMap = (bundle && bundle.policy) ? bundle.policy
@@ -4726,7 +4805,7 @@ function render() {
   const shapeForPolicy = playerShape(match.current);
   const resolved = resolvePolicy(m.key, shapeForPolicy);
   const policy = resolved.policy || {};
-  const aimSource = 'σ ' + resolved.snap.sigma1 + ' mm';
+  const aimSource = 'σ ' + resolved.snap.sigma + ' mm';
 
   const visit = match.visitDarts.map(d => d.label).join(' ') || '—';
   const dartN = match.winner !== null ? '—' : (4 - match.dartsLeft);
@@ -4796,7 +4875,7 @@ function bindMatchReviewButtons() {
     btn.addEventListener('click', () => {
       const go = btn.dataset.review;
       if (go === 'coach') showPage('coach');
-      else if (go === 'practice') showPage('practice');
+      else if (go === 'practice') { showPage('coach'); setCoachTab('practice'); }
       else if (go === 'share') shareMatchResults();
       else if (go === 'saveContact') {
         const namesSaved = saveMatchPlayersAsContacts(match, { bumpPlay: false });
@@ -4973,7 +5052,10 @@ const pageNav = document.getElementById('pageNav');
 const pageScore = document.getElementById('pageScore');
 const pageFit = document.getElementById('pageFit');
 const pageCoach = document.getElementById('pageCoach');
-const pagePractice = document.getElementById('pagePractice');
+
+let coachTab = 'profile'; // 'profile' | 'practice' | 'checkout'
+let checkoutDartFilter = 'all';
+let checkoutLoadedKey = '';
 
 buildModeToggle();
 populateSigmas();
@@ -4984,17 +5066,56 @@ updatePending();
 syncBotUi();
 sizeCanvas();
 
+function setCoachTab(tab) {
+  if (tab === 'practice' && !isPro()) {
+    showProBanner('Practice drills are Pro — train from your fitted throw.');
+    tab = 'profile';
+  }
+  coachTab = tab || 'profile';
+  const panels = {
+    profile: document.getElementById('coachPanelProfile'),
+    practice: document.getElementById('coachPanelPractice'),
+    checkout: document.getElementById('coachPanelCheckout'),
+  };
+  Object.keys(panels).forEach(k => {
+    if (panels[k]) panels[k].classList.toggle('hidden', k !== coachTab);
+  });
+  const tog = document.getElementById('coachTabToggle');
+  if (tog) {
+    for (const b of tog.querySelectorAll('[data-coach-tab]'))
+      b.classList.toggle('active', b.dataset.coachTab === coachTab);
+  }
+  if (coachTab === 'profile') {
+    ensureCoachName();
+    renderCoachPage();
+  } else if (coachTab === 'practice') {
+    ensureCoachName();
+    renderPracticePage();
+  } else if (coachTab === 'checkout') {
+    const sigEl = document.getElementById('checkoutSigma');
+    if (sigEl && !(sigEl.value || '').trim()) {
+      const fits = fitsForCoachName(ensureCoachName());
+      const s = fits[0] ? latestFitSigma(fits[0]) : nearestPolicySigma(activeSigma());
+      if (Number.isFinite(s)) sigEl.value = String(Math.round(s));
+    }
+    // Keep previous table if same σ; otherwise wait for Show.
+  }
+}
+
 function showPage(id) {
-  if ((id === 'fit' || id === 'practice') && !isPro()) {
-    showProBanner(id === 'fit'
-      ? 'Fit σ (accuracy calibration) is Pro — it builds your coach profile.'
-      : 'Practice drills are Pro — train from your fitted throw.');
+  let openCoachTab = null;
+  if (id === 'practice') {
     id = 'coach';
+    openCoachTab = 'practice';
+  }
+  if (id === 'fit' && !isPro()) {
+    showProBanner('Fit σ (accuracy calibration) is Pro — it builds your coach profile.');
+    id = 'coach';
+    openCoachTab = 'profile';
   }
   pageScore.classList.toggle('active', id === 'score');
   pageFit.classList.toggle('active', id === 'fit');
   if (pageCoach) pageCoach.classList.toggle('active', id === 'coach');
-  if (pagePractice) pagePractice.classList.toggle('active', id === 'practice');
   for (const b of pageNav.children)
     b.classList.toggle('active', b.dataset.page === id);
   if (id === 'score') {
@@ -5009,14 +5130,19 @@ function showPage(id) {
     renderFit();
     renderFitSavedList();
   } else if (id === 'coach') {
-    ensureCoachName();
-    renderCoachPage();
-  } else if (id === 'practice') {
-    renderPracticePage();
+    setCoachTab(openCoachTab || coachTab || 'profile');
   }
 }
 for (const b of pageNav.children)
   b.addEventListener('click', () => showPage(b.dataset.page));
+
+(function wireCoachTabs() {
+  const tog = document.getElementById('coachTabToggle');
+  if (!tog) return;
+  tog.querySelectorAll('[data-coach-tab]').forEach(btn => {
+    btn.addEventListener('click', () => setCoachTab(btn.dataset.coachTab));
+  });
+})();
 
 // ── Coach profile + practice drills ──────────────────────────────────────
 function ensureCoachName() {
@@ -5037,8 +5163,7 @@ function fitsForCoachName(name) {
 
 function latestFitSigma(rec) {
   if (!rec) return null;
-  if (rec.mode === 'general') return Number(rec.sigmaEq != null ? rec.sigmaEq : rec.sigma);
-  return Number(rec.sigma != null ? rec.sigma : rec.sigmaEq);
+    return Number(rec.sigma != null ? rec.sigma : rec.sigmaEq);
 }
 
 function drawCoachTrend(recs) {
@@ -5235,6 +5360,67 @@ function shareCoachProfile() {
   sharePayload('Darts Aim · ' + name, lines.join('\n'), '#coachPayoffDetail');
 }
 
+function renderCheckoutTable() {
+  const body = document.getElementById('checkoutTableBody');
+  const status = document.getElementById('checkoutStatus');
+  const sigEl = document.getElementById('checkoutSigma');
+  const modeEl = document.getElementById('checkoutMode');
+  if (!body) return;
+  let sigma = Math.round(parseFloat(sigEl && sigEl.value));
+  if (!Number.isFinite(sigma)) sigma = 15;
+  sigma = Math.max(1, Math.min(50, sigma));
+  if (sigEl) sigEl.value = String(sigma);
+  const modeKey = (modeEl && modeEl.value) || '501';
+  const shape = { sigma: sigma };
+  const resolved = resolvePolicy(modeKey, shape);
+  const snap = resolved.snap || snapPolicyShape(shape);
+  const key = modeKey + '|' + snap.sigma + '|' + checkoutDartFilter;
+  if (resolved.status === 'loading' || (!resolved.policy && resolved.status !== 'missing')) {
+    body.innerHTML = '<tr><td colspan="4" class="et">Loading aim table for σ = '
+      + snap.sigma + ' mm…</td></tr>';
+    if (status) status.textContent = 'Fetching policy…';
+    // Re-render when fetch completes (resolvePolicy → render also fires).
+    setTimeout(() => {
+      if (coachTab === 'checkout') renderCheckoutTable();
+    }, 400);
+    return;
+  }
+  if (!resolved.policy) {
+    body.innerHTML = '<tr><td colspan="4" class="et">No aim table for σ = '
+      + snap.sigma + ' mm yet.</td></tr>';
+    if (status) status.textContent = 'Missing policy JSON for this σ.';
+    return;
+  }
+  const policy = resolved.policy;
+  const wantD = checkoutDartFilter === 'all' ? null : parseInt(checkoutDartFilter, 10);
+  const rows = [];
+  for (let s = 170; s >= 2; s--) {
+    for (const d of [3, 2, 1]) {
+      if (wantD != null && d !== wantD) continue;
+      const entry = policy[s + ',' + d];
+      if (!entry || !entry[0]) continue;
+      const steps = hitContinuation(policy, s, d);
+      const path = formatHitPath(policy, steps).join(' → ');
+      const et = entry[3];
+      rows.push(
+        '<tr><td>' + s + '</td><td>' + d + '</td><td class="path">'
+        + path + '</td><td class="et">'
+        + (et != null && Number.isFinite(+et) ? Number(et).toFixed(3) : '—')
+        + '</td></tr>');
+    }
+  }
+  body.innerHTML = rows.length
+    ? rows.join('')
+    : '<tr><td colspan="4" class="et">No checkout leaves in this table.</td></tr>';
+  checkoutLoadedKey = key;
+  if (status) {
+    status.textContent = 'σ = ' + snap.sigma + ' mm · ' + modeKey
+      + ' · scores 2–170 · path = hit each aimed bed in sequence'
+      + (snap.sigma !== sigma ? (' (snapped from ' + sigma + ')') : '')
+      + ' · ' + rows.length + ' rows';
+  }
+}
+
 function renderPracticePage() {
   const el = document.getElementById('practiceStatusText');
   if (!el) return;
@@ -5293,7 +5479,7 @@ function startDrillBull() {
   setFitMethod('measure');
   showFitError('');
   const st = document.getElementById('practiceStatusText');
-  if (st) st.textContent = 'Bull drill: log distances (angles optional), then Save.';
+  if (st) st.textContent = 'Bull drill: log distances, then Save.';
 }
 
 function startDrillDouble() {
@@ -5375,9 +5561,31 @@ function startDrillWarmup() {
   bind('coachRefresh', renderCoachPage);
   bind('coachGoFit', () => showPage('fit'));
   bind('coachGoPlay', () => showPage('score'));
-  bind('coachGoPractice', () => showPage('practice'));
+  bind('coachGoPractice', () => { showPage('coach'); setCoachTab('practice'); });
   bind('coachShare', shareCoachProfile);
   bind('coachWarmup', startDrillWarmup);
+  bind('checkoutLoad', () => {
+    showPage('coach');
+    setCoachTab('checkout');
+    renderCheckoutTable();
+  });
+  const dartFilter = document.getElementById('checkoutDartFilter');
+  if (dartFilter) {
+    dartFilter.querySelectorAll('[data-darts]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        checkoutDartFilter = btn.dataset.darts || 'all';
+        for (const b of dartFilter.querySelectorAll('[data-darts]'))
+          b.classList.toggle('active', b === btn);
+        if (coachTab === 'checkout') renderCheckoutTable();
+      });
+    });
+  }
+  const checkoutSig = document.getElementById('checkoutSigma');
+  if (checkoutSig) {
+    checkoutSig.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); renderCheckoutTable(); }
+    });
+  }
   bind('coachApply0', () => {
     const fits = fitsForCoachName(ensureCoachName());
     if (fits[0]) applySavedFitRecordToPlayer(fits[0], 0);
@@ -5412,7 +5620,7 @@ function startDrillWarmup() {
 })();
 
 // ── Live Gaussian σ fit from bull landings (isotropic only) ──────────────
-// Measure: { r, theta? } — distance → isotropic σ (angle optional labeling).
+// Measure: { r } — distance → isotropic σ.
 // Zones: belt hits (+ optional sector labels) → isotropic annular MLE.
 const fitThrows = [];
 const FIT_ANNULI = [
@@ -5437,7 +5645,6 @@ const FIT_HISTORY_KEY = 'dartsFitHistory';
 const FIT_HISTORY_MAX = 100;
 
 const elFitRadius = document.getElementById('fitRadius');
-const elFitAngle = document.getElementById('fitAngle');
 const elFitSigma = document.getElementById('fitSigma');
 const elFitQuality = document.getElementById('fitQuality');
 const elFitDetail = document.getElementById('fitDetail');
@@ -5498,7 +5705,7 @@ function buildFitSaveRecord(name, fit) {
     ciHi: fit.ciHi,
     quality: { level: q.level, label: q.label, pct: q.pct },
     throws: fitMethod === 'measure'
-      ? fitThrows.map(t => ({ r: t.r, theta: t.theta }))
+      ? fitThrows.map(t => ({ r: t.r }))
       : [],
     zoneCounts: fitMethod === 'zones' ? Object.assign({}, fitZoneCounts) : null,
     zoneHits: fitMethod === 'zones'
@@ -5507,9 +5714,6 @@ function buildFitSaveRecord(name, fit) {
   };
   rec.sigma = fit.sigmaEq != null ? fit.sigmaEq : fit.sigma;
   rec.sigmaEq = rec.sigma;
-  rec.sigma1 = rec.sigma;
-  rec.sigma2 = rec.sigma;
-  rec.phiDeg = 0;
   return rec;
 }
 
@@ -5567,12 +5771,7 @@ function loadSavedFit(id) {
     for (const t of (rec.throws || [])) {
       const r = Number(t.r);
       if (!Number.isFinite(r) || r < 0 || r > FIT_R_MAX) continue;
-      let theta = null;
-      if (t.theta !== null && t.theta !== undefined && t.theta !== '') {
-        const a = Number(t.theta);
-        if (Number.isFinite(a) && a >= 0 && a <= 360) theta = a === 360 ? 0 : a;
-      }
-      fitThrows.push({ r, theta });
+      fitThrows.push({ r });
     }
   }
   showFitError('');
@@ -5765,7 +5964,7 @@ function fitIsotropic(radii) {
   const sigma = Math.sqrt(sumSq / (2 * n));
   const se = sigma / (2 * Math.sqrt(n));
   return {
-    mode: 'isotropic', n, sigma, sigma1: sigma, sigma2: sigma, phiDeg: 0,
+    mode: 'isotropic', n, sigma,
     sigmaEq: sigma, se,
     ciLo: Math.max(0, sigma - 1.96 * se), ciHi: sigma + 1.96 * se,
     r50: sigma * Math.sqrt(-2 * Math.log(0.5)),
@@ -5819,7 +6018,7 @@ function fitAnnuli(counts) {
   const probs = annulusProbs(sigma);
   const expected = probs.map(p => p * n);
   return {
-    mode: 'annuli', n, sigma, sigma1: sigma, sigma2: sigma, phiDeg: 0,
+    mode: 'annuli', n, sigma,
     sigmaEq: sigma, se,
     ciLo: Math.max(0, sigma - 1.96 * se), ciHi: sigma + 1.96 * se,
     r50: sigma * Math.sqrt(-2 * Math.log(0.5)),
@@ -6021,19 +6220,11 @@ function refreshFitSummary() {
   syncFitSaveButton();
 }
 
-function parseThrowFields(rRaw, aRaw) {
+function parseThrowFields(rRaw) {
   const r = parseFloat(rRaw);
   if (!Number.isFinite(r) || r < 0 || r > FIT_R_MAX)
     return { ok: false, err: 'Distance must be 0–' + FIT_R_MAX + ' mm' };
-  let theta = null;
-  const rawA = (aRaw || '').trim();
-  if (rawA !== '') {
-    const a = parseFloat(rawA);
-    if (!Number.isFinite(a) || a < 0 || a > 360)
-      return { ok: false, err: 'Angle must be 0–360°' };
-    theta = a === 360 ? 0 : a;
-  }
-  return { ok: true, r, theta };
+  return { ok: true, r };
 }
 
 function renderFitList() {
@@ -6051,15 +6242,12 @@ function renderFitList() {
     return;
   }
   let html = '<div class="hdr"><span>#</span><span>Distance (mm)</span>'
-    + '<span>Angle °</span><span></span></div>';
+    + '<span></span></div>';
   fitThrows.forEach((t, i) => {
     html += '<div class="fit-row" data-i="' + i + '">'
       + '<span class="idx">' + (i + 1) + '</span>'
       + '<input class="fit-r" type="number" inputmode="decimal" min="0" max="'
       + FIT_R_MAX + '" step="0.1" value="' + t.r + '">'
-      + '<input class="fit-a" type="number" inputmode="decimal" min="0" max="360" step="0.1" '
-      + 'placeholder="—" value="'
-      + (t.theta !== null && t.theta !== undefined ? t.theta : '') + '">'
       + '<button type="button" class="del" title="Delete" data-del="' + i + '">×</button>'
       + '</div>';
   });
@@ -6068,30 +6256,24 @@ function renderFitList() {
   elFitList.querySelectorAll('.fit-row').forEach(row => {
     const i = parseInt(row.dataset.i, 10);
     const rIn = row.querySelector('.fit-r');
-    const aIn = row.querySelector('.fit-a');
     const commit = () => {
-      const parsed = parseThrowFields(rIn.value, aIn.value);
+      const parsed = parseThrowFields(rIn.value);
       if (!parsed.ok) {
         rIn.classList.toggle('bad', true);
-        aIn.classList.toggle('bad', true);
         showFitError(parsed.err + ' (throw #' + (i + 1) + ')');
         return;
       }
       rIn.classList.remove('bad');
-      aIn.classList.remove('bad');
       showFitError('');
-      fitThrows[i] = { r: parsed.r, theta: parsed.theta };
+      fitThrows[i] = { r: parsed.r };
       refreshFitSummary();
     };
     rIn.addEventListener('change', commit);
-    aIn.addEventListener('change', commit);
     rIn.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); commit(); rIn.blur(); }
     });
-    aIn.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); commit(); aIn.blur(); }
-    });
   });
+
   elFitList.querySelectorAll('[data-del]').forEach(btn => {
     btn.addEventListener('click', () => {
       const i = parseInt(btn.dataset.del, 10);
@@ -6119,15 +6301,14 @@ function showFitError(msg) {
 }
 
 function addFitThrow() {
-  const parsed = parseThrowFields(elFitRadius.value, elFitAngle.value);
+  const parsed = parseThrowFields(elFitRadius.value);
   if (!parsed.ok) {
     showFitError(parsed.err);
     return;
   }
   showFitError('');
-  fitThrows.push({ r: parsed.r, theta: parsed.theta });
+  fitThrows.push({ r: parsed.r });
   elFitRadius.value = '';
-  elFitAngle.value = '';
   elFitRadius.focus();
   renderFit();
 }
@@ -6143,9 +6324,6 @@ function applyFitToPlayer(idx) {
 
 document.getElementById('fitAdd').addEventListener('click', addFitThrow);
 elFitRadius.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); addFitThrow(); }
-});
-elFitAngle.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); addFitThrow(); }
 });
 document.getElementById('fitClear').addEventListener('click', () => {
