@@ -4724,15 +4724,61 @@ function syncPolicyFromShape(idx) {
   if (el) el.value = String(snap.sigma);
 }
 
+/** In-progress matches parked by mode key when switching 501 ↔ cricket, etc. */
+const parkedMatches = Object.create(null);
+
+function cloneMatchState(m) {
+  if (!m) return null;
+  try {
+    if (typeof structuredClone === 'function') return structuredClone(m);
+  } catch (_) {}
+  return JSON.parse(JSON.stringify(m));
+}
+
+function parkCurrentMatch() {
+  if (!match || !currentModeKey) return;
+  syncNames();
+  cancelBotThrow();
+  parkedMatches[currentModeKey] = cloneMatchState(match);
+}
+
+function applyMatchNamesToDom(m) {
+  if (!m || !Array.isArray(m.players)) return;
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById('name' + i);
+    if (!el) continue;
+    if (m.players[i] && m.players[i].name)
+      el.value = m.players[i].name;
+  }
+}
+
 function selectMode(key) {
+  if (key === currentModeKey) return;
+  parkCurrentMatch();
   currentModeKey = key;
   const m = mode();
   for (const b of elModeToggle.children)
     b.className = (b.dataset.key === key) ? 'active' : '';
   populateSigmas();
-  match = newMatch(m.start_score, m.double_in, names(), m.game || 'x01');
+  cancelBotThrow();
+  visitDigits = '';
+  const wantGame = m.game || 'x01';
+  const parked = parkedMatches[key];
+  if (parked && parked.game === wantGame) {
+    match = parked;
+    delete parkedMatches[key];
+    applyMatchNamesToDom(match);
+    if (match.game === 'cricket') {
+      cricketPlayerCount = playerCount(match) >= 3 ? 3 : 2;
+      try { localStorage.setItem('dartsCricketPlayers', String(cricketPlayerCount)); } catch (_) {}
+    }
+  } else {
+    match = newMatch(m.start_score, m.double_in, names(), wantGame);
+  }
+  syncBotSeatFromNames();
   buildPad();
   updatePending();
+  syncAutoScoreEntryMode({ force: true, render: false });
   render();
 }
 
@@ -5494,6 +5540,7 @@ function startMatchWithBestOf(bestOf) {
   const bo = normalizeBestOf(bestOf);
   saveBestOf(bo);
   const m = mode();
+  if (currentModeKey) delete parkedMatches[currentModeKey];
   resetMatch(match, m.start_score, m.double_in, names(), m.game || 'x01', bo);
   syncBotSeatFromNames();
   visitDigits = '';
