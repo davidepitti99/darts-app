@@ -1415,16 +1415,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.7-beta / 2026-08-07 / b26ce14</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.8-beta / 2026-08-07 / b26ce14</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.7-beta / 2026-08-07 / b26ce14';
+const APP_VERSION = '0.1.8-beta / 2026-08-07 / b26ce14';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.7-beta-2026-08-07-b26ce14';
+const POLICY_CACHE_BUST = '0.1.8-beta-2026-08-07-b26ce14';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -3137,14 +3137,21 @@ function maybeStartNextLeg(m) {
 // ── UI state ─────────────────────────────────────────────────────────────
 let match = null;
 
+/** Active lineup size for the current mode (x01 always 2; cricket 2 or 3). */
+function lineupSeatCount() {
+  if (typeof isCricket === 'function' && isCricket())
+    return (typeof cricketPlayerCount === 'number' && cricketPlayerCount >= 3) ? 3 : 2;
+  return 2;
+}
+
 function names() {
   const out = [
     (document.getElementById('name0').value || 'Player 1').trim() || 'Player 1',
     (document.getElementById('name1').value || 'Player 2').trim() || 'Player 2',
   ];
-  // Seat count follows cricketPlayerCount only — do not OR with the live match
-  // length, or switching 3→2 still reads three names and rebuilds a 3-seat game.
-  if ((typeof cricketPlayerCount === 'number' ? cricketPlayerCount : 2) >= 3) {
+  // Only include seat 3 in cricket 3p — never while on 501/301, or a leftover
+  // Bot on the hidden card keeps greying Bot in the roster.
+  if (lineupSeatCount() >= 3) {
     const el = document.getElementById('name2');
     out.push(((el && el.value) || 'Player 3').trim() || 'Player 3');
   }
@@ -4534,11 +4541,13 @@ function nameTakenByOther(name, idx) {
   const key = normPlayerName(name);
   if (!key) return false;
   if (isBotPlayerName(name)) {
-    // Still selectable on a seat that already has Bot; grey only when the
-    // mode's Bot quota is already filled on other seats.
+    // Grey only when adding Bot here would exceed the mode quota.
+    // Replacing Bot on this seat with a human frees a slot again.
     const ns = names();
-    if (idx >= 0 && idx < ns.length && isBotPlayerName(ns[idx])) return false;
-    return botSeatsUsedByOthers(idx) >= maxBotSeats();
+    const currentIsBot = idx >= 0 && idx < ns.length && isBotPlayerName(ns[idx]);
+    const others = botSeatsUsedByOthers(idx);
+    const after = others + (currentIsBot ? 0 : 1);
+    return after > maxBotSeats();
   }
   return otherPlayerNameKeys(idx).has(key);
 }
