@@ -468,8 +468,9 @@
     margin: 0 0 8px; font-size: 14px; color: #fff;
   }
   .info .review .grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; font-size: 12px;
+    display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 6px 10px; font-size: 12px;
   }
+  .info .review .grid .head { color: var(--mute); font-size: 11px; }
   .info .review .grid .lbl { color: var(--mute); }
   .info .review .ctas {
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
@@ -1415,16 +1416,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.8-beta / 2026-08-07 / b26ce14</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.9-beta / 2026-08-07 / b26ce14</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.8-beta / 2026-08-07 / b26ce14';
+const APP_VERSION = '0.1.9-beta / 2026-08-07 / b26ce14';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.8-beta-2026-08-07-b26ce14';
+const POLICY_CACHE_BUST = '0.1.9-beta-2026-08-07-b26ce14';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2292,26 +2293,39 @@ function shareMatchResults() {
 function renderMatchReviewHtml() {
   const w = match.winner;
   if (w === null) return '';
-  const winner = match.players[w];
-  const loser = match.players[1 - w];
+  const ps = match.players;
+  const n = ps.length;
+  const winner = ps[w];
+  const losers = ps.filter((_, i) => i !== w);
+  const loser = losers[0] || ps[(w + 1) % n];
   const diag = diagnoseMatch(match);
   if (diag) {
     match.lastDiagnosis = diag;
     saveLastDiagnosis(diag);
   }
-  const rows = [];
+  let rows;
   if (match.game === 'cricket') {
-    rows.push(['Winner marks closed',
-      CRICKET_KEYS.filter(k => ((winner.marks || {})[k] || 0) >= 3).length + '/7']);
-    rows.push(['Winner points', String(winner.points | 0)]);
-    rows.push(['Loser closed',
-      CRICKET_KEYS.filter(k => ((loser.marks || {})[k] || 0) >= 3).length + '/7']);
+    const closed = (p) => CRICKET_KEYS.filter(k => ((p.marks || {})[k] || 0) >= 3).length;
+    rows = [
+      ['Marks closed', ...ps.map(p => closed(p) + '/7')],
+      ['Points', ...ps.map(p => String(p.points | 0))],
+      ['Darts', ...ps.map(p => String(p.dartsThrown | 0))],
+    ];
   } else {
-    rows.push(['Winner 3-dart avg', avg3(winner) != null ? avg3(winner).toFixed(1) : '—']);
-    rows.push(['Winner first 9', avgFirst9(winner) != null ? avgFirst9(winner).toFixed(1) : '—']);
-    rows.push(['Checkout %', checkoutPct(winner) != null ? checkoutPct(winner).toFixed(0) + '%' : '—']);
-    rows.push(['Highest checkout', String(winner.highestCheckout | 0)]);
-    rows.push(['Busts (both)', String((winner.busts | 0) + (loser.busts | 0))]);
+    rows = [
+      ['3-dart avg', ...ps.map(p => avg3(p) != null ? avg3(p).toFixed(1) : '—')],
+      ['First 9', ...ps.map(p => avgFirst9(p) != null ? avgFirst9(p).toFixed(1) : '—')],
+      ['Checkout %', ...ps.map(p => checkoutPct(p) != null ? checkoutPct(p).toFixed(0) + '%' : '—')],
+      ['Highest checkout', ...ps.map(p => (p.highestCheckout | 0) ? String(p.highestCheckout | 0) : '—')],
+      ['Busts', ...ps.map(p => String(p.busts | 0))],
+    ];
+  }
+  const colStyle = 'grid-template-columns: 1.1fr repeat(' + n + ', 1fr)';
+  let grid = '<div class="head"></div>';
+  for (const p of ps) grid += '<div class="head">' + p.name + '</div>';
+  for (const row of rows) {
+    grid += '<div class="lbl">' + row[0] + '</div>';
+    for (let i = 1; i < row.length; i++) grid += '<div>' + row[i] + '</div>';
   }
   const last = match.lastCoachAim;
   let aimLine = '';
@@ -2324,25 +2338,24 @@ function renderMatchReviewHtml() {
     diagHtml = '<div class="why" style="margin-top:10px"><b>' + diag.title + '</b><br>'
       + diag.detail + '</div>';
   }
-  let grid = rows.map(([a, b]) =>
-    '<div class="lbl">' + a + '</div><div>' + b + '</div>').join('');
   const drill = diag && diag.drill ? diag.drill : 'practice';
   const vsBot = matchHasBot(match);
   let shareBlock = '';
-  if (!vsBot) {
+  if (!vsBot && loser) {
+    const oppLabel = losers.map(p => p.name).join(' / ') || loser.name;
     shareBlock = '<div class="invite">Save '
-      + loser.name + ' as a contact, then share the scorecard — rematch next time in one tap.</div>'
+      + oppLabel + ' as a contact, then share the scorecard — rematch next time in one tap.</div>'
       + '<div class="share-row">'
       + '<button type="button" class="primary" data-review="share">Share results with '
-      + loser.name + '</button>'
+      + oppLabel + '</button>'
       + '<button type="button" data-review="saveContact">Save '
-      + loser.name + ' to contacts</button>'
+      + oppLabel + ' to contacts</button>'
       + '<div class="row" id="shareMatchFeedback" style="margin:0;text-align:center;color:var(--mute);font-size:12px"></div>'
       + '</div>';
   }
   return '<div class="review" id="matchReview">'
     + '<h3>Match review</h3>'
-    + '<div class="grid">' + grid + '</div>'
+    + '<div class="grid" style="' + colStyle + '">' + grid + '</div>'
     + aimLine
     + diagHtml
     + '<div class="ctas triple">'
