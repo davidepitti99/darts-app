@@ -1417,16 +1417,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.17-beta / 2026-08-07 / 199fd02</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.18-beta / 2026-08-07 / 1d1e54e</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.17-beta / 2026-08-07 / 199fd02';
+const APP_VERSION = '0.1.18-beta / 2026-08-07 / 1d1e54e';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.17-beta-2026-08-07-199fd02';
+const POLICY_CACHE_BUST = '0.1.18-beta-2026-08-07-1d1e54e';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2493,6 +2493,26 @@ function newMatch(startScore, doubleIn, namesArr, game, bestOf) {
 
 function isBotPlayerName(name) {
   return normPlayerName(name) === normPlayerName(BOT_PLAYER_NAME);
+}
+
+/** Cricket scorekeeper has no reliable bot policy yet — hide CPU seats there. */
+function cricketModeActive() {
+  return !!(match && match.game === 'cricket') || isCricket();
+}
+
+function clearBotsFromCricketLineup() {
+  if (!cricketModeActive()) return;
+  cancelBotThrow();
+  const n = lineupSeatCount();
+  for (let i = 0; i < n; i++) {
+    const el = document.getElementById('name' + i);
+    const cur = (el && el.value) || (match && match.players[i] && match.players[i].name) || '';
+    if (!isBotPlayerName(cur)) continue;
+    const fallback = 'Player ' + (i + 1);
+    if (el) el.value = fallback;
+    if (match && match.players[i]) match.players[i].name = fallback;
+  }
+  if (match) match.botSeat = null;
 }
 
 /**
@@ -4483,7 +4503,10 @@ function findSavedPlayer(name) {
 
 function applyPlayerName(idx, name) {
   let n = String(name || '').trim().slice(0, 16);
-  if (isBotPlayerName(n)) n = BOT_PLAYER_NAME;
+  if (isBotPlayerName(n)) {
+    if (cricketModeActive()) n = 'Player ' + ((idx | 0) + 1);
+    else n = BOT_PLAYER_NAME;
+  }
   document.getElementById('name' + idx).value = n;
   syncNames();
   syncBotSeatFromNames();
@@ -4511,11 +4534,9 @@ function otherPlayerNameKeys(idx) {
   return keys;
 }
 
-/** Max Bot seats: 2 in cricket 3-player, otherwise 1. */
+/** Max Bot seats: 0 in cricket (unavailable), 2 in cricket 3-player was prior — now off; else 1. */
 function maxBotSeats() {
-  if (typeof isCricket === 'function' && isCricket()
-      && (typeof cricketPlayerCount === 'number' ? cricketPlayerCount : 2) >= 3)
-    return 2;
+  if (cricketModeActive()) return 0;
   return 1;
 }
 
@@ -4550,14 +4571,20 @@ function renderPlayerList(filterName) {
     .filter(p => !isBotPlayerName(p.name))
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-  // Built-in Bot always first — not stored, cannot be deleted.
-  const players = [{ name: BOT_PLAYER_NAME, builtin: true }].concat(saved);
+  // Built-in Bot for x01 only — cricket has no CPU policy yet.
+  const players = (cricketModeActive()
+    ? []
+    : [{ name: BOT_PLAYER_NAME, builtin: true }]).concat(saved);
   const q = normPlayerName(filterName);
   const shown = q
     ? players.filter(p => normPlayerName(p.name).includes(q))
     : players;
   if (!shown.length) {
-    list.innerHTML = '<div class="empty">No match — Save to create this player</div>';
+    list.innerHTML = '<div class="empty">'
+      + (cricketModeActive()
+        ? 'No match — Save to create this player (Bot is unavailable in Cricket for now)'
+        : 'No match — Save to create this player')
+      + '</div>';
     return;
   }
   list.innerHTML = shown.map(p => {
@@ -4583,6 +4610,7 @@ function renderPlayerList(filterName) {
       const name = decodeURIComponent(btn.dataset.name);
       if (nameTakenByOther(name, playerEditIdx)) return;
       if (isBotPlayerName(name)) {
+        if (cricketModeActive()) return;
         applyPlayerName(playerEditIdx, BOT_PLAYER_NAME);
         closePlayerModal();
         render();
@@ -4615,11 +4643,24 @@ function openPlayerModal(idx) {
   title.textContent = 'Player ' + (idx + 1);
   nameIn.value = names()[idx];
   if (isBotPlayerName(nameIn.value)) {
-    nameIn.value = BOT_PLAYER_NAME;
-    playerListSel = normPlayerName(BOT_PLAYER_NAME);
+    if (cricketModeActive()) {
+      nameIn.value = 'Player ' + (idx + 1);
+      playerListSel = null;
+    } else {
+      nameIn.value = BOT_PLAYER_NAME;
+      playerListSel = normPlayerName(BOT_PLAYER_NAME);
+    }
   } else {
     const existing = findSavedPlayer(nameIn.value);
     if (existing) playerListSel = normPlayerName(existing.name);
+  }
+  const hint = document.querySelector('#playerRosterPanel .hint');
+  if (hint) {
+    hint.innerHTML = cricketModeActive()
+      ? 'Shared roster for both sides. Tap a name to use it, or type a new one and Save. '
+        + '<b>Bot</b> is unavailable in Cricket for now.'
+      : 'Shared roster for both sides. Tap a name to use it, or type a new one and Save. '
+        + '<b>Bot</b> is always listed as the CPU opponent.';
   }
   const c = findContact(nameIn.value);
   if (c) contactListSel = normPlayerName(c.name);
@@ -4653,6 +4694,10 @@ function saveCurrentPlayerFromModal() {
   }
   // Built-in Bot: assign to this seat, never persist/delete from roster.
   if (isBotPlayerName(name)) {
+    if (cricketModeActive()) {
+      nameIn.focus();
+      return;
+    }
     applyPlayerName(playerEditIdx, BOT_PLAYER_NAME);
     playerListSel = normPlayerName(BOT_PLAYER_NAME);
     closePlayerModal();
@@ -4944,6 +4989,7 @@ function selectMode(key) {
     match = newMatch(m.start_score, m.double_in, names(), wantGame);
     setMatchUiActive(false);
   }
+  if (wantGame === 'cricket') clearBotsFromCricketLineup();
   syncBotSeatFromNames();
   buildPad();
   updatePending();
@@ -5833,6 +5879,7 @@ function startMatchWithBestOf(bestOf) {
   resetMatch(match, m.start_score, m.double_in, names(), m.game || 'x01', bo);
   if (legs && legs.some(v => (v | 0) > 0))
     applyOpeningLegsScore(match, legs);
+  if ((m.game || 'x01') === 'cricket') clearBotsFromCricketLineup();
   setMatchUiActive(true);
   syncBotSeatFromNames();
   visitDigits = '';
@@ -6665,6 +6712,7 @@ function startDrillCricket() {
   if (fits.length) applySavedFitRecordToPlayer(fits[0], 0);
   switchGameMode('cricket');
   match = newMatch(0, false, names(), 'cricket');
+  clearBotsFromCricketLineup();
   match.message = 'Cricket drill — throw the coached aim (marks first).';
   setMatchUiActive(true);
   buildPad();
