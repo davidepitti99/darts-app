@@ -5657,6 +5657,27 @@ updatePending();
 syncBotUi();
 sizeCanvas();
 
+// Keep the phone screen on while this page is visible (Screen Wake Lock API).
+let screenWakeLock = null;
+async function ensureScreenWakeLock() {
+  if (!('wakeLock' in navigator) || !navigator.wakeLock) return;
+  if (document.visibilityState !== 'visible') return;
+  if (screenWakeLock) return;
+  try {
+    screenWakeLock = await navigator.wakeLock.request('screen');
+    screenWakeLock.addEventListener('release', () => { screenWakeLock = null; });
+  } catch (_) {
+    // Not allowed yet (needs gesture on some browsers) or unsupported.
+    screenWakeLock = null;
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') ensureScreenWakeLock();
+});
+document.addEventListener('pointerdown', () => { ensureScreenWakeLock(); },
+  { passive: true });
+ensureScreenWakeLock();
+
 function setCoachTab(tab) {
   if (tab === 'practice' && !isPro()) {
     showProBanner('Practice drills are Pro — train from your fitted throw.');
