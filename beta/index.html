@@ -1417,16 +1417,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.16-beta / 2026-08-07 / 199fd02</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.17-beta / 2026-08-07 / 199fd02</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.16-beta / 2026-08-07 / 199fd02';
+const APP_VERSION = '0.1.17-beta / 2026-08-07 / 199fd02';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.16-beta-2026-08-07-199fd02';
+const POLICY_CACHE_BUST = '0.1.17-beta-2026-08-07-199fd02';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2446,6 +2446,14 @@ function matchPlayStarted(m) {
   return false;
 }
 
+/** Names / swaps locked during an in-progress match; unlocked again when the match is over. */
+function lineupLocked(m) {
+  m = m || match;
+  if (!m) return false;
+  if (m.matchWinner != null) return false;
+  return matchPlayStarted(m);
+}
+
 /** 3+ player cricket: points go to opponents who have not closed the number. */
 function isCutThroat(m) {
   m = m || match;
@@ -3193,8 +3201,8 @@ function exchangePlayerSeats() {
  */
 function swapPlayerSides() {
   if (!match) return;
-  if (matchPlayStarted()) {
-    match.message = 'Seats locked after play starts — use New match to change lineup';
+  if (lineupLocked()) {
+    match.message = 'Seats locked while the match is in progress — change lineup after it ends or via New match';
     render();
     return;
   }
@@ -3229,8 +3237,8 @@ function swapPlayerSides() {
 /** Swap two cricket seats; the throwing person follows their name. */
 function swapAdjacentSeats(i, j) {
   if (!match) return;
-  if (matchPlayStarted()) {
-    match.message = 'Seats locked after play starts — use New match to change lineup';
+  if (lineupLocked()) {
+    match.message = 'Seats locked while the match is in progress — change lineup after it ends or via New match';
     render();
     return;
   }
@@ -4590,9 +4598,9 @@ function renderPlayerList(filterName) {
 }
 
 function openPlayerModal(idx) {
-  if (matchPlayStarted()) {
+  if (lineupLocked()) {
     if (match) {
-      match.message = 'Names locked after play starts — use New match to change lineup';
+      match.message = 'Names locked while the match is in progress — change lineup after it ends or via New match';
       render();
     }
     return;
@@ -4990,13 +4998,13 @@ function syncPlayerSeatsChrome() {
 }
 
 function syncLineupLockChrome() {
-  const locked = matchPlayStarted();
+  const locked = lineupLocked();
   for (let i = 0; i < 3; i++) {
     const el = document.getElementById('name' + i);
     if (!el) continue;
     el.classList.toggle('locked', locked);
     el.title = locked
-      ? 'Names locked after play starts'
+      ? 'Names locked while the match is in progress'
       : 'Tap to load or save player';
   }
   for (const id of ['btnSwapSides', 'btnSwap12']) {
@@ -5015,8 +5023,8 @@ function setCricketPlayerCount(n) {
   if (n === cricketPlayerCount && match && match.game === 'cricket'
       && playerCount(match) === n)
     return;
-  if (match && match.game === 'cricket' && matchPlayStarted()) {
-    match.message = 'Seat count locked after play starts — use New match to change';
+  if (match && match.game === 'cricket' && lineupLocked()) {
+    match.message = 'Seat count locked while the match is in progress — change after it ends or via New match';
     syncCricketChrome();
     render();
     return;
