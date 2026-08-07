@@ -599,6 +599,7 @@
   .actions {
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
   }
+  .actions.has-ok { grid-template-columns: 1fr 1fr 1fr; }
   .actions button, .pad button {
     background: var(--field); color: #fff; border: 1px solid #555;
     border-radius: 10px; padding: 12px 6px; font-size: 15px; font-weight: 600;
@@ -606,6 +607,8 @@
   }
   .actions button:active, .pad button:active { background: #555; }
   .actions .primary { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
+  .actions .ok-btn { background: #2a3a2a; }
+  .actions .ok-btn.hidden { display: none !important; }
 
   select {
     background: var(--field); color: #fff; border: 1px solid #555;
@@ -1128,9 +1131,10 @@
 
   <div class="pad" id="pad"></div>
 
-  <div class="actions">
+  <div class="actions" id="scoreActions">
     <button type="button" id="btnMatch" class="primary">New match</button>
     <button type="button" id="btnUndo">Undo</button>
+    <button type="button" id="btnVisitOk" class="ok-btn hidden">OK</button>
   </div>
 
   <div class="info" id="info"></div>
@@ -5074,6 +5078,17 @@ function syncEntryToggle() {
   box.classList.toggle('hidden', cricket);
   for (const b of box.querySelectorAll('button[data-entry]'))
     b.classList.toggle('active', b.dataset.entry === scoreEntryMode);
+  syncScoreActionRow();
+}
+
+function syncScoreActionRow() {
+  const actions = document.getElementById('scoreActions');
+  const ok = document.getElementById('btnVisitOk');
+  if (!actions || !ok) return;
+  const cricket = !!(match && match.game === 'cricket') || isCricket();
+  const showOk = !cricket && scoreEntryMode === 'visit';
+  ok.classList.toggle('hidden', !showOk);
+  actions.classList.toggle('has-ok', showOk);
 }
 
 function buildPad() {
@@ -5164,19 +5179,7 @@ function buildVisitPad() {
     syncVisitDisplay();
   });
   elPad.appendChild(bk);
-
-  const bust = document.createElement('button');
-  bust.type = 'button'; bust.textContent = 'Bust'; bust.className = 'miss';
-  bust.addEventListener('click', () => commitVisitTotal(null, { bust: true }));
-  elPad.appendChild(bust);
-  const ok = document.createElement('button');
-  ok.type = 'button'; ok.textContent = 'OK'; ok.className = 'special';
-  ok.style.gridColumn = 'span 2';
-  ok.addEventListener('click', () => {
-    const n = visitDigits === '' ? 0 : parseInt(visitDigits, 10);
-    commitVisitTotal(n, {});
-  });
-  elPad.appendChild(ok);
+  syncScoreActionRow();
 }
 
 function visitAppendDigit(d) {
@@ -5557,6 +5560,16 @@ function runPrescribedDrill(code) {
   else showPage('practice');
 }
 
+(function wireVisitOk() {
+  const ok = document.getElementById('btnVisitOk');
+  if (!ok) return;
+  ok.addEventListener('click', () => {
+    if (scoreEntryMode !== 'visit') return;
+    if (match && match.game === 'cricket') return;
+    const n = visitDigits === '' ? 0 : parseInt(visitDigits, 10);
+    commitVisitTotal(n, {});
+  });
+})();
 document.getElementById('btnUndo').addEventListener('click', () => {
   cancelBotThrow();
   if (undoMatch(match)) {
