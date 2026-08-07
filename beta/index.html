@@ -4844,9 +4844,17 @@ const parkedUiActive = Object.create(null);
 let matchUiActive = false;
 
 function setMatchUiActive(on) {
+  const was = matchUiActive;
   matchUiActive = !!on;
   const page = document.getElementById('pageScore');
   if (page) page.classList.toggle('prematch', !matchUiActive);
+  // Board was display:none in prematch — clientWidth was 0, so the canvas
+  // bitmap stayed empty. Re-measure after it becomes visible.
+  if (matchUiActive && !was) {
+    requestAnimationFrame(() => {
+      if (typeof sizeCanvas === 'function') sizeCanvas();
+    });
+  }
 }
 
 function cloneMatchState(m) {
@@ -6009,8 +6017,11 @@ if (contactHandleEl) {
 function sizeCanvas() {
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   const cssW = cv.clientWidth;
-  cv.width = Math.round(cssW * dpr);
-  cv.height = cv.width;
+  // Hidden (prematch / cricket-hide): don't collapse the bitmap to 0×0.
+  if (cssW >= 8) {
+    cv.width = Math.round(cssW * dpr);
+    cv.height = cv.width;
+  }
   render();
   sizeCheckoutBoard();
 }
