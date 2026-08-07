@@ -118,6 +118,24 @@
   .card.seat-extra.hidden { display: none !important; }
   .cricket-players-toggle.hidden { display: none !important; }
 
+  /* Before New match: lineup / mode only — hide scoring chrome. */
+  #pageScore.prematch .pad,
+  #pageScore.prematch .board-wrap,
+  #pageScore.prematch .stats,
+  #pageScore.prematch .info,
+  #pageScore.prematch .cricket-board,
+  #pageScore.prematch .entry-toggle {
+    display: none !important;
+  }
+  #pageScore.prematch #btnUndo,
+  #pageScore.prematch #btnVisitOk {
+    display: none !important;
+  }
+  #pageScore.prematch .actions,
+  #pageScore.prematch .actions.has-ok {
+    grid-template-columns: 1fr;
+  }
+
   .scores {
     display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; margin-bottom: 10px;
     align-items: center;
@@ -4820,6 +4838,15 @@ function syncPolicyFromShape(idx) {
 
 /** In-progress matches parked by mode key when switching 501 ↔ cricket, etc. */
 const parkedMatches = Object.create(null);
+const parkedUiActive = Object.create(null);
+/** False until the user starts a match via New match (best-of dialog). */
+let matchUiActive = false;
+
+function setMatchUiActive(on) {
+  matchUiActive = !!on;
+  const page = document.getElementById('pageScore');
+  if (page) page.classList.toggle('prematch', !matchUiActive);
+}
 
 function cloneMatchState(m) {
   if (!m) return null;
@@ -4834,6 +4861,7 @@ function parkCurrentMatch() {
   syncNames();
   cancelBotThrow();
   parkedMatches[currentModeKey] = cloneMatchState(match);
+  parkedUiActive[currentModeKey] = matchUiActive;
 }
 
 function applyMatchNamesToDom(m) {
@@ -4860,14 +4888,18 @@ function selectMode(key) {
   const parked = parkedMatches[key];
   if (parked && parked.game === wantGame) {
     match = parked;
+    const wasActive = !!parkedUiActive[key];
     delete parkedMatches[key];
+    delete parkedUiActive[key];
     applyMatchNamesToDom(match);
     if (match.game === 'cricket') {
       cricketPlayerCount = playerCount(match) >= 3 ? 3 : 2;
       try { localStorage.setItem('dartsCricketPlayers', String(cricketPlayerCount)); } catch (_) {}
     }
+    setMatchUiActive(wasActive);
   } else {
     match = newMatch(m.start_score, m.double_in, names(), wantGame);
+    setMatchUiActive(false);
   }
   syncBotSeatFromNames();
   buildPad();
@@ -5779,11 +5811,15 @@ function startMatchWithBestOf(bestOf) {
   const bo = normalizeBestOf(bestOf);
   saveBestOf(bo);
   const m = mode();
-  if (currentModeKey) delete parkedMatches[currentModeKey];
+  if (currentModeKey) {
+    delete parkedMatches[currentModeKey];
+    delete parkedUiActive[currentModeKey];
+  }
   const legs = bestOfLegsEnabled ? readBestOfLegsDraft() : null;
   resetMatch(match, m.start_score, m.double_in, names(), m.game || 'x01', bo);
   if (legs && legs.some(v => (v | 0) > 0))
     applyOpeningLegsScore(match, legs);
+  setMatchUiActive(true);
   syncBotSeatFromNames();
   visitDigits = '';
   buildPad();
@@ -6003,6 +6039,7 @@ let checkoutPreviewSel = null;
 buildModeToggle();
 populateSigmas();
 match = newMatch(mode().start_score, mode().double_in, names(), mode().game || 'x01');
+setMatchUiActive(false);
 syncBotSeatFromNames();
 buildPad();
 updatePending();
