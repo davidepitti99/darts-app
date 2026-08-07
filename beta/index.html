@@ -5167,17 +5167,12 @@ function buildPad() {
   elPad.innerHTML = '';
   const cricket = !!(match && match.game === 'cricket') || isCricket();
   syncEntryToggle();
-  // Cricket: D / number / T are on the scoreboard; pad is Miss only
-  // (wire bounce-outs are entered as Miss; Bounce stays a policy region).
+  // Cricket: D / number / T are on the scoreboard — no pad.
   if (cricket) {
-    elPad.style.gridTemplateColumns = '1fr';
-    const miss = document.createElement('button');
-    miss.type = 'button'; miss.textContent = 'Miss'; miss.className = 'miss';
-    miss.title = 'Miss or wire bounce-out (0)';
-    miss.addEventListener('click', () => commitLabel('Miss'));
-    elPad.appendChild(miss);
+    elPad.classList.add('hidden');
     return;
   }
+  elPad.classList.remove('hidden');
   if (scoreEntryMode === 'visit') {
     buildVisitPad();
     return;
@@ -6616,6 +6611,7 @@ function startDrillDouble() {
   match.players[0].opened = true;
   match.current = 0;
   match.message = 'Double drill — finish ' + leave + ' (D' + (leave / 2) + ').';
+  setMatchUiActive(true);
   buildPad();
   showPage('score');
   render();
@@ -6634,6 +6630,7 @@ function startDrillPath() {
   match.players[0].opened = true;
   match.current = 0;
   match.message = 'Path drill — follow Aim + why from ' + start + '.';
+  setMatchUiActive(true);
   buildPad();
   showPage('score');
   render();
@@ -6647,6 +6644,7 @@ function startDrillCricket() {
   switchGameMode('cricket');
   match = newMatch(0, false, names(), 'cricket');
   match.message = 'Cricket drill — throw the coached aim (marks first).';
+  setMatchUiActive(true);
   buildPad();
   showPage('score');
   render();
