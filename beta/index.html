@@ -3033,9 +3033,9 @@ function names() {
     (document.getElementById('name0').value || 'Player 1').trim() || 'Player 1',
     (document.getElementById('name1').value || 'Player 2').trim() || 'Player 2',
   ];
-  const want3 = (typeof cricketPlayerCount === 'number' ? cricketPlayerCount : 2) >= 3
-    || (match && match.game === 'cricket' && playerCount(match) >= 3);
-  if (want3) {
+  // Seat count follows cricketPlayerCount only — do not OR with the live match
+  // length, or switching 3→2 still reads three names and rebuilds a 3-seat game.
+  if ((typeof cricketPlayerCount === 'number' ? cricketPlayerCount : 2) >= 3) {
     const el = document.getElementById('name2');
     out.push(((el && el.value) || 'Player 3').trim() || 'Player 3');
   }
@@ -4772,18 +4772,18 @@ function renderCricketBoard() {
   const n = playerCount(match);
   el.classList.toggle('players-3', n >= 3);
   const seats = match.players;
-  // Layout: marks… | D · number · T | …marks  (3p: P1 | P2 | hit | P3)
+  // Layout: marks… | D · number · T | …marks  (3p: hit | P1 | P2 | P3)
   let colgroup = '<colgroup>';
   if (n >= 3) {
-    colgroup += '<col class="side"><col class="side"><col class="mid"><col class="side">';
+    colgroup += '<col class="mid"><col class="side"><col class="side"><col class="side">';
   } else {
     colgroup += '<col class="side"><col class="mid"><col class="side">';
   }
   colgroup += '</colgroup>';
   let head = '<thead><tr>';
   if (n >= 3) {
-    head += '<th>' + seats[0].name + '</th><th>' + seats[1].name + '</th>'
-      + '<th class="num">D · # · T</th><th>' + seats[2].name + '</th>';
+    head += '<th class="num">D · # · T</th><th>' + seats[0].name + '</th>'
+      + '<th>' + seats[1].name + '</th><th>' + seats[2].name + '</th>';
   } else {
     head += '<th>' + seats[0].name + '</th><th class="num">D · # · T</th><th>'
       + seats[1].name + '</th>';
@@ -4810,7 +4810,7 @@ function renderCricketBoard() {
     }
     body += '<tr>';
     if (n >= 3) {
-      body += marksCell(seats[0]) + marksCell(seats[1]) + hit + marksCell(seats[2]);
+      body += hit + marksCell(seats[0]) + marksCell(seats[1]) + marksCell(seats[2]);
     } else {
       body += marksCell(seats[0]) + hit + marksCell(seats[1]);
     }
@@ -4818,8 +4818,8 @@ function renderCricketBoard() {
   }
   body += '<tr class="pts">';
   if (n >= 3) {
-    body += '<td>' + (seats[0].points || 0) + '</td><td>' + (seats[1].points || 0)
-      + '</td><td class="num">Pts</td><td>' + (seats[2].points || 0) + '</td>';
+    body += '<td class="num">Pts</td><td>' + (seats[0].points || 0) + '</td><td>'
+      + (seats[1].points || 0) + '</td><td>' + (seats[2].points || 0) + '</td>';
   } else {
     body += '<td>' + (seats[0].points || 0) + '</td><td class="num">Pts</td><td>'
       + (seats[1].points || 0) + '</td>';
