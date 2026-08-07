@@ -451,8 +451,15 @@
     line-height: 1.45; font-size: 14px;
   }
   .info .turn { color: #cfcfcf; font-size: 13px; margin-bottom: 4px; }
-  .info .aim { font-size: 24px; font-weight: 800; color: var(--accent); line-height: 1.2; }
+  .info .aim-row {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  }
+  .info .aim { font-size: 24px; font-weight: 800; color: var(--accent); line-height: 1.2; min-width: 0; }
   .info .aim .next { color: #fff; font-size: 16px; font-weight: 700; margin-left: 0.3em; }
+  .info .aim-row .et {
+    flex-shrink: 0; color: var(--mute); font-size: 13px; font-weight: 600;
+    white-space: nowrap;
+  }
   .info .why, .stats .why {
     margin-top: 8px; padding: 8px 10px; border-radius: 8px;
     background: #242018; border-left: 3px solid var(--accent);
@@ -1410,16 +1417,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.12-beta / 2026-08-07 / b26ce14</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.13-beta / 2026-08-07 / b26ce14</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.12-beta / 2026-08-07 / b26ce14';
+const APP_VERSION = '0.1.13-beta / 2026-08-07 / b26ce14';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.12-beta-2026-08-07-b26ce14';
+const POLICY_CACHE_BUST = '0.1.13-beta-2026-08-07-b26ce14';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -1936,16 +1943,16 @@ function formatHitPath(policy, steps) {
 /** Plain-language coaching line for the current optimal aim. */
 function explainAimWhy(score, darts, entry, steps, aimSource) {
   if (!entry) return '';
-  const [aim, , , et] = entry;
+  const [aim] = entry;
   const clean = prettyAimLabel(aim);
   const step0 = steps && steps[0];
   const kind = step0 ? step0[4] : '';
   const leave = step0 ? step0[3] : null;
   const sigmaBit = aimSource ? (' at ' + aimSource) : '';
+  // Expected turns sits beside the aim line — keep why text qualitative only.
   if (kind === 'checkout') {
     return 'Finish now on ' + clean + sigmaBit
-      + ' — highest-probability checkout for this leave'
-      + (et != null ? (' (~' + Number(et).toFixed(2) + ' turns).') : '.');
+      + ' — highest-probability checkout for this leave.';
   }
   if (kind === 'bust') {
     return 'Prefer ' + clean + ' over a risky finish'
@@ -1959,11 +1966,9 @@ function explainAimWhy(score, darts, entry, steps, aimSource) {
     const nextAim = steps[1] ? prettyAimLabel(steps[1][2]) : '';
     return 'Throw ' + clean + ' to leave ' + leave
       + (nextAim ? (', then ' + nextAim) : '')
-      + sigmaBit
-      + (et != null ? (' · ~' + Number(et).toFixed(2) + ' turns expected.') : '.');
+      + sigmaBit + '.';
   }
-  return 'Recommended aim ' + clean + sigmaBit
-    + (et != null ? (' · expected turns ' + Number(et).toFixed(2) + '.') : '.');
+  return 'Recommended aim ' + clean + sigmaBit + '.';
 }
 
 const HABIT_KEY = 'dartsCoachHabitV1';
@@ -5563,12 +5568,11 @@ function render() {
     const aimClean = aims.length ? aims[0] : displayAim(aim, x, y);
     const why = explainAimWhy(score, darts, entry, steps, aimSource);
     drawAim(x, y, resolved.snap);
-    html += '<div class="aim">Aim: ' + aimClean;
+    html += '<div class="aim-row"><div class="aim">Aim: ' + aimClean;
     for (let i = 1; i < aims.length; i++)
       html += '<span class="next"> ' + aims[i] + '</span>';
-    html += '</div>';
+    html += '</div><div class="et">Expected turns: ' + et.toFixed(3) + '</div></div>';
     if (why) html += '<div class="why">' + why + '</div>';
-    html += '<div class="row"><span class="k">Expected turns:</span> ' + et.toFixed(3) + '</div>';
     match.lastCoachAim = { aim: aimClean, why: why, score: score, darts: darts, et: et };
   }
   html += statusMessageHtml(match.message);
