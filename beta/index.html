@@ -474,7 +474,18 @@
   }
   .info .row, .stats .row { color: #cfcfcf; margin-top: 6px; font-size: 13px; }
   .info .msg { color: var(--accent); margin-top: 6px; font-size: 13px; }
+  .info .msg.err {
+    color: #ff8a8a; font-weight: 700;
+    background: #2a1818; border-left: 3px solid #ff5555;
+    padding: 8px 10px; border-radius: 8px;
+  }
   .info .warn { color: #ff8a8a; }
+  .visit-reject {
+    grid-column: 1 / -1; margin-top: 4px; text-align: center;
+    color: #ff8a8a; font-size: 13px; font-weight: 700; line-height: 1.35;
+    background: #2a1818; border: 1px solid #5a2f2f; border-radius: 8px;
+    padding: 8px 10px;
+  }
   .stats .review {
     margin-top: 12px; padding-top: 10px; border-top: 1px solid #333;
   }
@@ -1466,16 +1477,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.28-beta / 2026-08-08 / 5cc4b84</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.29-beta / 2026-08-08 / 5cc4b84</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.28-beta / 2026-08-08 / 5cc4b84';
+const APP_VERSION = '0.1.29-beta / 2026-08-08 / 5cc4b84';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.28-beta-2026-08-08-5cc4b84';
+const POLICY_CACHE_BUST = '0.1.29-beta-2026-08-08-5cc4b84';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -3158,6 +3169,15 @@ function throwVisitTotal(m, score, opts) {
   if (!forceBust && (score < 0 || score > 180))
     throw new Error('Visit score must be 0–180');
 
+  const pCheck = m.players[m.current];
+  const remCheck = pCheck.remaining;
+  // Validate before mutating / undo so OK can refuse cleanly.
+  if (m.doubleIn && !pCheck.opened && !forceBust && score > 0
+      && !isValidOpeningDoubleScore(score))
+    throw new Error('301 DI: first score must be a double (2, 4, … 40, or 50)');
+  if (!forceBust && score === remCheck && !isCheckoutChance(remCheck))
+    throw new Error('Cannot check out ' + remCheck + ' with a visit total');
+
   pushUndo(m);
   const p = m.players[m.current];
   const remBefore = p.remaining;
@@ -3195,9 +3215,6 @@ function throwVisitTotal(m, score, opts) {
       nextPlayer(m);
       return result;
     }
-    // Opening visit total must itself be a double (D1–D20 or bull).
-    if (!isValidOpeningDoubleScore(score))
-      throw new Error('301 DI: first score must be a double (2, 4, … 40, or 50)');
     p.opened = true;
   }
 
@@ -3216,8 +3233,6 @@ function throwVisitTotal(m, score, opts) {
   }
 
   if (score === remBefore) {
-    if (!isCheckoutChance(remBefore))
-      throw new Error('Cannot check out ' + remBefore + ' with a visit total');
     // A finish always counts at least one attempt.
     if (opts.checkoutAttempts != null && (opts.checkoutAttempts | 0) < 1)
       opts.checkoutAttempts = 1;
@@ -5469,6 +5484,11 @@ function buildVisitPad() {
   disp.style.gridColumn = '1 / -1';
   disp.innerHTML = (visitDigits || '0');
   elPad.appendChild(disp);
+  const rej = document.createElement('div');
+  rej.className = 'visit-reject hidden';
+  rej.id = 'visitReject';
+  rej.setAttribute('role', 'alert');
+  elPad.appendChild(rej);
 
   for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
     const b = document.createElement('button');
@@ -5479,7 +5499,11 @@ function buildVisitPad() {
   }
   const clr = document.createElement('button');
   clr.type = 'button'; clr.textContent = 'C'; clr.className = 'miss';
-  clr.addEventListener('click', () => { visitDigits = ''; syncVisitDisplay(); });
+  clr.addEventListener('click', () => {
+    visitDigits = '';
+    clearVisitReject();
+    syncVisitDisplay();
+  });
   elPad.appendChild(clr);
   const zero = document.createElement('button');
   zero.type = 'button'; zero.textContent = '0';
@@ -5489,23 +5513,41 @@ function buildVisitPad() {
   bk.type = 'button'; bk.textContent = '⌫';
   bk.addEventListener('click', () => {
     visitDigits = visitDigits.slice(0, -1);
+    clearVisitReject();
     syncVisitDisplay();
   });
   elPad.appendChild(bk);
   syncScoreActionRow();
+  syncVisitDisplay();
 }
 
 function visitAppendDigit(d) {
   if (visitDigits.length >= 3) return;
   if (visitDigits === '0') visitDigits = d;
   else visitDigits += d;
+  clearVisitReject();
   syncVisitDisplay();
+}
+
+function clearVisitReject() {
+  if (match && match.messageIsError) {
+    match.messageIsError = false;
+    if (match.message) match.message = '';
+  }
 }
 
 function syncVisitDisplay() {
   const disp = document.getElementById('visitDisplay');
-  if (!disp) return;
-  disp.innerHTML = (visitDigits || '0');
+  if (disp) disp.innerHTML = (visitDigits || '0');
+  const rej = document.getElementById('visitReject');
+  if (!rej) return;
+  if (match && match.messageIsError && match.message) {
+    rej.textContent = match.message;
+    rej.classList.remove('hidden');
+  } else {
+    rej.textContent = '';
+    rej.classList.add('hidden');
+  }
 }
 
 function updatePending() {
@@ -5553,8 +5595,10 @@ function commitVisitTotal(score, opts) {
   try {
     throwVisitTotal(match, score, opts || {});
     visitDigits = '';
+    match.messageIsError = false;
   } catch (e) {
     match.message = String(e.message || e);
+    match.messageIsError = true;
   }
   if (match.winner !== null) {
     const id = archiveFinishedMatch(match);
@@ -5562,6 +5606,7 @@ function commitVisitTotal(score, opts) {
       match.message += ' · saved ' + formatHistWhen(id);
     maybeStartNextLeg(match);
     visitDigits = '';
+    match.messageIsError = false;
   }
   render();
   if (scoreEntryMode === 'visit') syncVisitDisplay();
@@ -5581,7 +5626,8 @@ function statusMessageHtml(msg) {
   if (!msg || isThrowOnlyMessage(msg)) return '';
   // Bot throws already show on the board / remaining — don't echo "Bot: …" under Aim.
   if (/^Bot\b/i.test(String(msg).trim())) return '';
-  return '<div class="msg">' + msg + '</div>';
+  const err = !!(match && match.messageIsError);
+  return '<div class="msg' + (err ? ' err' : '') + '">' + msg + '</div>';
 }
 
 function renderStats() {
