@@ -591,6 +591,24 @@
     background: var(--field); color: #fff; border: 1px solid #555;
     border-radius: 10px; padding: 12px 10px; font-size: 16px; width: 100%;
   }
+  .coach-pick-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .coach-pick-head .hint {
+    margin: 0; font-size: 12px; color: var(--mute); text-align: left; line-height: 1.35;
+  }
+  .coach-pick-head button {
+    flex: 0 0 auto; background: var(--field); color: #eee; border: 1px solid #555;
+    border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .coach-player-list {
+    max-height: 180px; margin-bottom: 12px;
+    border: 1px solid #444; border-radius: 10px; overflow: auto;
+    background: #1a1a1a;
+  }
+  .coach-player-list button .sub { color: var(--mute); font-size: 11px; font-weight: 500; }
+  .coach-player-list button.sel { background: #2a2a20; color: var(--accent); }
   .drill-card {
     background: var(--panel); border-radius: 12px; padding: 14px; margin-bottom: 10px;
   }
@@ -1262,10 +1280,12 @@
     </div>
 
     <div class="coach-panel" id="coachPanelProfile">
-    <div class="coach-name-row">
-      <input id="coachPlayerName" type="text" maxlength="16" placeholder="Player name" autocomplete="off">
-      <button type="button" class="primary" id="coachRefresh" style="background:var(--accent);color:#1a1a1a;border:1px solid var(--accent);border-radius:10px;padding:12px 14px;font-weight:700;cursor:pointer">Refresh</button>
+    <div class="coach-pick-head">
+      <p class="hint">Players with saved fits or match form on this device</p>
+      <button type="button" id="coachRefresh">Refresh</button>
     </div>
+    <div class="player-list coach-player-list" id="coachPlayerPick"></div>
+    <input id="coachPlayerName" type="hidden" value="">
     <div class="coach-card" id="coachProfileCard">
       <h2>Your throw</h2>
       <p class="promise">Fit once, then Play uses aims matched to your accuracy.</p>
@@ -1465,16 +1485,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.23-beta / 2026-08-08 / 870ffcb</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.24-beta / 2026-08-08 / 870ffcb</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.23-beta / 2026-08-08 / 870ffcb';
+const APP_VERSION = '0.1.24-beta / 2026-08-08 / 870ffcb';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.23-beta-2026-08-08-870ffcb';
+const POLICY_CACHE_BUST = '0.1.24-beta-2026-08-08-870ffcb';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -6402,6 +6422,7 @@ function showPage(id) {
     renderFit();
     renderFitSavedList();
   } else if (id === 'coach') {
+    seedCoachNameIfEmpty();
     setCoachTab(openCoachTab || coachTab || 'profile');
   }
 }
@@ -6423,13 +6444,94 @@ function coachPlayerName() {
   return (el.value || '').trim().slice(0, 16);
 }
 
-/** Seed Coach name from seat 1 only when the field is still empty (page open), never while typing. */
-function seedCoachNameIfEmpty() {
+function setCoachPlayerName(name) {
   const el = document.getElementById('coachPlayerName');
-  if (!el) return '';
-  if ((el.value || '').trim()) return coachPlayerName();
+  if (!el) return;
+  el.value = String(name || '').trim().slice(0, 16);
+}
+
+/** Players who have a saved Fit and/or finished-match form on this device. */
+function listCoachProfilePlayers() {
+  const byKey = new Map();
+  const touch = (raw, kind) => {
+    const clean = String(raw || '').trim().slice(0, 16);
+    if (!clean || isBotPlayerName(clean) || isPlaceholderPlayerName(clean)) return;
+    const key = normPlayerName(clean);
+    if (!key) return;
+    let row = byKey.get(key);
+    if (!row) {
+      row = { name: clean, fits: 0, matches: 0 };
+      byKey.set(key, row);
+    }
+    if (kind === 'fit') row.fits += 1;
+    else if (kind === 'match') row.matches += 1;
+  };
+  try {
+    loadFitHistory().forEach(r => { if (r && r.name) touch(r.name, 'fit'); });
+  } catch (_) {}
+  try {
+    loadMatchHistory().forEach(rec => {
+      if (!rec || !Array.isArray(rec.players)) return;
+      rec.players.forEach(p => { if (p && p.name) touch(p.name, 'match'); });
+    });
+  } catch (_) {}
+  return [...byKey.values()]
+    .filter(p => (p.fits | 0) > 0 || (p.matches | 0) > 0)
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+}
+
+function renderCoachPlayerPick() {
+  const list = document.getElementById('coachPlayerPick');
+  if (!list) return;
+  const players = listCoachProfilePlayers();
+  const selKey = normPlayerName(coachPlayerName());
+  if (!players.length) {
+    list.innerHTML = '<div class="empty">No saved stats yet — finish a match or Fit σ under a player name.</div>';
+    return;
+  }
+  list.innerHTML = players.map(p => {
+    const key = normPlayerName(p.name);
+    const bits = [];
+    if (p.fits) bits.push(p.fits + ' fit' + (p.fits === 1 ? '' : 's'));
+    if (p.matches) bits.push(p.matches + ' match' + (p.matches === 1 ? '' : 'es'));
+    const sub = bits.join(' · ');
+    const cls = key === selKey ? 'sel' : '';
+    return '<button type="button" data-name="' + encodeURIComponent(p.name) + '"'
+      + (cls ? (' class="' + cls + '"') : '') + '>'
+      + '<span>' + p.name + '</span>'
+      + (sub ? ('<span class="sub">' + sub + '</span>') : '')
+      + '</button>';
+  }).join('');
+  list.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = decodeURIComponent(btn.dataset.name || '');
+      if (!name) return;
+      setCoachPlayerName(name);
+      renderCoachPage();
+    });
+  });
+}
+
+/** Seed Coach selection from seat 1 / first player with stats when nothing selected. */
+function seedCoachNameIfEmpty() {
+  if (coachPlayerName()) return coachPlayerName();
+  const players = listCoachProfilePlayers();
   const n0 = (document.getElementById('name0') && document.getElementById('name0').value || '').trim();
-  if (n0 && normPlayerName(n0) !== 'player 1') el.value = n0.slice(0, 16);
+  if (n0 && !isPlaceholderPlayerName(n0) && !isBotPlayerName(n0)) {
+    const key = normPlayerName(n0);
+    const hit = players.find(p => normPlayerName(p.name) === key);
+    if (hit) {
+      setCoachPlayerName(hit.name);
+      return coachPlayerName();
+    }
+  }
+  if (players.length) {
+    setCoachPlayerName(players[0].name);
+    return coachPlayerName();
+  }
+  if (n0 && !isPlaceholderPlayerName(n0) && !isBotPlayerName(n0)) {
+    setCoachPlayerName(n0);
+  }
   return coachPlayerName();
 }
 
@@ -6498,6 +6600,7 @@ function applySavedFitRecordToPlayer(rec, idx) {
 }
 
 function renderCoachPage() {
+  renderCoachPlayerPick();
   const name = ensureCoachName();
   const empty = document.getElementById('coachEmpty');
   const body = document.getElementById('coachProfileBody');
@@ -6561,7 +6664,7 @@ function renderCoachPage() {
       + ' on this device · ' + (isPro()
         ? 'Pro coach · Fit, practice & groups'
         : 'Free — upgrade for Fit, practice & groups'))
-    : 'Enter a player name to see form.';
+    : 'Pick a player above to see form.';
 
   // Habit strip
   const habit = loadHabit();
@@ -6585,7 +6688,7 @@ function renderCoachPage() {
     body.classList.add('hidden');
     empty.textContent = name
       ? ('No saved fit for ' + name + ' yet — open Fit σ and Save.')
-      : 'Type a player name (or set Player 1), then Fit σ → Save.';
+      : 'Pick a player with saved stats, or Fit σ → Save under a name.';
     drawCoachTrend([]);
     renderCoachContacts();
     renderCoachGroups();
