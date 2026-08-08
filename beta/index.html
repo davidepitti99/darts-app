@@ -136,6 +136,13 @@
   #pageScore.prematch .actions.has-ok {
     grid-template-columns: 1fr;
   }
+  .lineup-msg {
+    margin: 0 0 10px; padding: 10px 12px; border-radius: 8px;
+    background: #2a1818; border: 1px solid #5a2f2f;
+    color: #ff8a8a; font-size: 13px; font-weight: 700;
+    text-align: center; line-height: 1.35;
+  }
+  .lineup-msg.hidden { display: none !important; }
 
   .scores {
     display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; margin-bottom: 10px;
@@ -1251,6 +1258,7 @@
 
   <div class="pad" id="pad"></div>
 
+  <div class="lineup-msg hidden" id="lineupMsg" role="alert"></div>
   <div class="actions" id="scoreActions">
     <button type="button" id="btnMatch" class="primary">New match</button>
     <button type="button" id="btnUndo">Undo</button>
@@ -3355,6 +3363,21 @@ function refuseMatchStart(reason) {
   match.message = reason || 'Select a player for each seat before starting';
   match.messageIsError = true;
   render();
+  syncLineupMsg();
+}
+
+function syncLineupMsg() {
+  const el = document.getElementById('lineupMsg');
+  if (!el) return;
+  // Prematch hides .info — show refusals next to New match instead.
+  const show = !!(match && !matchUiActive && match.messageIsError && match.message);
+  if (show) {
+    el.textContent = match.message;
+    el.classList.remove('hidden');
+  } else {
+    el.textContent = '';
+    el.classList.add('hidden');
+  }
 }
 
 function syncNames() {
@@ -5737,6 +5760,7 @@ function render() {
     maybeStartNextLeg(match);
   syncPlayBoardChrome();
   syncAutoScoreEntryMode({ render: false });
+  syncLineupMsg();
   const m = mode();
 
   for (let i = 0; i < match.players.length; i++) {
