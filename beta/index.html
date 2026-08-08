@@ -165,6 +165,7 @@
     font-size: 13px; font-weight: 600; text-align: center; padding: 4px 0;
     cursor: pointer; border-radius: 6px;
   }
+  .card .name::placeholder { color: #666; font-weight: 600; }
   .card .name:focus { outline: 1px solid #555; }
   .card.active .name { color: var(--accent); }
 
@@ -1194,7 +1195,7 @@
 
   <div class="scores" id="scoreCards">
     <div class="card" id="card0">
-      <input class="name" id="name0" value="Player 1" maxlength="16" readonly
+      <input class="name" id="name0" value="" placeholder="Select player" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
       <div class="rem cricket-hide" id="rem0" title="Tap to see visit scores"
            role="button" tabindex="0">0</div>
@@ -1210,7 +1211,7 @@
     <button type="button" class="swap-sides" id="btnSwapSides"
             title="Swap these two players" aria-label="Swap seat 1 and seat 2">⇄</button>
     <div class="card" id="card1">
-      <input class="name" id="name1" value="Player 2" maxlength="16" readonly
+      <input class="name" id="name1" value="" placeholder="Select player" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
       <div class="rem cricket-hide" id="rem1" title="Tap to see visit scores"
            role="button" tabindex="0">0</div>
@@ -1226,7 +1227,7 @@
     <button type="button" class="swap-sides swap-adj-extra hidden" id="btnSwap12"
             title="Swap these two players" aria-label="Swap seat 2 and seat 3">⇄</button>
     <div class="card seat-extra hidden" id="card2">
-      <input class="name" id="name2" value="Player 3" maxlength="16" readonly
+      <input class="name" id="name2" value="" placeholder="Select player" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
       <div class="rem cricket-hide" id="rem2">0</div>
       <div class="meta" id="meta2">Legs 0</div>
@@ -1477,16 +1478,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.29-beta / 2026-08-08 / 5cc4b84</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.30-beta / 2026-08-08 / 5cc4b84</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.29-beta / 2026-08-08 / 5cc4b84';
+const APP_VERSION = '0.1.30-beta / 2026-08-08 / 5cc4b84';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.29-beta-2026-08-08-5cc4b84';
+const POLICY_CACHE_BUST = '0.1.30-beta-2026-08-08-5cc4b84';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2606,14 +2607,14 @@ function cricketScoreline(m) {
 function newMatch(startScore, doubleIn, namesArr, game, bestOf) {
   game = game || 'x01';
   const bo = normalizeBestOf(bestOf != null ? bestOf : loadSavedBestOf());
-  const ns = (namesArr && namesArr.length) ? namesArr : ['Player 1', 'Player 2'];
+  const ns = (namesArr && namesArr.length) ? namesArr : ['', ''];
   // x01 is always 2-up; cricket may be 2 or 3.
   let count = ns.length;
   if (game !== 'cricket') count = 2;
   else count = Math.min(3, Math.max(2, count));
   const players = [];
   for (let i = 0; i < count; i++) {
-    const nm = (ns[i] || ('Player ' + (i + 1))).trim() || ('Player ' + (i + 1));
+    const nm = (ns[i] || '').trim();
     players.push(makePlayer(nm, startScore, doubleIn, game));
   }
   return {
@@ -2647,7 +2648,7 @@ function clearBotsFromCricketLineup() {
     const el = document.getElementById('name' + i);
     const cur = (el && el.value) || (match && match.players[i] && match.players[i].name) || '';
     if (!isBotPlayerName(cur)) continue;
-    const fallback = 'Player ' + (i + 1);
+    const fallback = '';
     if (el) el.value = fallback;
     if (match && match.players[i]) match.players[i].name = fallback;
   }
@@ -3325,16 +3326,35 @@ function lineupSeatCount() {
 
 function names() {
   const out = [
-    (document.getElementById('name0').value || 'Player 1').trim() || 'Player 1',
-    (document.getElementById('name1').value || 'Player 2').trim() || 'Player 2',
+    (document.getElementById('name0').value || '').trim(),
+    (document.getElementById('name1').value || '').trim(),
   ];
   // Only include seat 3 in cricket 3p — never while on 501/301, or a leftover
   // Bot on the hidden card keeps greying Bot in the roster.
   if (lineupSeatCount() >= 3) {
     const el = document.getElementById('name2');
-    out.push(((el && el.value) || 'Player 3').trim() || 'Player 3');
+    out.push(((el && el.value) || '').trim());
   }
   return out;
+}
+
+/** True when every active seat has a real player (or Bot) selected. */
+function lineupNamesReady() {
+  const ns = names();
+  const need = lineupSeatCount();
+  if (ns.length < need) return false;
+  for (let i = 0; i < need; i++) {
+    const n = (ns[i] || '').trim();
+    if (!n || isPlaceholderPlayerName(n)) return false;
+  }
+  return true;
+}
+
+function refuseMatchStart(reason) {
+  if (!match) return;
+  match.message = reason || 'Select a player for each seat before starting';
+  match.messageIsError = true;
+  render();
 }
 
 function syncNames() {
@@ -4661,13 +4681,18 @@ function findSavedPlayer(name) {
 function applyPlayerName(idx, name, opts) {
   let n = String(name || '').trim().slice(0, 16);
   if (isBotPlayerName(n)) {
-    if (cricketModeActive()) n = 'Player ' + ((idx | 0) + 1);
+    if (cricketModeActive()) n = '';
     else n = BOT_PLAYER_NAME;
   }
   document.getElementById('name' + idx).value = n;
   syncNames();
   syncBotSeatFromNames();
   cancelBotThrow();
+  if (match && match.messageIsError) {
+    match.messageIsError = false;
+    if (/Select a player for each seat/i.test(String(match.message || '')))
+      match.message = '';
+  }
 }
 
 function otherPlayerNameKey(idx) {
@@ -4806,7 +4831,7 @@ function openPlayerModal(idx) {
   nameIn.value = names()[idx];
   if (isBotPlayerName(nameIn.value)) {
     if (cricketModeActive()) {
-      nameIn.value = 'Player ' + (idx + 1);
+      nameIn.value = '';
       playerListSel = null;
     } else {
       nameIn.value = BOT_PLAYER_NAME;
@@ -6097,6 +6122,10 @@ function syncBestOfModal() {
 }
 
 function openBestOfModal() {
+  if (!lineupNamesReady()) {
+    refuseMatchStart('Select a player for each seat before starting a match');
+    return;
+  }
   bestOfDraft = (match && match.bestOf) ? normalizeBestOf(match.bestOf) : loadSavedBestOf();
   const hasLegs = !!(match && match.players
     && match.players.some(p => (p.legsWon | 0) > 0));
@@ -6112,6 +6141,11 @@ function closeBestOfModal() {
 }
 
 function startMatchWithBestOf(bestOf) {
+  if (!lineupNamesReady()) {
+    closeBestOfModal();
+    refuseMatchStart('Select a player for each seat before starting a match');
+    return;
+  }
   cancelBotThrow();
   syncNames();
   const bo = normalizeBestOf(bestOf);
@@ -6126,6 +6160,12 @@ function startMatchWithBestOf(bestOf) {
   if (legs && legs.some(v => (v | 0) > 0))
     applyOpeningLegsScore(match, legs);
   if ((m.game || 'x01') === 'cricket') clearBotsFromCricketLineup();
+  if (!lineupNamesReady()) {
+    refuseMatchStart('Select a player for each seat before starting a match');
+    setMatchUiActive(false);
+    return;
+  }
+  match.messageIsError = false;
   setMatchUiActive(true);
   syncBotSeatFromNames();
   visitDigits = '';
