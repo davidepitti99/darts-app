@@ -366,6 +366,18 @@
   .bestof-legs-hint {
     margin: 8px 0 0; font-size: 11px; color: var(--mute); text-align: center;
   }
+  .checkout-attempts-picks {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 4px;
+  }
+  .checkout-attempts-picks button {
+    padding: 14px 8px; font-size: 20px; font-weight: 800;
+    background: var(--field); color: #eee; border: 1px solid #555; border-radius: 10px;
+    cursor: pointer;
+  }
+  .checkout-attempts-picks button:active,
+  .checkout-attempts-picks button.sel {
+    background: var(--accent); color: #1a1a1a; border-color: var(--accent);
+  }
   .card .rem {
     font-size: 42px; font-weight: 800; line-height: 1.05; margin: 4px 0;
     user-select: none;
@@ -1084,6 +1096,22 @@
     </div>
   </div>
 </div>
+<div class="player-modal hidden" id="checkoutAttemptsModal" role="dialog" aria-modal="true"
+     aria-label="Checkout attempts">
+  <div class="player-box">
+    <h2>Checkout attempts</h2>
+    <p class="hint" id="checkoutAttemptsHint">Leave was in checkout range. How many attempts at closing?</p>
+    <div class="checkout-attempts-picks" id="checkoutAttemptsPicks">
+      <button type="button" data-attempts="0">0</button>
+      <button type="button" data-attempts="1">1</button>
+      <button type="button" data-attempts="2">2</button>
+      <button type="button" data-attempts="3">3</button>
+    </div>
+    <div class="player-actions" style="grid-template-columns:1fr">
+      <button type="button" id="checkoutAttemptsCancel">Cancel</button>
+    </div>
+  </div>
+</div>
 <div class="player-modal hidden" id="visitListModal" role="dialog" aria-modal="true" aria-label="Visit scores">
   <div class="player-box">
     <h2 id="visitListTitle">Visits</h2>
@@ -1433,16 +1461,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.19-beta / 2026-08-08 / 870ffcb</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.20-beta / 2026-08-08 / 870ffcb</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.19-beta / 2026-08-08 / 870ffcb';
+const APP_VERSION = '0.1.20-beta / 2026-08-08 / 870ffcb';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.19-beta-2026-08-08-870ffcb';
+const POLICY_CACHE_BUST = '0.1.20-beta-2026-08-08-870ffcb';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2914,9 +2942,17 @@ function isCheckoutChance(rem) { return rem >= 2 && rem <= 170; }
 
 /** One checkout attempt per visit that starts on a finishable leave (2–170). */
 function countCheckoutAttemptIfNeeded(m, p) {
+  addCheckoutAttempts(m, p, 1);
+}
+
+/** Add N checkout attempts for this visit (capped 0–3). No-op if already counted. */
+function addCheckoutAttempts(m, p, n) {
   if (m.visitCheckoutCounted) return;
   if (!isCheckoutChance(m.turnStart)) return;
-  p.checkoutAttempts += 1;
+  let k = (n == null) ? 1 : (n | 0);
+  if (k < 0) k = 0;
+  if (k > 3) k = 3;
+  p.checkoutAttempts = (p.checkoutAttempts | 0) + k;
   m.visitCheckoutCounted = true;
 }
 
@@ -3118,7 +3154,10 @@ function throwVisitTotal(m, score, opts) {
 
   function countVisitDarts(n) {
     p.dartsThrown += n;
-    countCheckoutAttemptIfNeeded(m, p);
+    if (opts.checkoutAttempts != null)
+      addCheckoutAttempts(m, p, opts.checkoutAttempts);
+    else
+      countCheckoutAttemptIfNeeded(m, p);
   }
 
   function pushVisitResult(result) {
@@ -3160,6 +3199,9 @@ function throwVisitTotal(m, score, opts) {
   if (score === remBefore) {
     if (!isCheckoutChance(remBefore))
       throw new Error('Cannot check out ' + remBefore + ' with a visit total');
+    // A finish always counts at least one attempt.
+    if (opts.checkoutAttempts != null && (opts.checkoutAttempts | 0) < 1)
+      opts.checkoutAttempts = 1;
     countVisitDarts(3);
     p.remaining = 0;
     p.checkoutHits += 1;
@@ -4593,7 +4635,7 @@ function findSavedPlayer(name) {
   return loadSavedPlayers().find(p => normPlayerName(p.name) === key) || null;
 }
 
-function applyPlayerName(idx, name) {
+function applyPlayerName(idx, name, opts) {
   let n = String(name || '').trim().slice(0, 16);
   if (isBotPlayerName(n)) {
     if (cricketModeActive()) n = 'Player ' + ((idx | 0) + 1);
@@ -4602,7 +4644,8 @@ function applyPlayerName(idx, name) {
   document.getElementById('name' + idx).value = n;
   syncNames();
   syncBotSeatFromNames();
-  syncEntryThreshInputFromPrefs(idx);
+  if (!(opts && opts.keepEntryThresh))
+    syncEntryThreshInputFromPrefs(idx);
   cancelBotThrow();
 }
 
@@ -4797,7 +4840,11 @@ function saveCurrentPlayerFromModal() {
     render();
     return;
   }
-  applyPlayerName(playerEditIdx, name.slice(0, 16));
+  applyPlayerName(playerEditIdx, name.slice(0, 16), { keepEntryThresh: true });
+  const thr = entryDartThresholdForSeat(playerEditIdx);
+  storeEntryDartThresholdForName(name.slice(0, 16), thr);
+  const thrEl = document.getElementById('entryDart' + playerEditIdx);
+  if (thrEl) thrEl.value = String(clampEntryDartThreshold(thr));
   const profile = { name: name.slice(0, 16) };
   const list = loadSavedPlayers().filter(p => !isBotPlayerName(p.name));
   const key = normPlayerName(profile.name);
@@ -5786,6 +5833,29 @@ function runPrescribedDrill(code) {
   else showPage('practice');
 }
 
+let pendingVisitTotalScore = null;
+
+function openCheckoutAttemptsModal(score) {
+  pendingVisitTotalScore = score | 0;
+  const leave = match ? (match.turnStart | 0) : 0;
+  const hint = document.getElementById('checkoutAttemptsHint');
+  if (hint) {
+    hint.textContent = 'Started on ' + leave + '. How many attempts at closing?';
+  }
+  const picks = document.getElementById('checkoutAttemptsPicks');
+  if (picks) {
+    picks.querySelectorAll('button').forEach(b => b.classList.remove('sel'));
+  }
+  const modal = document.getElementById('checkoutAttemptsModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeCheckoutAttemptsModal() {
+  pendingVisitTotalScore = null;
+  const modal = document.getElementById('checkoutAttemptsModal');
+  if (modal) modal.classList.add('hidden');
+}
+
 (function wireVisitOk() {
   const ok = document.getElementById('btnVisitOk');
   if (!ok) return;
@@ -5793,7 +5863,33 @@ function runPrescribedDrill(code) {
     if (scoreEntryMode !== 'visit') return;
     if (match && match.game === 'cricket') return;
     const n = visitDigits === '' ? 0 : parseInt(visitDigits, 10);
+    // On a finishable leave, ask how many checkout attempts (0–3).
+    if (match && isCheckoutChance(match.turnStart)) {
+      openCheckoutAttemptsModal(n);
+      return;
+    }
     commitVisitTotal(n, {});
+  });
+})();
+(function wireCheckoutAttemptsModal() {
+  const modal = document.getElementById('checkoutAttemptsModal');
+  if (!modal) return;
+  const cancel = document.getElementById('checkoutAttemptsCancel');
+  const picks = document.getElementById('checkoutAttemptsPicks');
+  if (cancel) cancel.addEventListener('click', closeCheckoutAttemptsModal);
+  if (picks) {
+    picks.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-attempts]');
+      if (!btn) return;
+      if (pendingVisitTotalScore == null) return;
+      const attempts = parseInt(btn.getAttribute('data-attempts'), 10);
+      const score = pendingVisitTotalScore;
+      closeCheckoutAttemptsModal();
+      commitVisitTotal(score, { checkoutAttempts: attempts });
+    });
+  }
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeCheckoutAttemptsModal();
   });
 })();
 document.getElementById('btnUndo').addEventListener('click', () => {
