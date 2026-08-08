@@ -1465,16 +1465,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.22-beta / 2026-08-08 / 870ffcb</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.23-beta / 2026-08-08 / 870ffcb</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.22-beta / 2026-08-08 / 870ffcb';
+const APP_VERSION = '0.1.23-beta / 2026-08-08 / 870ffcb';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.22-beta-2026-08-08-870ffcb';
+const POLICY_CACHE_BUST = '0.1.23-beta-2026-08-08-870ffcb';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -6359,16 +6359,14 @@ function setCoachTab(tab) {
   }
   if (coachTab === 'profile') {
     hideCheckoutAimPreview();
-    ensureCoachName();
     renderCoachPage();
   } else if (coachTab === 'practice') {
     hideCheckoutAimPreview();
-    ensureCoachName();
     renderPracticePage();
   } else if (coachTab === 'checkout') {
     const sigEl = document.getElementById('checkoutSigma');
     if (sigEl && !(sigEl.value || '').trim()) {
-      const fits = fitsForCoachName(ensureCoachName());
+      const fits = fitsForCoachName(coachPlayerName());
       const s = fits[0] ? latestFitSigma(fits[0]) : nearestPolicySigma(activeSigma());
       if (Number.isFinite(s)) sigEl.value = String(Math.round(s));
     }
@@ -6419,14 +6417,25 @@ for (const b of pageNav.children)
 })();
 
 // ── Coach profile + practice drills ──────────────────────────────────────
-function ensureCoachName() {
+function coachPlayerName() {
   const el = document.getElementById('coachPlayerName');
   if (!el) return '';
-  if (!(el.value || '').trim()) {
-    const n0 = (document.getElementById('name0') && document.getElementById('name0').value || '').trim();
-    if (n0 && normPlayerName(n0) !== 'player 1') el.value = n0.slice(0, 16);
-  }
   return (el.value || '').trim().slice(0, 16);
+}
+
+/** Seed Coach name from seat 1 only when the field is still empty (page open), never while typing. */
+function seedCoachNameIfEmpty() {
+  const el = document.getElementById('coachPlayerName');
+  if (!el) return '';
+  if ((el.value || '').trim()) return coachPlayerName();
+  const n0 = (document.getElementById('name0') && document.getElementById('name0').value || '').trim();
+  if (n0 && normPlayerName(n0) !== 'player 1') el.value = n0.slice(0, 16);
+  return coachPlayerName();
+}
+
+/** @deprecated alias — prefer coachPlayerName(); does not auto-fill. */
+function ensureCoachName() {
+  return coachPlayerName();
 }
 
 function fitsForCoachName(name) {
