@@ -209,25 +209,6 @@
   }
   .hist-form .W { background: #1e3a1e; color: #7dcc7d; }
   .hist-form .L { background: #3a1e1e; color: #ff8a8a; }
-  .hist-chart {
-    height: 72px; display: flex; align-items: flex-end; gap: 3px;
-    padding: 6px 4px 2px; background: #141414; border: 1px solid #2a2a2a;
-    border-radius: 10px;
-  }
-  .hist-chart .bar {
-    flex: 1; min-width: 0; border-radius: 3px 3px 0 0;
-    background: #3a3a3a; position: relative;
-  }
-  .hist-chart .bar.win { background: #2f5a2f; }
-  .hist-chart .bar.loss { background: #5a2f2f; }
-  .hist-chart .bar .tip {
-    position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -2px);
-    font-size: 9px; color: var(--mute); white-space: nowrap; display: none;
-  }
-  .hist-chart .bar:last-child .tip { display: block; color: var(--accent); }
-  .hist-chart-label {
-    font-size: 10px; color: var(--mute); text-align: center; margin-top: -4px;
-  }
   .hist-list {
     flex: 1; overflow-y: auto; border: 1px solid #333; border-radius: 10px;
     min-height: 100px; max-height: 220px; background: #141414;
@@ -1485,16 +1466,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.24-beta / 2026-08-08 / 870ffcb</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.25-beta / 2026-08-08 / 870ffcb</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,7,10,15],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.24-beta / 2026-08-08 / 870ffcb';
+const APP_VERSION = '0.1.25-beta / 2026-08-08 / 870ffcb';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.24-beta-2026-08-08-870ffcb';
+const POLICY_CACHE_BUST = '0.1.25-beta-2026-08-08-870ffcb';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -3809,28 +3790,6 @@ function renderPlayerHistory() {
     return '<span class="' + wl + '" title="' + modeLabel(rec) + '">' + wl + '</span>';
   }).join('');
 
-  // Chart: chronological (oldest → newest) of last 12 x01 averages; cricket as short bars.
-  const chartSrc = rows.slice(0, 12).slice().reverse();
-  let maxV = 1;
-  const vals = chartSrc.map(rec => {
-    const side = playerSideInMatch(rec, name);
-    if (!side) return { v: 0, win: false, label: '—', cricket: false };
-    const cricket = rec.game === 'cricket' || rec.mode === 'cricket';
-    const v = cricket
-      ? (side.me.points | 0)
-      : (side.me.avg3 != null ? Number(side.me.avg3) : 0);
-    if (v > maxV) maxV = v;
-    return {
-      v, win: !!side.won, cricket,
-      label: cricket ? (String(side.me.points | 0) + 'p') : (side.me.avg3 == null ? '—' : Number(side.me.avg3).toFixed(0)),
-    };
-  });
-  const chart = vals.map(b => {
-    const h = Math.max(4, Math.round(64 * (b.v / maxV)));
-    return '<div class="bar ' + (b.win ? 'win' : 'loss') + '" style="height:' + h + 'px">'
-      + '<span class="tip">' + b.label + '</span></div>';
-  }).join('');
-
   let list = rows.slice(0, 40).map(rec => {
     const side = playerSideInMatch(rec, name);
     if (!side) return '';
@@ -3852,8 +3811,6 @@ function renderPlayerHistory() {
     + '</div><div class="k">Avg 3-dart</div></div>'
     + '</div>'
     + '<div class="hist-form" title="Recent form (newest left)">' + form + '</div>'
-    + '<div class="hist-chart">' + chart + '</div>'
-    + '<div class="hist-chart-label">Recent form · bar height = 3-dart avg (or Cricket pts)</div>'
     + '<div class="hist-list">' + list + '</div>';
 
   box.querySelectorAll('.hist-list button').forEach(btn => {
@@ -7054,13 +7011,6 @@ function startDrillWarmup() {
 }
 
 (function wireCoachUi() {
-  const nameEl = document.getElementById('coachPlayerName');
-  if (nameEl) {
-    nameEl.addEventListener('input', () => renderCoachPage());
-    nameEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); renderCoachPage(); }
-    });
-  }
   const bind = (id, fn) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('click', fn);
