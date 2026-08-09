@@ -840,6 +840,14 @@
               background: #141414; margin-top: 10px; }
   .fit-method { margin-bottom: 10px; }
   .fit-panel.hidden { display: none; }
+  .fit-aim-block { margin-bottom: 10px; }
+  .fit-aim-block .hint {
+    margin: 8px 0 6px; font-size: 12px; color: var(--mute); text-align: center;
+  }
+  .fit-aim-sectors.hidden { display: none !important; }
+  .fit-aim-sectors .sector-pad button.sel {
+    background: var(--accent); color: #1a1a1a; border-color: var(--accent);
+  }
   .zone-grid {
     display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 8px;
   }
@@ -1447,8 +1455,18 @@
     </div><!-- /fitPanelMeasure -->
 
     <div class="fit-panel" id="fitPanelZones">
-    <div class="fit-help">
-      Aim at the <b>bull</b>. Tap <b>+</b> for the belt each dart hit.
+    <div class="fit-help" id="fitZonesHelp">
+      Choose <b>aim</b> (red bull or a triple), then tap <b>+</b> for where each dart landed.
+    </div>
+    <div class="fit-aim-block" id="fitAimBlock">
+      <div class="segmented" id="fitAimKindToggle">
+        <button type="button" class="active" data-fit-aim="bull">Red bull</button>
+        <button type="button" data-fit-aim="triple">Triple</button>
+      </div>
+      <div class="fit-aim-sectors hidden" id="fitAimSectorRow">
+        <p class="hint">Aiming which triple?</p>
+        <div class="sector-pad" id="fitAimSectorPad"></div>
+      </div>
     </div>
     <div class="zone-grid" id="zoneGrid"></div>
     </div><!-- /fitPanelZones -->
@@ -1486,16 +1504,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.32-beta / 2026-08-09 / f7b2f55</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.33-beta / 2026-08-09 / 448fc7b</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.32-beta / 2026-08-09 / f7b2f55';
+const APP_VERSION = '0.1.33-beta / 2026-08-09 / 448fc7b';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.32-beta-2026-08-09-f7b2f55';
+const POLICY_CACHE_BUST = '0.1.33-beta-2026-08-09-448fc7b';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -7251,11 +7269,26 @@ const FIT_ANNULI = [
 const FIT_ANNULUS_BY_KEY = Object.fromEntries(FIT_ANNULI.map(a => [a.key, a]));
 /** Belts that carry a sector number (1–20). */
 const FIT_SECTORAL_KEYS = new Set(['single_inner', 'triple', 'single_outer', 'double']);
+/** Outcome buckets when aiming at a triple (multinomial MLE via MC). */
+const FIT_TRIPLE_REGIONS = [
+  { key: 'target', label: 'Target triple', short: 'T' },
+  { key: 'same_single', label: 'Same single', short: 'S' },
+  { key: 'same_double', label: 'Same double', short: 'D' },
+  { key: 'adj_triple', label: 'Adjacent triples', short: 'T±' },
+  { key: 'adj_single', label: 'Adjacent singles', short: 'S±' },
+  { key: 'elsewhere', label: 'Elsewhere', short: '…' },
+];
+const FIT_TRIPLE_BY_KEY = Object.fromEntries(FIT_TRIPLE_REGIONS.map(a => [a.key, a]));
 /** Zone hits: { key, sector: null | 1..20 }. */
 const fitZoneHits = [];
-const fitZoneCounts = Object.fromEntries(FIT_ANNULI.map(a => [a.key, 0]));
+const fitZoneCounts = Object.create(null);
 let fitMethod = 'zones'; // 'measure' | 'zones'
-let pendingZoneKey = null; // belt awaiting optional sector pick
+let pendingZoneKey = null; // belt awaiting optional sector pick (bull aim)
+/** Score-zones aim: red bull (annuli) or any triple TN. */
+let fitAimKind = 'bull'; // 'bull' | 'triple'
+let fitAimSector = 20;
+const TRIPLE_FIT_MC = 2500;
+const _tripleProbCache = Object.create(null);
 
 const FIT_HISTORY_KEY = 'dartsFitHistory';
 const FIT_HISTORY_MAX = 100;
@@ -7294,7 +7327,11 @@ function storeFitHistory(list) {
 function fitSummaryLabel(rec) {
   if (!rec) return '—';
   const s = latestFitSigma(rec);
-  return Number.isFinite(s) ? ('σ ' + Number(s).toFixed(1) + ' mm') : '—';
+  if (!Number.isFinite(s)) return '—';
+  let aim = '';
+  if (rec.aim && rec.aim.kind === 'triple') aim = ' · T' + (rec.aim.sector | 0);
+  else if (rec.method === 'zones') aim = ' · bull';
+  return 'σ ' + Number(s).toFixed(1) + ' mm' + aim;
 }
 
 function upsertSavedPlayerName(name) {
@@ -7315,6 +7352,11 @@ function buildFitSaveRecord(name, fit) {
     name: String(name || '').trim().slice(0, 16),
     method: fitMethod,
     mode: fit.mode,
+    aim: fitMethod === 'zones'
+      ? (fitAimKind === 'triple'
+        ? { kind: 'triple', sector: fitAimSector | 0 }
+        : { kind: 'bull' })
+      : { kind: 'bull' },
     n: fit.n | 0,
     se: fit.se,
     ciLo: fit.ciLo,
@@ -7361,22 +7403,33 @@ function loadSavedFit(id) {
   if (!rec) return;
   elFitPlayerName.value = rec.name || '';
   fitThrows.length = 0;
-  fitZoneHits.length = 0;
-  for (const a of FIT_ANNULI) fitZoneCounts[a.key] = 0;
+  clearFitZoneData();
   if (rec.method === 'zones' && (rec.zoneHits || rec.zoneCounts)) {
     setFitMethod('zones');
+    const aim = rec.aim || { kind: 'bull' };
+    if (aim.kind === 'triple' && SECTORS.includes(aim.sector | 0)) {
+      fitAimKind = 'triple';
+      fitAimSector = aim.sector | 0;
+    } else {
+      fitAimKind = 'bull';
+      fitAimSector = 20;
+    }
+    syncFitAimUi();
+    resetFitZoneCounts();
+    const schema = fitZoneSchema();
+    const byKey = Object.fromEntries(schema.map(a => [a.key, a]));
     if (Array.isArray(rec.zoneHits) && rec.zoneHits.length) {
       for (const h of rec.zoneHits) {
-        if (!h || !FIT_ANNULUS_BY_KEY[h.key]) continue;
+        if (!h || !byKey[h.key]) continue;
         let sector = null;
-        if (h.sector != null && FIT_SECTORAL_KEYS.has(h.key)) {
+        if (fitAimKind === 'bull' && h.sector != null && FIT_SECTORAL_KEYS.has(h.key)) {
           const s = parseInt(h.sector, 10);
           if (SECTORS.includes(s)) sector = s;
         }
         fitZoneHits.push({ key: h.key, sector: sector });
       }
     } else if (rec.zoneCounts) {
-      for (const a of FIT_ANNULI) {
+      for (const a of schema) {
         const n = Math.max(0, parseInt(rec.zoneCounts[a.key], 10) || 0);
         for (let i = 0; i < n; i++) fitZoneHits.push({ key: a.key, sector: null });
       }
@@ -7384,6 +7437,8 @@ function loadSavedFit(id) {
     syncZoneCountsFromHits();
   } else {
     setFitMethod('measure');
+    fitAimKind = 'bull';
+    syncFitAimUi();
     for (const t of (rec.throws || [])) {
       const r = Number(t.r);
       if (!Number.isFinite(r) || r < 0 || r > FIT_R_MAX) continue;
@@ -7461,20 +7516,201 @@ function syncFitSaveButton() {
   elFitSave.disabled = !(name && fitCurrent());
 }
 
+function fitZoneSchema() {
+  return fitAimKind === 'triple' ? FIT_TRIPLE_REGIONS : FIT_ANNULI;
+}
+
+function resetFitZoneCounts() {
+  for (const k of Object.keys(fitZoneCounts)) delete fitZoneCounts[k];
+  for (const a of fitZoneSchema()) fitZoneCounts[a.key] = 0;
+}
+
+function clearFitZoneData() {
+  fitZoneHits.length = 0;
+  resetFitZoneCounts();
+  _zoneFitCache = { sig: null, fit: null };
+}
+
+function adjacentSectors(n) {
+  const i = SECTORS.indexOf(n | 0);
+  if (i < 0) return [];
+  return [SECTORS[(i + 19) % 20], SECTORS[(i + 1) % 20]];
+}
+
+function tripleAimPoint(sector) {
+  const i = SECTORS.indexOf(sector | 0);
+  const idx = i >= 0 ? i : 0;
+  const theta = idx * SECTOR;
+  const r = (TRIPLE_INNER + TRIPLE_OUTER) / 2;
+  return [r * Math.sin(theta), r * Math.cos(theta)];
+}
+
+function classifyTripleOutcome(aimSector, label) {
+  const lab = String(label || '');
+  if (lab === 'Bull' || lab === '25' || lab === 'Miss' || lab === 'Bounce')
+    return 'elsewhere';
+  const m = /^([TSD])(\d+)$/.exec(lab);
+  if (!m) return 'elsewhere';
+  const kind = m[1];
+  const n = parseInt(m[2], 10);
+  const aim = aimSector | 0;
+  if (n === aim) {
+    if (kind === 'T') return 'target';
+    if (kind === 'S') return 'same_single';
+    if (kind === 'D') return 'same_double';
+  }
+  if (adjacentSectors(aim).includes(n)) {
+    if (kind === 'T') return 'adj_triple';
+    if (kind === 'S') return 'adj_single';
+  }
+  return 'elsewhere';
+}
+
+function tripleRegionProbs(sector, sigma) {
+  const s = Math.max(0.5, Number(sigma) || 25);
+  const rounded = Math.round(s * 10) / 10;
+  const key = (sector | 0) + ':' + rounded.toFixed(1);
+  if (_tripleProbCache[key]) return _tripleProbCache[key].slice();
+  const [ax, ay] = tripleAimPoint(sector);
+  const tallies = Object.fromEntries(FIT_TRIPLE_REGIONS.map(r => [r.key, 0]));
+  for (let i = 0; i < TRIPLE_FIT_MC; i++) {
+    const [x, y] = sampleGaussianLanding(ax, ay, { sigma: rounded });
+    const reg = classifyTripleOutcome(sector, scoreLabelFromXY(x, y));
+    tallies[reg] = (tallies[reg] || 0) + 1;
+  }
+  let sum = 0;
+  const probs = FIT_TRIPLE_REGIONS.map(r => {
+    const p = Math.max(tallies[r.key] / TRIPLE_FIT_MC, 1e-300);
+    sum += p;
+    return p;
+  });
+  const out = probs.map(p => p / sum);
+  _tripleProbCache[key] = out;
+  // Cap cache size.
+  const keys = Object.keys(_tripleProbCache);
+  if (keys.length > 400) {
+    for (let i = 0; i < 80; i++) delete _tripleProbCache[keys[i]];
+  }
+  return out.slice();
+}
+
+function fitTripleRegions(sector, counts) {
+  const nVec = FIT_TRIPLE_REGIONS.map(a => counts[a.key] || 0);
+  const n = nVec.reduce((a, b) => a + b, 0);
+  if (n < 1) return null;
+
+  function nll(logSigma) {
+    const sigma = Math.exp(logSigma);
+    const p = tripleRegionProbs(sector, sigma);
+    let s = 0;
+    for (let i = 0; i < nVec.length; i++) s += nVec[i] * Math.log(p[i]);
+    return -s;
+  }
+
+  let lo = Math.log(0.5), hi = Math.log(400);
+  const gr = (Math.sqrt(5) - 1) / 2;
+  let c = hi - gr * (hi - lo);
+  let d = lo + gr * (hi - lo);
+  let fc = nll(c), fd = nll(d);
+  for (let iter = 0; iter < 48; iter++) {
+    if (fc < fd) { hi = d; d = c; fd = fc; c = hi - gr * (hi - lo); fc = nll(c); }
+    else { lo = c; c = d; fc = fd; d = lo + gr * (hi - lo); fd = nll(d); }
+  }
+  const logHat = (lo + hi) / 2;
+  const sigma = Math.exp(logHat);
+  const h = 1e-3;
+  const f0 = nll(logHat);
+  const d2 = (nll(logHat + h) - 2 * f0 + nll(logHat - h)) / (h * h);
+  const se = d2 > 1e-12 ? sigma / Math.sqrt(d2) : sigma;
+  const probs = tripleRegionProbs(sector, sigma);
+  return {
+    mode: 'triple_regions', n, sigma,
+    sigmaEq: sigma, se,
+    ciLo: Math.max(0, sigma - 1.96 * se), ciHi: sigma + 1.96 * se,
+    r50: sigma * Math.sqrt(-2 * Math.log(0.5)),
+    r95: sigma * Math.sqrt(-2 * Math.log(0.05)),
+    counts: Object.assign({}, counts),
+    expected: probs.map(p => p * n),
+    probs,
+    aimSector: sector | 0,
+    regions: FIT_TRIPLE_REGIONS,
+  };
+}
+
+function syncFitAimUi() {
+  const kindTog = document.getElementById('fitAimKindToggle');
+  if (kindTog) {
+    kindTog.querySelectorAll('[data-fit-aim]').forEach(b => {
+      b.classList.toggle('active', b.dataset.fitAim === fitAimKind);
+    });
+  }
+  const row = document.getElementById('fitAimSectorRow');
+  if (row) row.classList.toggle('hidden', fitAimKind !== 'triple');
+  const pad = document.getElementById('fitAimSectorPad');
+  if (pad && fitAimKind === 'triple') {
+    pad.innerHTML = SECTORS.map(n => {
+      const sel = n === fitAimSector ? ' sel' : '';
+      return '<button type="button" data-sector="' + n + '" class="' + sel.trim() + '">'
+        + n + '</button>';
+    }).join('');
+    pad.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const n = parseInt(btn.dataset.sector, 10);
+        if (!SECTORS.includes(n) || n === fitAimSector) return;
+        if (fitZoneHits.length
+            && !window.confirm('Change aim to T' + n + '? Logged hits will be cleared.'))
+          return;
+        fitAimSector = n;
+        clearFitZoneData();
+        syncFitAimUi();
+        renderFit();
+      });
+    });
+  }
+  const help = document.getElementById('fitZonesHelp');
+  if (help) {
+    help.innerHTML = fitAimKind === 'triple'
+      ? ('Aiming <b>T' + fitAimSector + '</b>. Tap <b>+</b> for where each dart landed.')
+      : 'Aiming <b>red bull</b>. Tap <b>+</b> for the belt each dart hit.';
+  }
+}
+
+function setFitAimKind(kind) {
+  if (kind !== 'bull' && kind !== 'triple') return;
+  if (kind === fitAimKind) return;
+  if (fitZoneHits.length
+      && !window.confirm('Switch aim? Logged score-zone hits will be cleared.'))
+    return;
+  fitAimKind = kind;
+  clearFitZoneData();
+  syncFitAimUi();
+  renderFit();
+}
+
 function setFitMethod(method) {
   fitMethod = method;
   for (const b of elFitMethodToggle.children)
     b.classList.toggle('active', b.dataset.fitMethod === method);
   elFitPanelMeasure.classList.toggle('hidden', method !== 'measure');
   elFitPanelZones.classList.toggle('hidden', method !== 'zones');
+  if (method === 'zones') syncFitAimUi();
   renderFit();
 }
 
 for (const b of elFitMethodToggle.children)
   b.addEventListener('click', () => setFitMethod(b.dataset.fitMethod));
+(function wireFitAimUi() {
+  const tog = document.getElementById('fitAimKindToggle');
+  if (!tog) return;
+  tog.querySelectorAll('[data-fit-aim]').forEach(btn => {
+    btn.addEventListener('click', () => setFitAimKind(btn.dataset.fitAim));
+  });
+  syncFitAimUi();
+  resetFitZoneCounts();
+})();
 
 function syncZoneCountsFromHits() {
-  for (const a of FIT_ANNULI) fitZoneCounts[a.key] = 0;
+  resetFitZoneCounts();
   for (const h of fitZoneHits)
     fitZoneCounts[h.key] = (fitZoneCounts[h.key] || 0) + 1;
 }
@@ -7500,7 +7736,7 @@ function openSectorModal(key) {
   const a = FIT_ANNULUS_BY_KEY[key];
   document.getElementById('sectorModalTitle').textContent = a.label + ' — sector';
   document.getElementById('sectorModalHint').textContent =
-    'Optional sector label — the fit stays isotropic σ from belt counts.';
+    'Optional sector label — the bull-aim fit stays isotropic σ from belt counts.';
   const pad = document.getElementById('sectorPad');
   pad.innerHTML = '';
   for (const n of SECTORS) {
@@ -7538,11 +7774,24 @@ function removeZoneHit(key) {
 
 function renderZoneGrid() {
   syncZoneCountsFromHits();
-  elZoneGrid.innerHTML = FIT_ANNULI.map(a => {
-    const sec = FIT_SECTORAL_KEYS.has(a.key) ? zoneSectorSummary(a.key) : '';
+  const schema = fitZoneSchema();
+  const n = fitAimSector | 0;
+  const adj = adjacentSectors(n);
+  elZoneGrid.innerHTML = schema.map(a => {
+    let sub = a.sub || '';
+    if (fitAimKind === 'triple') {
+      if (a.key === 'target') sub = 'T' + n;
+      else if (a.key === 'same_single') sub = 'S' + n;
+      else if (a.key === 'same_double') sub = 'D' + n;
+      else if (a.key === 'adj_triple') sub = 'T' + adj[0] + ' / T' + adj[1];
+      else if (a.key === 'adj_single') sub = 'S' + adj[0] + ' / S' + adj[1];
+      else sub = 'Bull, far sectors, miss';
+    }
+    const sec = (fitAimKind === 'bull' && FIT_SECTORAL_KEYS.has(a.key))
+      ? zoneSectorSummary(a.key) : '';
     return '<div class="zone-row" data-key="' + a.key + '">'
       + '<div class="zlab">' + a.label
-      + '<span class="zsub">' + a.sub + '</span>'
+      + '<span class="zsub">' + sub + '</span>'
       + (sec ? ('<span class="zsec">' + sec + '</span>') : '')
       + '</div>'
       + '<button type="button" class="minus" data-delta="-1" aria-label="minus">−</button>'
@@ -7556,7 +7805,7 @@ function renderZoneGrid() {
       btn.addEventListener('click', () => {
         const d = parseInt(btn.dataset.delta, 10);
         if (d > 0) {
-          if (FIT_SECTORAL_KEYS.has(key)) openSectorModal(key);
+          if (fitAimKind === 'bull' && FIT_SECTORAL_KEYS.has(key)) openSectorModal(key);
           else commitZoneHit(key, null);
         } else {
           removeZoneHit(key);
@@ -7645,10 +7894,11 @@ function fitAnnuli(counts) {
   };
 }
 
-/** Isotropic annular MLE from zone belt counts (sectors are labels only). */
+/** Score-zones MLE: bull annuli (analytic) or triple regions (MC). */
 let _zoneFitCache = { sig: null, fit: null };
 function zoneHitsSignature(hits) {
-  return hits.map(h => h.key + ':' + (h.sector == null ? '-' : h.sector)).join('|');
+  const aim = fitAimKind === 'triple' ? ('T' + fitAimSector) : 'bull';
+  return aim + '|' + hits.map(h => h.key + ':' + (h.sector == null ? '-' : h.sector)).join('|');
 }
 
 function fitZonesFromHits(hits) {
@@ -7659,7 +7909,9 @@ function fitZonesFromHits(hits) {
   const sig = zoneHitsSignature(hits);
   if (_zoneFitCache.sig === sig) return _zoneFitCache.fit;
   syncZoneCountsFromHits();
-  const iso = fitAnnuli(fitZoneCounts);
+  const iso = fitAimKind === 'triple'
+    ? fitTripleRegions(fitAimSector, fitZoneCounts)
+    : fitAnnuli(fitZoneCounts);
   _zoneFitCache = { sig: sig, fit: iso };
   return iso;
 }
@@ -7706,15 +7958,17 @@ function drawFitChart(fit) {
       cssW / 2, cssH / 2);
     return;
   }
-  if (fit.mode === 'annuli') drawAnnuliChart(fit, cssW, cssH);
+  if (fit.mode === 'annuli' || fit.mode === 'triple_regions')
+    drawAnnuliChart(fit, cssW, cssH);
   else drawIsoChart(fit, cssW, cssH);
 }
 
 function drawAnnuliChart(fit, cssW, cssH) {
   const padL = 8, padR = 8, padT = 16, padB = 48;
   const W = cssW - padL - padR, H = cssH - padT - padB;
-  const n = FIT_ANNULI.length;
-  const obs = FIT_ANNULI.map(a => (fit.counts[a.key] || 0) / fit.n);
+  const regions = fit.regions || FIT_ANNULI;
+  const n = regions.length;
+  const obs = regions.map(a => (fit.counts[a.key] || 0) / fit.n);
   const exp = fit.probs;
   let yMax = 0;
   for (let i = 0; i < n; i++) yMax = Math.max(yMax, obs[i], exp[i]);
@@ -7733,7 +7987,9 @@ function drawAnnuliChart(fit, cssW, cssH) {
   fitCtx.fillStyle = '#888';
   fitCtx.font = '9px sans-serif';
   fitCtx.textAlign = 'center';
-  const short = ['RB', 'GB', 'S1', 'T', 'S2', 'D', 'X'];
+  const short = fit.mode === 'triple_regions'
+    ? regions.map(a => a.short || a.key)
+    : ['RB', 'GB', 'S1', 'T', 'S2', 'D', 'X'];
   for (let i = 0; i < n; i++)
     fitCtx.fillText(short[i], padL + (i + 0.5) * groupW, cssH - 28);
   fitCtx.fillText('Observed (blue) vs model (gold)', padL + W / 2, cssH - 10);
@@ -7796,7 +8052,8 @@ function fitQuality(fit) {
     level = 'high'; label = 'High confidence';
   }
   let detail = '±' + pct.toFixed(0) + '% on σ (95% CI) · n=' + n;
-  if (fit.mode === 'annuli') detail += ' · belt MLE';
+  if (fit.mode === 'annuli') detail += ' · bull belt MLE';
+  else if (fit.mode === 'triple_regions') detail += ' · T' + (fit.aimSector || '') + ' region MLE';
   else detail += ' · isotropic';
   return { level, label, detail, pct };
 }
@@ -7808,7 +8065,9 @@ function refreshFitSummary() {
     elFitQuality.textContent = '';
     elFitQuality.className = 'quality';
     if (fitMethod === 'zones') {
-      elFitDetail.textContent = 'Tap + on each belt a dart hit';
+      elFitDetail.textContent = fitAimKind === 'triple'
+        ? ('Tap + for landings while aiming T' + fitAimSector)
+        : 'Tap + on each belt a dart hit (aiming red bull)';
     } else {
       elFitDetail.textContent = fitThrows.length
         ? 'Fix invalid rows to estimate σ'
@@ -7822,7 +8081,12 @@ function refreshFitSummary() {
     const s = nearestPolicySigma(fit.sigma);
     if (fit.mode === 'annuli') {
       elFitDetail.textContent =
-        'belt MLE (isotropic) · 95% CI ' + fit.ciLo.toFixed(1)
+        'bull belt MLE · 95% CI ' + fit.ciLo.toFixed(1)
+        + '–' + fit.ciHi.toFixed(1) + ' mm'
+        + ' · policy s' + s + '_s' + s + '_p0';
+    } else if (fit.mode === 'triple_regions') {
+      elFitDetail.textContent =
+        'T' + fit.aimSector + ' region MLE · 95% CI ' + fit.ciLo.toFixed(1)
         + '–' + fit.ciHi.toFixed(1) + ' mm'
         + ' · policy s' + s + '_s' + s + '_p0';
     } else {
@@ -7850,7 +8114,9 @@ function renderFitList() {
       elFitList.innerHTML = '<div class="empty">No belt counts yet</div>';
       return;
     }
-    elFitList.innerHTML = '<div class="empty">n = ' + n + ' throws across score belts</div>';
+    elFitList.innerHTML = '<div class="empty">n = ' + n + ' throws across score zones'
+      + (fitAimKind === 'triple' ? (' (aim T' + fitAimSector + ')') : ' (aim bull)')
+      + '</div>';
     return;
   }
   if (!fitThrows.length) {
@@ -7944,8 +8210,7 @@ elFitRadius.addEventListener('keydown', (e) => {
 });
 document.getElementById('fitClear').addEventListener('click', () => {
   fitThrows.length = 0;
-  fitZoneHits.length = 0;
-  for (const a of FIT_ANNULI) fitZoneCounts[a.key] = 0;
+  clearFitZoneData();
   closeSectorModal();
   renderFit();
 });
