@@ -1633,13 +1633,12 @@ let pendingMult = 'S';
  *  Auto uses each seat's saved Dart≤ threshold (default 170). */
 let scoreEntryMode = 'visit';
 let visitDigits = '';
-/** Lineup size for 501 / 301 DI / Cricket: 2 or 3 (cricket 3p = cut-throat). */
+/** Lineup size for 501 / 301 DI / Cricket: 2 or 3 (cricket 3p = cut-throat).
+ *  Always defaults to 2; choosing 3 lasts for the session until changed. */
 let lineupPlayerCount = 2;
 try {
-  let cp = parseInt(localStorage.getItem('dartsLineupPlayers'), 10);
-  if (cp !== 2 && cp !== 3)
-    cp = parseInt(localStorage.getItem('dartsCricketPlayers'), 10);
-  if (cp === 2 || cp === 3) lineupPlayerCount = cp;
+  localStorage.removeItem('dartsLineupPlayers');
+  localStorage.removeItem('dartsCricketPlayers');
 } catch (_) {}
 /** @deprecated use lineupPlayerCount — kept in sync for older call sites. */
 let cricketPlayerCount = lineupPlayerCount;
@@ -5271,9 +5270,12 @@ function selectMode(key) {
     applyMatchNamesToDom(match);
     lineupPlayerCount = playerCount(match) >= 3 ? 3 : 2;
     cricketPlayerCount = lineupPlayerCount;
-    try { localStorage.setItem('dartsLineupPlayers', String(lineupPlayerCount)); } catch (_) {}
     setMatchUiActive(wasActive);
   } else {
+    // Fresh mode: keep seat count only if already 2; otherwise open on default 2.
+    if (lineupPlayerCount !== 2 && lineupPlayerCount !== 3)
+      lineupPlayerCount = 2;
+    cricketPlayerCount = lineupPlayerCount;
     match = newMatch(m.start_score, m.double_in, names(), wantGame);
     setMatchUiActive(false);
   }
