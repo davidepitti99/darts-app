@@ -116,6 +116,7 @@
   }
   .scores:not(.players-3) .swap-adj-extra { display: none !important; }
   .card.seat-extra.hidden { display: none !important; }
+  .players-toggle.hidden,
   .cricket-players-toggle.hidden { display: none !important; }
 
   /* Before New match: lineup / mode only — hide scoring chrome. */
@@ -1202,7 +1203,7 @@
 
   <div class="page active" id="pageScore">
   <div class="segmented" id="modeToggle"></div>
-  <div class="segmented cricket-players-toggle hidden" id="cricketPlayersToggle">
+  <div class="segmented players-toggle" id="playersToggle">
     <button type="button" class="active" data-cp="2">2 players</button>
     <button type="button" data-cp="3">3 players</button>
   </div>
@@ -1248,7 +1249,8 @@
     <div class="card seat-extra hidden" id="card2">
       <input class="name" id="name2" value="" placeholder="Select player" maxlength="16" readonly
              inputmode="none" title="Tap to load or save player">
-      <div class="rem cricket-hide" id="rem2">0</div>
+      <div class="rem cricket-hide" id="rem2" title="Tap to see visit scores"
+           role="button" tabindex="0">0</div>
       <div class="meta" id="meta2">Legs 0</div>
       <div class="sigma-row cricket-hide" id="simpleRow2">
         <label for="sigma2">σ</label>
@@ -1479,6 +1481,7 @@
     <div class="fit-actions">
       <button type="button" class="primary" id="fitApply0">Use for Player 1</button>
       <button type="button" class="primary" id="fitApply1">Use for Player 2</button>
+      <button type="button" class="primary" id="fitApply2">Use for Player 3</button>
     </div>
     <div class="fit-saved" id="fitSavedList">
       <div class="hdr"><span>Saved fits</span><span>this device</span></div>
@@ -1486,16 +1489,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.36-beta / 2026-08-09 / bc00eac</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.37-beta / 2026-08-09 / bc00eac</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.36-beta / 2026-08-09 / bc00eac';
+const APP_VERSION = '0.1.37-beta / 2026-08-09 / bc00eac';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.36-beta-2026-08-09-bc00eac';
+const POLICY_CACHE_BUST = '0.1.37-beta-2026-08-09-bc00eac';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -1620,6 +1623,7 @@ const elInfo = document.getElementById('info');
 const elStats = document.getElementById('stats');
 const elSigma0 = document.getElementById('sigma0');
 const elSigma1 = document.getElementById('sigma1');
+const elSigma2 = document.getElementById('sigma2');
 const elModeToggle = document.getElementById('modeToggle');
 const elPad = document.getElementById('pad');
 
@@ -1629,12 +1633,16 @@ let pendingMult = 'S';
  *  Auto uses each seat's saved Dart≤ threshold (default 170). */
 let scoreEntryMode = 'visit';
 let visitDigits = '';
-/** Cricket seat count: 2 = classic, 3 = cut-throat (points to open opponents). */
-let cricketPlayerCount = 2;
+/** Lineup size for 501 / 301 DI / Cricket: 2 or 3 (cricket 3p = cut-throat). */
+let lineupPlayerCount = 2;
 try {
-  const cp = parseInt(localStorage.getItem('dartsCricketPlayers'), 10);
-  if (cp === 2 || cp === 3) cricketPlayerCount = cp;
+  let cp = parseInt(localStorage.getItem('dartsLineupPlayers'), 10);
+  if (cp !== 2 && cp !== 3)
+    cp = parseInt(localStorage.getItem('dartsCricketPlayers'), 10);
+  if (cp === 2 || cp === 3) lineupPlayerCount = cp;
 } catch (_) {}
+/** @deprecated use lineupPlayerCount — kept in sync for older call sites. */
+let cricketPlayerCount = lineupPlayerCount;
 /** Built-in roster name: selecting it for a seat makes that seat the CPU. */
 const BOT_PLAYER_NAME = 'Bot';
 let botThrowTimer = null;
@@ -2180,11 +2188,18 @@ function loadLastDiagnosis() {
   } catch (_) { return null; }
 }
 
+function matchLosers(m) {
+  if (!m || m.winner === null || !Array.isArray(m.players)) return [];
+  return m.players.filter((_, i) => i !== m.winner);
+}
+
 /** Diagnose finished match → one prescribed drill. */
 function diagnoseMatch(m) {
   if (!m || m.winner === null) return null;
   const w = m.players[m.winner];
-  const l = m.players[1 - m.winner];
+  const losers = matchLosers(m);
+  const l = losers[0];
+  if (!w || !l) return null;
   if (m.game === 'cricket') {
     const wClosed = CRICKET_KEYS.filter(k => ((w.marks || {})[k] || 0) >= 3).length;
     const lClosed = CRICKET_KEYS.filter(k => ((l.marks || {})[k] || 0) >= 3).length;
@@ -2344,7 +2359,7 @@ function sharePayload(title, text, feedbackSel) {
 function shareGreetingFor(m) {
   m = m || match;
   if (!m || !Array.isArray(m.players) || m.winner === null) return '';
-  const invitee = m.players[1 - m.winner];
+  const invitee = matchLosers(m)[0];
   if (!invitee || isPlaceholderPlayerName(invitee.name)) return '';
   const c = findContact(invitee.name);
   const who = (c && c.handle) ? c.handle : invitee.name;
@@ -2376,49 +2391,48 @@ function padShare(s, w) {
   return s.length >= w ? s : (s + ' '.repeat(w - s.length));
 }
 
+function shareStatRow(label, values) {
+  let s = padShare(label, 14);
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    s += (i < values.length - 1) ? padShare(v, 10) : String(v);
+  }
+  return s;
+}
+
 /** Plain-text match card for sharing with the opponent (+ app invite). */
 function buildMatchShareText(m) {
   m = m || match;
   if (!m || m.winner === null) return '';
-  const a = m.players[0], b = m.players[1];
+  const ps = m.players || [];
   const modeName = (typeof modeLabel === 'function')
     ? modeLabel({ game: m.game, mode: (typeof currentModeKey !== 'undefined' ? currentModeKey : ''), doubleIn: m.doubleIn, startScore: m.startScore })
     : (m.game === 'cricket' ? 'Cricket' : String(m.startScore || '501'));
   const when = formatHistWhen(m.archiveId || new Date().toISOString());
   const winner = m.players[m.winner];
-  const loser = m.players[1 - m.winner];
+  const losers = matchLosers(m);
   const lines = [];
   lines.push('Darts Aim — match result');
   lines.push(modeName + ' · ' + when);
   lines.push('');
-  lines.push(winner.name + ' beat ' + loser.name);
+  lines.push(winner.name + ' beat ' + losers.map(p => p.name).join(' / '));
   lines.push('');
+  lines.push(shareStatRow('', ps.map(p => p.name)));
   if (m.game === 'cricket') {
     const closed = (p) => CRICKET_KEYS.filter(k => ((p.marks || {})[k] || 0) >= 3).length;
-    lines.push(padShare('', 14) + padShare(a.name, 10) + b.name);
-    lines.push(padShare('Points', 14) + padShare(a.points | 0, 10) + (b.points | 0));
-    lines.push(padShare('Closed', 14) + padShare(closed(a) + '/7', 10) + closed(b) + '/7');
-    lines.push(padShare('Darts', 14) + padShare(a.dartsThrown | 0, 10) + (b.dartsThrown | 0));
+    lines.push(shareStatRow('Points', ps.map(p => p.points | 0)));
+    lines.push(shareStatRow('Closed', ps.map(p => closed(p) + '/7')));
+    lines.push(shareStatRow('Darts', ps.map(p => p.dartsThrown | 0)));
   } else {
-    lines.push(padShare('', 14) + padShare(a.name, 10) + b.name);
-    lines.push(padShare('3-dart avg', 14)
-      + padShare(fmtShareStat(avg3(a), 1), 10) + fmtShareStat(avg3(b), 1));
-    lines.push(padShare('First 9', 14)
-      + padShare(fmtShareStat(avgFirst9(a), 1), 10) + fmtShareStat(avgFirst9(b), 1));
-    lines.push(padShare('Checkout %', 14)
-      + padShare(
-        (checkoutPct(a) == null ? '—' : fmtShareStat(checkoutPct(a), 0) + '%'), 10)
-      + (checkoutPct(b) == null ? '—' : fmtShareStat(checkoutPct(b), 0) + '%'));
-    lines.push(padShare('Hi checkout', 14)
-      + padShare(a.highestCheckout || '—', 10) + (b.highestCheckout || '—'));
-    lines.push(padShare('Hi visit', 14)
-      + padShare(a.highestVisit || '—', 10) + (b.highestVisit || '—'));
-    lines.push(padShare('180s', 14)
-      + padShare(a.scores180 | 0, 10) + (b.scores180 | 0));
-    lines.push(padShare('Busts', 14)
-      + padShare(a.busts | 0, 10) + (b.busts | 0));
-    lines.push(padShare('Darts', 14)
-      + padShare(a.dartsThrown | 0, 10) + (b.dartsThrown | 0));
+    lines.push(shareStatRow('3-dart avg', ps.map(p => fmtShareStat(avg3(p), 1))));
+    lines.push(shareStatRow('First 9', ps.map(p => fmtShareStat(avgFirst9(p), 1))));
+    lines.push(shareStatRow('Checkout %', ps.map(p =>
+      checkoutPct(p) == null ? '—' : fmtShareStat(checkoutPct(p), 0) + '%')));
+    lines.push(shareStatRow('Hi checkout', ps.map(p => p.highestCheckout || '—')));
+    lines.push(shareStatRow('Hi visit', ps.map(p => p.highestVisit || '—')));
+    lines.push(shareStatRow('180s', ps.map(p => p.scores180 | 0)));
+    lines.push(shareStatRow('Busts', ps.map(p => p.busts | 0)));
+    lines.push(shareStatRow('Darts', ps.map(p => p.dartsThrown | 0)));
   }
   lines.push('');
   lines.push('Rematch with personal aims — fit your throw, get coached aims.');
@@ -2432,8 +2446,9 @@ function shareMatchResults() {
   // Keep players in the circle when sharing — next rematch is one tap.
   saveMatchPlayersAsContacts(match, { bumpPlay: false });
   const text = shareGreetingFor(match) + buildMatchShareText(match);
+  const losers = matchLosers(match);
   const title = match.players[match.winner].name + ' beat '
-    + match.players[1 - match.winner].name + ' · Darts Aim';
+    + losers.map(p => p.name).join(' / ') + ' · Darts Aim';
   sharePayload(title, text, '#shareMatchFeedback');
 }
 
@@ -2616,10 +2631,10 @@ function newMatch(startScore, doubleIn, namesArr, game, bestOf) {
   game = game || 'x01';
   const bo = normalizeBestOf(bestOf != null ? bestOf : loadSavedBestOf());
   const ns = (namesArr && namesArr.length) ? namesArr : ['', ''];
-  // x01 is always 2-up; cricket may be 2 or 3.
-  let count = ns.length;
-  if (game !== 'cricket') count = 2;
-  else count = Math.min(3, Math.max(2, count));
+  // 501 / 301 DI / Cricket: 2 or 3 seats (cricket 3p = cut-throat scoring).
+  let count = Math.min(3, Math.max(2, ns.length));
+  if (typeof lineupPlayerCount === 'number')
+    count = lineupPlayerCount >= 3 ? 3 : 2;
   const players = [];
   for (let i = 0; i < count; i++) {
     const nm = (ns[i] || '').trim();
@@ -3383,11 +3398,9 @@ function maybeStartNextLeg(m) {
 // ── UI state ─────────────────────────────────────────────────────────────
 let match = null;
 
-/** Active lineup size for the current mode (x01 always 2; cricket 2 or 3). */
+/** Active lineup size for the current mode (2 or 3). */
 function lineupSeatCount() {
-  if (typeof isCricket === 'function' && isCricket())
-    return (typeof cricketPlayerCount === 'number' && cricketPlayerCount >= 3) ? 3 : 2;
-  return 2;
+  return (typeof lineupPlayerCount === 'number' && lineupPlayerCount >= 3) ? 3 : 2;
 }
 
 function names() {
@@ -3395,8 +3408,8 @@ function names() {
     (document.getElementById('name0').value || '').trim(),
     (document.getElementById('name1').value || '').trim(),
   ];
-  // Only include seat 3 in cricket 3p — never while on 501/301, or a leftover
-  // Bot on the hidden card keeps greying Bot in the roster.
+  // Seat 3 only when 3-up — a leftover name on the hidden card must not
+  // keep greying Bot / blocking the roster.
   if (lineupSeatCount() >= 3) {
     const el = document.getElementById('name2');
     out.push(((el && el.value) || '').trim());
@@ -3813,9 +3826,9 @@ function modeLabel(rec) {
 }
 
 function matchTitle(rec) {
-  const a = (rec && rec.players && rec.players[0] && rec.players[0].name) || '—';
-  const b = (rec && rec.players && rec.players[1] && rec.players[1].name) || '—';
-  return modeLabel(rec) + ': ' + a + ' vs ' + b;
+  const names = ((rec && rec.players) || []).map(p => (p && p.name) || '—');
+  if (names.length >= 3) return modeLabel(rec) + ': ' + names.join(' · ');
+  return modeLabel(rec) + ': ' + (names[0] || '—') + ' vs ' + (names[1] || '—');
 }
 
 function histMetric(side, rec) {
@@ -3962,47 +3975,48 @@ function renderPlayerHistory() {
 }
 
 function renderMatchDetailHtml(rec, focusName) {
-  const a = (rec.players && rec.players[0]) || { name: '—' };
-  const b = (rec.players && rec.players[1]) || { name: '—' };
+  const ps = (rec.players && rec.players.length)
+    ? rec.players
+    : [{ name: '—' }, { name: '—' }];
   const cricket = rec.game === 'cricket' || rec.mode === 'cricket';
-  const winName = rec.winnerName || (rec.players && rec.players[rec.winner] && rec.players[rec.winner].name) || '—';
+  const winName = rec.winnerName || (ps[rec.winner] && ps[rec.winner].name) || '—';
   const rows = cricket
     ? [
-        ['Points', a.points, b.points],
-        ['Closed', (a.closed != null ? a.closed : '—') + '/7', (b.closed != null ? b.closed : '—') + '/7'],
-        ['Darts', a.dartsThrown, b.dartsThrown],
-        ['Legs', a.legsWon, b.legsWon],
+        ['Points', ...ps.map(p => p.points)],
+        ['Closed', ...ps.map(p => (p.closed != null ? p.closed : '—') + '/7')],
+        ['Darts', ...ps.map(p => p.dartsThrown)],
+        ['Legs', ...ps.map(p => p.legsWon)],
       ]
     : [
-        ['3-dart avg', a.avg3 == null ? '—' : Number(a.avg3).toFixed(1),
-                      b.avg3 == null ? '—' : Number(b.avg3).toFixed(1)],
-        ['First 9', a.avgFirst9 == null ? '—' : Number(a.avgFirst9).toFixed(1),
-                   b.avgFirst9 == null ? '—' : Number(b.avgFirst9).toFixed(1)],
-        ['Darts', a.dartsThrown, b.dartsThrown],
-        ['100–139', a.scores100, b.scores100],
-        ['140–179', a.scores140, b.scores140],
-        ['180', a.scores180, b.scores180],
-        ['Checkout %',
-          a.checkoutPct == null ? '—' : Math.round(a.checkoutPct) + '%',
-          b.checkoutPct == null ? '—' : Math.round(b.checkoutPct) + '%'],
-        ['Hi checkout', a.highestCheckout || '—', b.highestCheckout || '—'],
-        ['Hi visit', a.highestVisit || '—', b.highestVisit || '—'],
-        ['Busts', a.busts, b.busts],
-        ['Legs', a.legsWon, b.legsWon],
+        ['3-dart avg', ...ps.map(p => p.avg3 == null ? '—' : Number(p.avg3).toFixed(1))],
+        ['First 9', ...ps.map(p => p.avgFirst9 == null ? '—' : Number(p.avgFirst9).toFixed(1))],
+        ['Darts', ...ps.map(p => p.dartsThrown)],
+        ['100–139', ...ps.map(p => p.scores100)],
+        ['140–179', ...ps.map(p => p.scores140)],
+        ['180', ...ps.map(p => p.scores180)],
+        ['Checkout %', ...ps.map(p =>
+          p.checkoutPct == null ? '—' : Math.round(p.checkoutPct) + '%')],
+        ['Hi checkout', ...ps.map(p => p.highestCheckout || '—')],
+        ['Hi visit', ...ps.map(p => p.highestVisit || '—')],
+        ['Busts', ...ps.map(p => p.busts)],
+        ['Legs', ...ps.map(p => p.legsWon)],
       ];
-  const aCls = normPlayerName(a.name) === normPlayerName(winName) ? ' winner' : '';
-  const bCls = normPlayerName(b.name) === normPlayerName(winName) ? ' winner' : '';
-  let grid = '<div class="h"></div><div class="h' + aCls + '">' + a.name
-    + '</div><div class="h' + bCls + '">' + b.name + '</div>';
-  for (const [lab, va, vb] of rows) {
-    grid += '<div class="lbl">' + lab + '</div><div>' + va + '</div><div>' + vb + '</div>';
+  let grid = '<div class="h"></div>';
+  for (const p of ps) {
+    const cls = normPlayerName(p.name) === normPlayerName(winName) ? ' winner' : '';
+    grid += '<div class="h' + cls + '">' + p.name + '</div>';
+  }
+  for (const row of rows) {
+    grid += '<div class="lbl">' + row[0] + '</div>';
+    for (let i = 1; i < row.length; i++) grid += '<div>' + row[i] + '</div>';
   }
   return '<div class="hist-detail">'
     + '<div class="d-title">' + matchTitle(rec) + '</div>'
     + '<div class="d-meta">' + formatHistWhen(rec.ts || rec.id)
     + ' · ' + winName + ' won'
     + '<br>' + formatIsoSeconds(rec.id) + '</div>'
-    + '<div class="d-grid">' + grid + '</div>'
+    + '<div class="d-grid" style="grid-template-columns: 1.1fr repeat('
+    + ps.length + ', 1fr)">' + grid + '</div>'
     + renderMatchThrowsHtml(rec, focusName)
     + '</div>';
 }
@@ -4380,15 +4394,16 @@ function memberKeySet(group) {
   return s;
 }
 
-/** Finished matches where both players are group members. */
+/** Finished matches where every seat is a group member. */
 function matchesForGroup(group) {
   const keys = memberKeySet(group);
   if (keys.size < 2) return [];
   return loadMatchHistory().filter(r => {
     if (!r || !Array.isArray(r.players) || r.players.length < 2) return false;
-    const a = normPlayerName(r.players[0] && r.players[0].name);
-    const b = normPlayerName(r.players[1] && r.players[1].name);
-    return a && b && a !== b && keys.has(a) && keys.has(b);
+    const names = r.players.map(p => normPlayerName(p && p.name));
+    if (names.some(n => !n)) return false;
+    if (new Set(names).size !== names.length) return false;
+    return names.every(n => keys.has(n));
   });
 }
 
@@ -4407,8 +4422,9 @@ function groupStandings(group) {
   const matches = matchesForGroup(group);
   for (const m of matches) {
     const wa = m.winner;
-    if (wa !== 0 && wa !== 1) continue;
-    for (let i = 0; i < 2; i++) {
+    const n = (m.players || []).length;
+    if (wa == null || wa < 0 || wa >= n) continue;
+    for (let i = 0; i < n; i++) {
       const p = m.players[i];
       const key = normPlayerName(p && p.name);
       const row = rows[key];
@@ -4629,12 +4645,13 @@ function renderCoachGroups() {
     } else {
       html += matches.map(m => {
         const w = m.players[m.winner];
-        const l = m.players[1 - m.winner];
+        const losers = (m.players || []).filter((_, i) => i !== m.winner);
         const mode = modeLabel({
           game: m.game, mode: m.mode, doubleIn: m.doubleIn, startScore: m.startScore,
         });
         return '<div class="row"><b>' + (w && w.name) + '</b> beat <b>'
-          + (l && l.name) + '</b><br>' + mode + ' · ' + formatHistWhen(m.ts || m.id)
+          + losers.map(p => p.name).join(' / ') + '</b><br>' + mode
+          + ' · ' + formatHistWhen(m.ts || m.id)
           + '</div>';
       }).join('');
     }
@@ -5043,7 +5060,8 @@ function populateSigmas() {
   const m = mode();
   const allowed = isPro() ? m.sigmas : freeSigmas().filter(s => m.sigmas.includes(s));
   const lo = allowed[0], hi = allowed[allowed.length - 1];
-  for (const el of [elSigma0, elSigma1]) {
+  for (const el of [elSigma0, elSigma1, elSigma2]) {
+    if (!el) continue;
     const prev = parseInt(el.value, 10);
     el.min = String(lo);
     el.max = String(hi);
@@ -5182,7 +5200,7 @@ function resolvePolicy(modeKey, shape) {
 
 function syncPolicyFromShape(idx) {
   const snap = snapPolicyShape(playerShape(idx));
-  const el = idx === 0 ? elSigma0 : elSigma1;
+  const el = document.getElementById('sigma' + idx);
   if (el) el.value = String(snap.sigma);
 }
 
@@ -5251,10 +5269,9 @@ function selectMode(key) {
     delete parkedMatches[key];
     delete parkedUiActive[key];
     applyMatchNamesToDom(match);
-    if (match.game === 'cricket') {
-      cricketPlayerCount = playerCount(match) >= 3 ? 3 : 2;
-      try { localStorage.setItem('dartsCricketPlayers', String(cricketPlayerCount)); } catch (_) {}
-    }
+    lineupPlayerCount = playerCount(match) >= 3 ? 3 : 2;
+    cricketPlayerCount = lineupPlayerCount;
+    try { localStorage.setItem('dartsLineupPlayers', String(lineupPlayerCount)); } catch (_) {}
     setMatchUiActive(wasActive);
   } else {
     match = newMatch(m.start_score, m.double_in, names(), wantGame);
@@ -5291,20 +5308,19 @@ function syncCricketChrome() {
       }
     }
   }
-  const cpToggle = document.getElementById('cricketPlayersToggle');
+  const cpToggle = document.getElementById('playersToggle')
+    || document.getElementById('cricketPlayersToggle');
   if (cpToggle) {
-    cpToggle.classList.toggle('hidden', !cricket);
+    cpToggle.classList.remove('hidden');
     for (const b of cpToggle.querySelectorAll('button[data-cp]'))
-      b.classList.toggle('active', (b.dataset.cp | 0) === cricketPlayerCount);
+      b.classList.toggle('active', (b.dataset.cp | 0) === lineupPlayerCount);
   }
   syncPlayerSeatsChrome();
   syncEntryToggle();
 }
 
 function syncPlayerSeatsChrome() {
-  const n = (match && match.game === 'cricket')
-    ? playerCount(match)
-    : ((isCricket() && cricketPlayerCount >= 3) ? 3 : 2);
+  const n = match ? playerCount(match) : lineupSeatCount();
   const cards = document.getElementById('scoreCards');
   if (cards) cards.classList.toggle('players-3', n >= 3);
   const card2 = document.getElementById('card2');
@@ -5328,43 +5344,45 @@ function syncLineupLockChrome() {
     const b = document.getElementById(id);
     if (b) b.disabled = locked;
   }
-  const cpToggle = document.getElementById('cricketPlayersToggle');
+  const cpToggle = document.getElementById('playersToggle')
+    || document.getElementById('cricketPlayersToggle');
   if (cpToggle) {
     for (const b of cpToggle.querySelectorAll('button[data-cp]'))
-      b.disabled = locked && !!(match && match.game === 'cricket');
+      b.disabled = locked && !!match;
   }
 }
 
-function setCricketPlayerCount(n) {
+function setLineupPlayerCount(n) {
   n = (n | 0) === 3 ? 3 : 2;
-  if (n === cricketPlayerCount && match && match.game === 'cricket'
-      && playerCount(match) === n)
+  if (n === lineupPlayerCount && match && playerCount(match) === n)
     return;
-  if (match && match.game === 'cricket' && lineupLocked()) {
+  if (match && lineupLocked()) {
     match.message = 'Seat count locked while the match is in progress — change after it ends or via New match';
     syncCricketChrome();
     render();
     return;
   }
+  lineupPlayerCount = n;
   cricketPlayerCount = n;
-  try { localStorage.setItem('dartsCricketPlayers', String(n)); } catch (_) {}
+  try { localStorage.setItem('dartsLineupPlayers', String(n)); } catch (_) {}
   syncPlayerSeatsChrome();
-  if (isCricket() || (match && match.game === 'cricket')) {
-    cancelBotThrow();
-    syncNames();
-    const m = mode();
-    const bo = (match && match.bestOf) || loadSavedBestOf();
-    // Preserve undo of the previous match when changing seat count.
-    if (match) resetMatch(match, m.start_score, m.double_in, names(), 'cricket', bo);
-    else match = newMatch(m.start_score, m.double_in, names(), 'cricket', bo);
-    syncBotSeatFromNames();
-    visitDigits = '';
-    buildPad();
-    render();
-  } else {
-    syncCricketChrome();
-  }
+  cancelBotThrow();
+  syncNames();
+  const m = mode();
+  const game = (m && m.game) || 'x01';
+  const bo = (match && match.bestOf) || loadSavedBestOf();
+  // Preserve undo of the previous match when changing seat count.
+  if (match) resetMatch(match, m.start_score, m.double_in, names(), game, bo);
+  else match = newMatch(m.start_score, m.double_in, names(), game, bo);
+  if (game === 'cricket') clearBotsFromCricketLineup();
+  syncBotSeatFromNames();
+  visitDigits = '';
+  buildPad();
+  render();
 }
+
+/** @deprecated alias — cricket UI used this name. */
+function setCricketPlayerCount(n) { setLineupPlayerCount(n); }
 
 function cricketCommit(target, mult) {
   // mult: 'S' | 'D' | 'T'. Bull: S=outer 25, D=inner 50, T unused.
@@ -6096,10 +6114,8 @@ let bestOfDraft = loadSavedBestOf();
 let bestOfLegsEnabled = false;
 
 function bestOfSeatCount() {
-  const game = mode() && mode().game;
-  if (game === 'cricket' && cricketPlayerCount >= 3) return 3;
-  if (match && match.game === 'cricket' && playerCount(match) >= 3) return 3;
-  return 2;
+  if (match) return playerCount(match);
+  return lineupSeatCount();
 }
 
 function bestOfMaxLegsPerPlayer() {
@@ -6307,8 +6323,6 @@ if (elEntryToggle) {
     setScoreEntryMode(btn.dataset.entry);
   });
 }
-elSigma0.addEventListener('change', () => commitSigmaInput(elSigma0));
-
 (function wireSigmaInfo() {
   const modal = document.getElementById('sigmaInfoModal');
   if (!modal) return;
@@ -6330,8 +6344,9 @@ elSigma0.addEventListener('change', () => commitSigmaInput(elSigma0));
     if (e.target === modal) close();
   });
 })();
-elSigma1.addEventListener('change', () => commitSigmaInput(elSigma1));
-for (const el of [elSigma0, elSigma1]) {
+for (const el of [elSigma0, elSigma1, elSigma2]) {
+  if (!el) continue;
+  el.addEventListener('change', () => commitSigmaInput(el));
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); commitSigmaInput(el); el.blur(); }
   });
@@ -6365,13 +6380,14 @@ for (const idx of [0, 1, 2]) {
     if (e.target === modal) closeVisitListModal();
   });
 })();
-(function wireCricketPlayersToggle() {
-  const box = document.getElementById('cricketPlayersToggle');
+(function wirePlayersToggle() {
+  const box = document.getElementById('playersToggle')
+    || document.getElementById('cricketPlayersToggle');
   if (!box) return;
   box.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-cp]');
     if (!btn) return;
-    setCricketPlayerCount(btn.dataset.cp | 0);
+    setLineupPlayerCount(btn.dataset.cp | 0);
   });
 })();
 document.getElementById('playerCancel').addEventListener('click', closePlayerModal);
@@ -6757,9 +6773,9 @@ function drawCoachTrend(recs) {
 
 function applySavedFitRecordToPlayer(rec, idx) {
   if (!rec) return;
-  const el = idx === 0 ? elSigma0 : elSigma1;
+  const el = document.getElementById('sigma' + idx);
   const s = nearestPolicySigma(latestFitSigma(rec) || 15);
-  el.value = String(s);
+  if (el) el.value = String(s);
   if (rec.name) applyPlayerName(idx, rec.name);
   showPage('score');
   render();
@@ -8280,8 +8296,8 @@ function addFitThrow() {
 function applyFitToPlayer(idx) {
   const fit = fitCurrent();
   if (!fit) return;
-  const el = idx === 0 ? elSigma0 : elSigma1;
-  el.value = String(nearestPolicySigma(fit.sigma));
+  const el = document.getElementById('sigma' + idx);
+  if (el) el.value = String(nearestPolicySigma(fit.sigma));
   showPage('score');
   render();
 }
@@ -8297,6 +8313,7 @@ document.getElementById('fitClear').addEventListener('click', () => {
 });
 document.getElementById('fitApply0').addEventListener('click', () => applyFitToPlayer(0));
 document.getElementById('fitApply1').addEventListener('click', () => applyFitToPlayer(1));
+document.getElementById('fitApply2').addEventListener('click', () => applyFitToPlayer(2));
 if (elFitSave) elFitSave.addEventListener('click', saveCurrentFit);
 if (elFitPlayerName) {
   elFitPlayerName.addEventListener('input', () => {
