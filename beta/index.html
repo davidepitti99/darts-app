@@ -906,10 +906,8 @@
   .zone-grid {
     display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 8px;
   }
-  .zone-row {
-    display: grid; grid-template-columns: 1fr auto auto auto; gap: 6px;
-    align-items: center; background: var(--panel); border-radius: 10px;
-    padding: 8px 10px;
+  .zone-row.pending {
+    outline: 2px solid var(--accent); background: #222818;
   }
   .zone-row .zlab { font-size: 13px; font-weight: 600; text-align: left; }
   .zone-row .zsub { display: block; font-size: 11px; color: var(--mute); font-weight: 400; }
@@ -1526,8 +1524,8 @@
 
     <div class="fit-panel" id="fitPanelZones">
     <div class="fit-help" id="fitZonesHelp">
-      <b>Bull</b>: count board belts. <b>Triple / double</b>: pick the landing
-      <b>score sector</b>, then count belts (e.g. T20 aim → inner single + sector 1 = S1).
+      <b>Bull</b>: count board belts. <b>Triple / double</b>: tap + on a belt, then pick the
+      landing <b>score sector</b> (e.g. T20 aim → + inner single → 1 = S1).
     </div>
     <div id="zoneGrid"></div>
     </div><!-- /fitPanelZones -->
@@ -1554,16 +1552,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.55-beta / 2026-08-10 / bc00eac</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.57-beta / 2026-08-10 / 86e8bec</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.55-beta / 2026-08-10 / bc00eac';
+const APP_VERSION = '0.1.57-beta / 2026-08-10 / 86e8bec';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.55-beta-2026-08-10-bc00eac';
+const POLICY_CACHE_BUST = '0.1.57-beta-2026-08-10-86e8bec';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -7936,6 +7934,8 @@ let fitAimSector = 20;
 let fitZonePad = 'bull'; // 'bull' | 'triple' | 'double'
 /** Landing score sector when logging T/D belt hits (defaults to aim sector). */
 let fitLandingSector = 20;
+/** After + on a T/D belt that needs a score: { aim, key } until sector picked. */
+let fitPendingBelt = null;
 const RING_FIT_MC = 2500;
 const _aimAnnulusProbCache = Object.create(null);
 const _ringBeltScoreProbCache = Object.create(null);
@@ -8304,6 +8304,7 @@ function resetFitZoneCounts() {
 function clearFitZoneData() {
   fitZoneHits.length = 0;
   resetFitZoneCounts();
+  fitPendingBelt = null;
   _zoneFitCache = { sig: null, fit: null };
 }
 
@@ -8551,14 +8552,17 @@ function syncFitAimSectorPad(padId) {
       const t = btn.dataset.aimTarget;
       if (t === 'bull') {
         fitZonePad = 'bull';
+        fitPendingBelt = null;
       } else if (t === 'triple' || t === 'double') {
         fitZonePad = t;
+        fitPendingBelt = null;
       } else if (t && t.indexOf('sector:') === 0) {
         const n = parseInt(t.slice(7), 10);
         if (!SECTORS.includes(n)) return;
         fitAimSector = n;
         fitLandingSector = n;
         if (fitZonePad === 'bull') fitZonePad = 'triple';
+        fitPendingBelt = null;
       } else {
         return;
       }
@@ -8613,34 +8617,48 @@ function zoneTotal() {
 }
 
 function commitZoneHit(aim, key) {
-  let score = null;
-  if (aim === 'bull') {
-    score = scoreLabelForBelt(key, 0);
-  } else {
-    if (RING_BELTS_NEED_SCORE.includes(key) && !SECTORS.includes(fitLandingSector | 0)) {
-      showFitError('Pick the landing score sector first');
-      return;
-    }
-    score = scoreLabelForBelt(key, fitLandingSector);
+  if (aim === 'bull' || !RING_BELTS_NEED_SCORE.includes(key)) {
+    const score = scoreLabelForBelt(key, 0);
+    fitZoneHits.push({ aim: aim, key: key, score: score });
+    fitPendingBelt = null;
+    _zoneFitCache = { sig: null, fit: null };
+    showFitError('');
+    renderFit();
+    return;
   }
+  // T/D belts that need a score: open landing-sector pad first.
+  fitPendingBelt = { aim: aim, key: key };
+  showFitError('');
+  renderZoneGrid();
+}
+
+function finishPendingZoneHit(sector) {
+  if (!fitPendingBelt) return;
+  const n = sector | 0;
+  if (!SECTORS.includes(n)) return;
+  const aim = fitPendingBelt.aim;
+  const key = fitPendingBelt.key;
+  fitLandingSector = n;
+  const score = scoreLabelForBelt(key, n);
   fitZoneHits.push({ aim: aim, key: key, score: score });
+  fitPendingBelt = null;
   _zoneFitCache = { sig: null, fit: null };
   showFitError('');
   renderFit();
 }
 
+function cancelPendingZoneHit() {
+  if (!fitPendingBelt) return;
+  fitPendingBelt = null;
+  showFitError('');
+  renderZoneGrid();
+}
+
 function removeZoneHit(aim, key) {
-  const wantScore = (aim !== 'bull' && RING_BELTS_NEED_SCORE.includes(key))
-    ? scoreLabelForBelt(key, fitLandingSector)
-    : null;
-  for (let i = fitZoneHits.length - 1; i >= 0; i--) {
-    if (zoneAimId(fitZoneHits[i]) !== aim || fitZoneHits[i].key !== key) continue;
-    if (wantScore && fitZoneHits[i].score && fitZoneHits[i].score !== wantScore) continue;
-    fitZoneHits.splice(i, 1);
-    _zoneFitCache = { sig: null, fit: null };
+  if (fitPendingBelt && fitPendingBelt.aim === aim && fitPendingBelt.key === key) {
+    cancelPendingZoneHit();
     return true;
   }
-  // Fallback: remove any hit on this aim+belt.
   for (let i = fitZoneHits.length - 1; i >= 0; i--) {
     if (zoneAimId(fitZoneHits[i]) === aim && fitZoneHits[i].key === key) {
       fitZoneHits.splice(i, 1);
@@ -8663,18 +8681,21 @@ function beltScoreBreakdown(aim, belt) {
 
 function renderZoneRows(schema, aim, counts) {
   const onBull = aim === 'bull';
+  const pendingKey = (fitPendingBelt && fitPendingBelt.aim === aim)
+    ? fitPendingBelt.key : null;
   return schema.map(a => {
     let sub = a.sub || '';
     if (!onBull) {
       if (RING_BELTS_NEED_SCORE.includes(a.key)) {
-        const sc = scoreLabelForBelt(a.key, fitLandingSector);
         const br = beltScoreBreakdown(aim, a.key);
-        sub = 'next + → ' + sc + (br ? (' · logged ' + br) : '');
+        if (pendingKey === a.key) sub = 'pick landing score sector below';
+        else sub = 'tap + then pick score sector' + (br ? (' · ' + br) : '');
       } else {
-        sub = a.label === 'Miss / off' ? 'Miss' : (a.key === 'red_bull' ? '50' : '25');
+        sub = a.key === 'red_bull' ? '50' : (a.key === 'green_bull' ? '25' : 'Miss');
       }
     }
-    return '<div class="zone-row" data-aim="' + aim + '" data-key="' + a.key + '">'
+    const pend = pendingKey === a.key ? ' pending' : '';
+    return '<div class="zone-row' + pend + '" data-aim="' + aim + '" data-key="' + a.key + '">'
       + '<div class="zlab">' + a.label
       + '<span class="zsub">' + sub + '</span>'
       + '</div>'
@@ -8689,19 +8710,17 @@ function syncFitLandingSectorPad() {
   const pad = document.getElementById('fitLandingSectorPad');
   if (!pad) return;
   let html = SECTORS.map(n => {
-    const sel = (n === (fitLandingSector | 0)) ? 'sel' : '';
-    return '<button type="button" data-landing-sector="' + n + '" class="' + sel + '">'
-      + n + '</button>';
+    return '<button type="button" data-landing-sector="' + n + '">' + n + '</button>';
   }).join('');
   pad.innerHTML = html;
   pad.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
       const n = parseInt(btn.dataset.landingSector, 10);
-      if (!SECTORS.includes(n)) return;
-      fitLandingSector = n;
-      renderZoneGrid();
+      finishPendingZoneHit(n);
     });
   });
+  const cancel = document.getElementById('fitLandingCancel');
+  if (cancel) cancel.addEventListener('click', cancelPendingZoneHit);
 }
 
 function aimHitCount(aim) {
@@ -8717,25 +8736,31 @@ function renderZoneGrid() {
   const onBull = aim === 'bull';
   const counts = countsForAim(aim);
   const nLogged = aimHitCount(aim);
+  if (fitPendingBelt && fitPendingBelt.aim !== aim) fitPendingBelt = null;
+  const pending = !!(fitPendingBelt && fitPendingBelt.aim === aim);
 
   let html = '<div class="fit-zone-section">'
     + '<p class="hint" style="margin:0 0 8px;text-align:center">'
     + 'Aim target · ' + (onBull ? 'red bull' : activeFitAimId())
     + ' · ' + nLogged + ' logged</p>'
-    + '<div class="sector-pad" id="fitAimSectorPad"></div>';
-  if (!onBull) {
+    + '<div class="sector-pad" id="fitAimSectorPad"></div>'
+    + '<div class="zone-grid" style="margin-top:8px">'
+    + renderZoneRows(FIT_ANNULI, aim, counts) + '</div>';
+  if (pending) {
+    const belt = fitPendingBelt.key;
+    const ex = scoreLabelForBelt(belt, fitAimSector).replace(/\d+$/, '');
     html += '<p class="hint" style="margin:10px 0 6px;text-align:center">'
-      + 'Landing <b>score sector</b> (highlighted) · belt + logs '
-      + 'T/D/S' + (fitLandingSector | 0) + ' as appropriate</p>'
-      + '<div class="sector-pad" id="fitLandingSectorPad"></div>';
+      + 'Landing score for <b>' + (FIT_ANNULUS_BY_KEY[belt] || {}).label + '</b>'
+      + ' — tap sector (e.g. ' + ex + (fitAimSector | 0) + ')</p>'
+      + '<div class="sector-pad" id="fitLandingSectorPad"></div>'
+      + '<div class="fit-actions single" style="margin-top:8px">'
+      + '<button type="button" id="fitLandingCancel">Cancel</button></div>';
   }
-  html += '<div class="zone-grid" style="margin-top:8px">'
-    + renderZoneRows(FIT_ANNULI, aim, counts) + '</div>'
-    + '</div>';
+  html += '</div>';
 
   elZoneGrid.innerHTML = html;
   syncFitAimSectorPad('fitAimSectorPad');
-  if (!onBull) syncFitLandingSectorPad();
+  if (pending) syncFitLandingSectorPad();
   elZoneGrid.querySelectorAll('.zone-row').forEach(row => {
     const rowAim = row.dataset.aim;
     const key = row.dataset.key;
@@ -8993,15 +9018,6 @@ function fitQuality(fit) {
     level = 'high'; label = 'High confidence';
   }
   let detail = '±' + pct.toFixed(0) + '% on σ (95% CI) · n=' + n;
-  if (fit.mode === 'annuli') detail += ' · bull belt MLE';
-  else if (fit.mode === 'triple_regions') detail += ' · T' + (fit.aimSector || '') + ' region MLE';
-  else if (fit.mode === 'score_zones_joint') {
-    const parts = [];
-    if (fit.nBull) parts.push('bull ' + fit.nBull);
-    if (fit.nTrip) parts.push('T ' + fit.nTrip);
-    if (fit.nDouble) parts.push('D ' + fit.nDouble);
-    detail += ' · joint (' + (parts.join(' + ') || 'zones') + ')';
-  } else detail += ' · isotropic';
   return { level, label, detail, pct };
 }
 
@@ -9024,31 +9040,9 @@ function refreshFitSummary() {
     elFitQuality.className = 'quality ' + q.level;
     elFitQuality.textContent = q.label + ' — ' + q.detail;
     const s = nearestPolicySigma(fit.sigma);
-    if (fit.mode === 'annuli') {
-      elFitDetail.textContent =
-        'bull belt MLE · 95% CI ' + fit.ciLo.toFixed(1)
-        + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s;
-    } else if (fit.mode === 'triple_regions') {
-      elFitDetail.textContent =
-        'T' + fit.aimSector + ' region MLE · 95% CI ' + fit.ciLo.toFixed(1)
-        + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s;
-    } else if (fit.mode === 'score_zones_joint') {
-      const bits = [];
-      if (fit.nBull) bits.push(fit.nBull + ' bull');
-      if (fit.nTrip) bits.push(fit.nTrip + ' triple');
-      if (fit.nDouble) bits.push(fit.nDouble + ' double');
-      elFitDetail.textContent =
-        'joint MLE (' + bits.join(' + ') + ') · 95% CI ' + fit.ciLo.toFixed(1)
-        + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s;
-    } else {
-      elFitDetail.textContent =
-        'isotropic · 95% CI ' + fit.ciLo.toFixed(1)
-        + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s;
-    }
+    elFitDetail.textContent =
+      '95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
+      + ' · policy s' + s;
   }
   drawFitChart(fit);
   syncFitSaveButton();
