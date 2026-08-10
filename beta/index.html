@@ -388,7 +388,33 @@
   .visit-list .v-row {
     display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
     padding: 10px 12px; border-bottom: 1px solid #2a2a2a; font-size: 14px;
+    cursor: pointer;
   }
+  .visit-list .v-row:active,
+  .visit-list .v-row.editing { background: #1e1e1e; }
+  .visit-list .v-row.uneditable { cursor: default; opacity: 0.75; }
+  .visit-list .v-edit {
+    grid-column: 1 / -1; display: grid; gap: 8px; padding-top: 4px;
+  }
+  .visit-list .v-edit-row {
+    display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center;
+  }
+  .visit-list .v-edit input[type="number"] {
+    width: 100%; padding: 10px 12px; font-size: 18px; font-weight: 800;
+    border-radius: 8px; border: 1px solid #555; background: var(--field); color: #eee;
+  }
+  .visit-list .v-edit .err {
+    color: var(--bad); font-size: 12px; font-weight: 700; min-height: 1.2em;
+  }
+  .visit-list .v-edit button {
+    padding: 10px 12px; font-size: 13px; font-weight: 700;
+    border-radius: 8px; border: 1px solid #555; background: var(--field); color: #eee;
+    cursor: pointer;
+  }
+  .visit-list .v-edit button.primary {
+    background: var(--accent); color: #1a1a1a; border-color: var(--accent);
+  }
+  .visit-list .v-edit button.bust-btn { color: var(--bad); border-color: #5a2f2f; }
   .visit-list .v-row:last-child { border-bottom: none; }
   .visit-list .v-n {
     width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center;
@@ -1165,7 +1191,7 @@
 <div class="player-modal hidden" id="visitListModal" role="dialog" aria-modal="true" aria-label="Visit scores">
   <div class="player-box">
     <h2 id="visitListTitle">Visits</h2>
-    <p class="hint" id="visitListHint">Previous visit totals this match</p>
+    <p class="hint" id="visitListHint">Tap a visit to edit the score</p>
     <div class="visit-list" id="visitListBody"></div>
     <div class="player-actions" style="grid-template-columns:1fr">
       <button type="button" id="visitListClose" class="primary">Close</button>
@@ -1489,16 +1515,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.39-beta / 2026-08-09 / bc00eac</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.40-beta / 2026-08-09 / bc00eac</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.39-beta / 2026-08-09 / bc00eac';
+const APP_VERSION = '0.1.40-beta / 2026-08-09 / bc00eac';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.39-beta-2026-08-09-bc00eac';
+const POLICY_CACHE_BUST = '0.1.40-beta-2026-08-09-bc00eac';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -3660,22 +3686,231 @@ function formatVisitDartLabels(v) {
   }).join(' · ');
 }
 
+let visitListPlayerIdx = null;
+let visitListEditIdx = null;
+
+function visitEditableInMatch(m) {
+  return !!(m && m.game !== 'cricket' && matchUiActive
+    && m.winner === null && m.matchWinner == null);
+}
+
+/** Remaining (and opened) at the start of visit histIdx for this player. */
+function remBeforePlayerVisit(m, playerIdx, histIdx) {
+  const p = m.players[playerIdx];
+  const hist = p.visitHistory || [];
+  let rem = m.startScore;
+  let opened = !m.doubleIn;
+  let curLeg = null;
+  for (let i = 0; i < histIdx; i++) {
+    const v = hist[i];
+    if (!v) continue;
+    const leg = (v.leg | 0) || 1;
+    if (curLeg === null || leg !== curLeg) {
+      rem = m.startScore;
+      opened = !m.doubleIn;
+      curLeg = leg;
+    }
+    if (v.busted) continue;
+    const sc = v.score | 0;
+    if (m.doubleIn && !opened) {
+      if (sc <= 0) continue;
+      if (!isValidOpeningDoubleScore(sc)) continue;
+      opened = true;
+    }
+    if (sc > rem || (rem - sc) === 1) continue;
+    if (sc === rem) { rem = 0; continue; }
+    rem -= sc;
+  }
+  const target = hist[histIdx];
+  const tLeg = target ? ((target.leg | 0) || 1) : 1;
+  if (curLeg === null || tLeg !== curLeg) {
+    rem = m.startScore;
+    opened = !m.doubleIn;
+  }
+  return { remBefore: rem, opened: opened };
+}
+
+function recomputePlayerVisitAggregates(p) {
+  p.pointsScored = 0;
+  p.highestVisit = 0;
+  p.scores180 = 0;
+  p.scores140 = 0;
+  p.scores100 = 0;
+  p.busts = 0;
+  p.first9Points = 0;
+  p.first9Darts = 0;
+  p.highestCheckout = 0;
+  const hist = p.visitHistory || [];
+  const scores = p.visitScores || [];
+  for (let i = 0; i < hist.length; i++) {
+    const v = hist[i];
+    const sc = (v && (v.score | 0)) || (scores[i] | 0) || 0;
+    if (v && v.busted) p.busts = (p.busts | 0) + 1;
+    else {
+      p.pointsScored = (p.pointsScored | 0) + sc;
+      if (sc > (p.highestVisit | 0)) p.highestVisit = sc;
+      if (sc === 180) p.scores180 = (p.scores180 | 0) + 1;
+      else if (sc >= 140) p.scores140 = (p.scores140 | 0) + 1;
+      else if (sc >= 100) p.scores100 = (p.scores100 | 0) + 1;
+    }
+    const dartsN = (v && v.darts && v.darts.length === 1
+      && String(v.darts[0].label || '').startsWith('Visit'))
+      ? 3
+      : ((v && v.darts && v.darts.length) ? v.darts.length : 3);
+    creditFirst9Visit(p, v && v.busted ? 0 : sc, dartsN);
+    if (v && v.darts && v.darts.some(d => d && d.outcome === 'checkout')) {
+      // Checkout value ≈ leave before that visit — approximate from remBefore if possible.
+      if (sc > (p.highestCheckout | 0)) p.highestCheckout = sc;
+    }
+  }
+  // Keep visitScores aligned with history.
+  p.visitScores = hist.map(v => (v && v.busted) ? 0 : (v.score | 0));
+}
+
+/** Replay current-leg remaining for one player; sync finishOrder if needed. */
+function syncPlayerRemainingFromHistory(m, playerIdx) {
+  const p = m.players[playerIdx];
+  const leg = m.legNumber | 0;
+  let rem = m.startScore;
+  let opened = !m.doubleIn;
+  const hist = p.visitHistory || [];
+  for (let i = 0; i < hist.length; i++) {
+    const v = hist[i];
+    if (((v.leg | 0) || 1) !== leg) continue;
+    if (v.busted) continue;
+    const sc = v.score | 0;
+    if (m.doubleIn && !opened) {
+      if (sc <= 0) continue;
+      if (!isValidOpeningDoubleScore(sc)) continue;
+      opened = true;
+    }
+    if (sc > rem || (rem - sc) === 1) continue;
+    if (sc === rem) { rem = 0; break; }
+    rem -= sc;
+  }
+  p.opened = opened || !m.doubleIn;
+  if (m.current === playerIdx && (m.visitDarts || []).length) {
+    m.turnStart = rem;
+    p.remaining = Math.max(0, rem - (m.visitPoints | 0));
+  } else {
+    p.remaining = rem;
+    if (m.current === playerIdx) m.turnStart = rem;
+  }
+
+  const fo = ensureFinishOrder(m);
+  const atIdx = fo.indexOf(playerIdx);
+  if (rem === 0 && atIdx < 0 && isX01PlayOn(m)) {
+    fo.push(playerIdx);
+  } else if (rem > 0 && atIdx >= 0) {
+    fo.splice(atIdx, 1);
+  } else if (rem === 0 && !isX01PlayOn(m) && playerCount(m) < 3) {
+    // 2p: checkout visit should end the leg — leave winner handling to caller if needed.
+  }
+}
+
+/**
+ * Edit a past visit total. newScore 0..180; bust=true forces a bust (0 scored).
+ * Returns null on success, or an error string.
+ */
+function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
+  if (!match || match.game === 'cricket') return 'Not available in Cricket';
+  if (!visitEditableInMatch(match))
+    return 'Can only edit visits while the leg is in progress';
+  const p = match.players[playerIdx];
+  if (!p || !p.visitHistory || !p.visitHistory[histIdx]) return 'Visit not found';
+  const v = p.visitHistory[histIdx];
+  if (((v.leg | 0) || 1) !== (match.legNumber | 0))
+    return 'Only visits in the current leg can be edited';
+  bust = !!bust;
+  let sc = bust ? 0 : (newScore | 0);
+  if (!bust && (sc < 0 || sc > 180)) return 'Score must be 0–180';
+
+  const before = remBeforePlayerVisit(match, playerIdx, histIdx);
+  const remBefore = before.remBefore | 0;
+  if (match.doubleIn && !before.opened && !bust && sc > 0
+      && !isValidOpeningDoubleScore(sc))
+    return '301 DI: opening score must be a double (2…40 or 50)';
+  if (!bust && sc > remBefore) return 'Score cannot exceed leave (' + remBefore + ')';
+  if (!bust && sc > 0 && (remBefore - sc) === 1) return 'Cannot leave 1';
+  // Bust button or impossible leave → record as bust.
+  if (!bust && sc > 0 && sc === remBefore && remBefore > 170)
+    return 'Cannot check out ' + remBefore + ' with a visit total';
+
+  pushUndo(match);
+  const wasCheckout = !!(v.darts && v.darts.some(d => d && d.outcome === 'checkout'));
+  const nowCheckout = !bust && sc === remBefore && remBefore >= 2;
+  if (bust || (sc > remBefore) || (remBefore - sc) === 1) {
+    bust = true;
+    sc = 0;
+  }
+  v.score = sc;
+  v.busted = bust;
+  if (bust) {
+    v.darts = [{
+      label: 'Bust', points: 0, isDouble: false, outcome: 'bust',
+      remainingAfter: remBefore, suggested: '',
+    }];
+  } else if (nowCheckout) {
+    v.darts = [{
+      label: 'Visit ' + sc, points: sc, isDouble: true, outcome: 'checkout',
+      remainingAfter: 0, suggested: '',
+    }];
+  } else {
+    v.darts = [{
+      label: 'Visit ' + sc, points: sc, isDouble: false, outcome: 'ok',
+      remainingAfter: remBefore - sc, suggested: '',
+    }];
+  }
+  if (p.visitScores && p.visitScores.length > histIdx)
+    p.visitScores[histIdx] = sc;
+
+  // Checkout hit bookkeeping (attempts left as-is — user already logged them).
+  if (wasCheckout && !nowCheckout)
+    p.checkoutHits = Math.max(0, (p.checkoutHits | 0) - 1);
+  else if (!wasCheckout && nowCheckout)
+    p.checkoutHits = (p.checkoutHits | 0) + 1;
+
+  recomputePlayerVisitAggregates(p);
+  syncPlayerRemainingFromHistory(match, playerIdx);
+
+  // Editing into/out of a finish may complete or reopen the leg.
+  if (match.winner === null && nowCheckout) {
+    if (!isX01PlayOn(match)) {
+      applyLegWin(match, playerIdx);
+    } else {
+      const fo = ensureFinishOrder(match);
+      if (fo.indexOf(playerIdx) < 0) fo.push(playerIdx);
+      if (fo.length >= 2) {
+        for (let i = 0; i < playerCount(match); i++) {
+          if (fo.indexOf(i) < 0) fo.push(i);
+        }
+        applyLegWin(match, fo[0]);
+      }
+    }
+  }
+
+  match.message = p.name + ': visit ' + (histIdx + 1) + ' set to '
+    + (bust ? 'bust' : String(sc));
+  match.messageIsError = false;
+  return null;
+}
+
 function renderVisitListHtml(idx) {
   if (!match || !match.players[idx]) {
     return '<div class="empty">No match</div>';
   }
   const p = match.players[idx];
   const hist = (p.visitHistory || []).slice();
+  const canEdit = visitEditableInMatch(match);
   if (!hist.length) {
     const scores = p.visitScores || [];
     if (!scores.length)
       return '<div class="empty">No visits yet</div>';
-    // Fallback: totals only
     let html = '';
     for (let i = scores.length - 1; i >= 0; i--) {
       const sc = scores[i] | 0;
       const cls = sc === 0 ? ' bust' : (sc >= 100 ? ' hot' : '');
-      html += '<div class="v-row">'
+      html += '<div class="v-row uneditable">'
         + '<div class="v-n">' + (i + 1) + '</div>'
         + '<div class="v-darts">Visit</div>'
         + '<div class="v-score' + cls + '">' + sc + '</div>'
@@ -3683,7 +3918,6 @@ function renderVisitListHtml(idx) {
     }
     return html;
   }
-  // Newest first; group by leg.
   const byLeg = {};
   const legOrder = [];
   for (let i = hist.length - 1; i >= 0; i--) {
@@ -3695,6 +3929,7 @@ function renderVisitListHtml(idx) {
     }
     byLeg[leg].push({ v: v, idx: i });
   }
+  const curLeg = match.legNumber | 0;
   let html = '';
   for (const leg of legOrder) {
     html += '<div class="v-leg">Leg ' + leg + '</div>';
@@ -3705,38 +3940,82 @@ function renderVisitListHtml(idx) {
       const bust = !!v.busted || sc === 0 && (v.darts || []).some(d => d && d.outcome === 'bust');
       const cls = bust ? ' bust' : (sc >= 100 ? ' hot' : '');
       const darts = formatVisitDartLabels(v);
-      html += '<div class="v-row">'
-        + '<div class="v-n">' + (row.idx + 1) + '</div>'
+      const editable = canEdit && leg === curLeg;
+      const editing = editable && visitListEditIdx === row.idx;
+      html += '<div class="v-row' + (editing ? ' editing' : '')
+        + (editable ? '' : ' uneditable') + '"'
+        + (editable ? (' data-visit-idx="' + row.idx + '" role="button" tabindex="0"') : '')
+        + '>';
+      html += '<div class="v-n">' + (row.idx + 1) + '</div>'
         + '<div class="v-darts">' + (darts || (bust ? 'Bust' : 'Visit')) + '</div>'
-        + '<div class="v-score' + cls + '">' + (bust && sc === 0 ? '0' : sc) + '</div>'
-        + '</div>';
+        + '<div class="v-score' + cls + '">' + (bust && sc === 0 ? '0' : sc) + '</div>';
+      if (editing) {
+        const before = remBeforePlayerVisit(match, idx, row.idx);
+        html += '<div class="v-edit">'
+          + '<div class="v-edit-row">'
+          + '<input type="number" inputmode="numeric" min="0" max="180" step="1" '
+          + 'id="visitEditScore" value="' + (bust ? '' : sc) + '" '
+          + 'placeholder="0–' + Math.min(180, before.remBefore) + '" '
+          + 'aria-label="Edit visit score">'
+          + '<button type="button" class="bust-btn" data-visit-bust>Bust</button>'
+          + '<button type="button" class="primary" data-visit-save>Save</button>'
+          + '</div>'
+          + '<div class="err" id="visitEditErr"></div>'
+          + '<button type="button" data-visit-cancel>Cancel</button>'
+          + '</div>';
+      }
+      html += '</div>';
     }
   }
   return html;
 }
 
-function openVisitListModal(idx) {
-  if (!match || !match.players[idx]) return;
-  if (match.game === 'cricket') return;
+function refreshVisitListModal() {
+  if (visitListPlayerIdx == null) return;
+  const idx = visitListPlayerIdx;
+  if (!match || !match.players[idx]) {
+    closeVisitListModal();
+    return;
+  }
   const p = match.players[idx];
   const title = document.getElementById('visitListTitle');
   const hint = document.getElementById('visitListHint');
   const body = document.getElementById('visitListBody');
-  const modal = document.getElementById('visitListModal');
-  if (!modal || !body) return;
   if (title) title.textContent = (p.name || ('Player ' + (idx + 1))) + ' — visits';
   const n = (p.visitHistory && p.visitHistory.length)
     || (p.visitScores && p.visitScores.length) || 0;
+  const canEdit = visitEditableInMatch(match);
   if (hint) {
-    hint.textContent = n
-      ? (n + ' visit' + (n === 1 ? '' : 's') + ' this match · newest first')
-      : 'Previous visit totals this match';
+    if (!n) hint.textContent = 'No visits yet';
+    else if (canEdit)
+      hint.textContent = n + ' visit' + (n === 1 ? '' : 's')
+        + ' · tap a current-leg score to edit';
+    else
+      hint.textContent = n + ' visit' + (n === 1 ? '' : 's')
+        + ' this match · newest first';
   }
-  body.innerHTML = renderVisitListHtml(idx);
+  if (body) body.innerHTML = renderVisitListHtml(idx);
+  const inp = document.getElementById('visitEditScore');
+  if (inp) {
+    inp.focus();
+    inp.select();
+  }
+}
+
+function openVisitListModal(idx) {
+  if (!match || !match.players[idx]) return;
+  if (match.game === 'cricket') return;
+  visitListPlayerIdx = idx;
+  visitListEditIdx = null;
+  const modal = document.getElementById('visitListModal');
+  if (!modal) return;
+  refreshVisitListModal();
   modal.classList.remove('hidden');
 }
 
 function closeVisitListModal() {
+  visitListPlayerIdx = null;
+  visitListEditIdx = null;
   const modal = document.getElementById('visitListModal');
   if (modal) modal.classList.add('hidden');
 }
@@ -6485,6 +6764,63 @@ for (const idx of [0, 1, 2]) {
   if (closeBtn) closeBtn.addEventListener('click', closeVisitListModal);
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeVisitListModal();
+  });
+  const body = document.getElementById('visitListBody');
+  if (!body) return;
+  body.addEventListener('click', (e) => {
+    const save = e.target.closest('[data-visit-save]');
+    const bust = e.target.closest('[data-visit-bust]');
+    const cancel = e.target.closest('[data-visit-cancel]');
+    const row = e.target.closest('.v-row[data-visit-idx]');
+    if (cancel) {
+      visitListEditIdx = null;
+      refreshVisitListModal();
+      return;
+    }
+    if ((save || bust) && visitListPlayerIdx != null && visitListEditIdx != null) {
+      const inp = document.getElementById('visitEditScore');
+      const raw = inp ? inp.value : '';
+      const sc = raw === '' ? 0 : parseInt(raw, 10);
+      const err = editPastVisitTotal(
+        visitListPlayerIdx, visitListEditIdx, sc, !!bust);
+      const errEl = document.getElementById('visitEditErr');
+      if (err) {
+        if (errEl) errEl.textContent = err;
+        return;
+      }
+      visitListEditIdx = null;
+      if (match && match.winner !== null) {
+        const id = archiveFinishedMatch(match);
+        if (id && match.matchWinner != null)
+          match.message += ' · saved ' + formatHistWhen(id);
+        maybeStartNextLeg(match);
+        closeVisitListModal();
+      } else {
+        refreshVisitListModal();
+      }
+      render();
+      if (scoreEntryMode === 'visit') buildPad();
+      return;
+    }
+    if (!row || !visitEditableInMatch(match)) return;
+    if (e.target.closest('.v-edit')) return;
+    const vi = parseInt(row.getAttribute('data-visit-idx'), 10);
+    if (!Number.isFinite(vi)) return;
+    visitListEditIdx = (visitListEditIdx === vi) ? null : vi;
+    refreshVisitListModal();
+  });
+  body.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    if (e.target && e.target.id === 'visitEditScore') {
+      e.preventDefault();
+      const btn = body.querySelector('[data-visit-save]');
+      if (btn) btn.click();
+      return;
+    }
+    const row = e.target.closest('.v-row[data-visit-idx]');
+    if (!row) return;
+    e.preventDefault();
+    row.click();
   });
 })();
 (function wirePlayersToggle() {
