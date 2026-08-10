@@ -1539,16 +1539,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.43-beta / 2026-08-09 / bc00eac</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.44-beta / 2026-08-09 / bc00eac</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.43-beta / 2026-08-09 / bc00eac';
+const APP_VERSION = '0.1.44-beta / 2026-08-09 / bc00eac';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.43-beta-2026-08-09-bc00eac';
+const POLICY_CACHE_BUST = '0.1.44-beta-2026-08-09-bc00eac';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2155,35 +2155,9 @@ function formatHitPath(policy, steps) {
   });
 }
 
-/** Plain-language coaching line for the current optimal aim. */
+/** Plain-language coaching line for the current optimal aim (unused in Play UI). */
 function explainAimWhy(score, darts, entry, steps, aimSource) {
-  if (!entry) return '';
-  const [aim] = entry;
-  const clean = prettyAimLabel(aim);
-  const step0 = steps && steps[0];
-  const kind = step0 ? step0[4] : '';
-  const leave = step0 ? step0[3] : null;
-  const sigmaBit = aimSource ? (' at ' + aimSource) : '';
-  // Expected turns sits beside the aim line — keep why text qualitative only.
-  if (kind === 'checkout') {
-    return 'Finish now on ' + clean + sigmaBit
-      + ' — highest-probability checkout for this leave.';
-  }
-  if (kind === 'bust') {
-    return 'Prefer ' + clean + ' over a risky finish'
-      + sigmaBit + ' — protects the score at your accuracy.';
-  }
-  if (kind === 'end_turn' && leave != null) {
-    return 'Park on ' + clean + ' to leave ' + leave
-      + sigmaBit + ' — a cleaner start next visit.';
-  }
-  if (kind === 'continue' && leave != null) {
-    const nextAim = steps[1] ? prettyAimLabel(steps[1][2]) : '';
-    return 'Throw ' + clean + ' to leave ' + leave
-      + (nextAim ? (', then ' + nextAim) : '')
-      + sigmaBit + '.';
-  }
-  return 'Recommended aim ' + clean + sigmaBit + '.';
+  return '';
 }
 
 const HABIT_KEY = 'dartsCoachHabitV1';
