@@ -812,6 +812,7 @@
   .fit-save-bar input[type=text] {
     background: var(--field); color: #fff; border: 1px solid #555;
     border-radius: 10px; padding: 12px 10px; font-size: 17px; width: 100%;
+    cursor: pointer;
   }
   .fit-save-bar button {
     background: var(--accent); color: #1a1a1a; border: 1px solid var(--accent);
@@ -896,21 +897,9 @@
     margin: 0 0 8px; font-size: 13px; color: var(--accent); font-weight: 800;
     text-align: center; letter-spacing: 0.02em;
   }
-  .fit-zone-aim-toggle {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px;
+  .sector-pad button.bull-opt {
+    grid-column: 1 / -1; font-size: 14px; letter-spacing: 0.02em;
   }
-  .fit-zone-aim-toggle button {
-    padding: 10px 8px; font-size: 13px; font-weight: 700;
-    background: var(--field); color: #ccc; border: 1px solid #555; border-radius: 10px;
-    cursor: pointer;
-  }
-  .fit-zone-aim-toggle button .n {
-    display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--mute);
-  }
-  .fit-zone-aim-toggle button.active {
-    background: var(--accent); color: #1a1a1a; border-color: var(--accent);
-  }
-  .fit-zone-aim-toggle button.active .n { color: #1a1a1a; opacity: 0.75; }
   .zone-grid {
     display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 8px;
   }
@@ -1505,7 +1494,8 @@
 
   <div class="page" id="pageFit">
     <div class="fit-save-bar">
-      <input id="fitPlayerName" type="text" maxlength="16" placeholder="Player name" autocomplete="off">
+      <input id="fitPlayerName" type="text" maxlength="16" placeholder="Select player" autocomplete="off"
+             readonly inputmode="none" aria-haspopup="dialog" title="Choose from saved players">
       <button type="button" id="fitSave" disabled title="Estimate σ first, then save">Save</button>
     </div>
     <div class="segmented fit-method" id="fitMethodToggle">
@@ -1514,20 +1504,24 @@
     </div>
 
     <div class="fit-panel hidden" id="fitPanelMeasure">
-    <div class="fit-help">
-      Aim at the <b>bull</b>. Enter each dart’s <b>distance</b> from the centre (mm).
-      The fit estimates isotropic σ (Rayleigh MLE).
+    <div class="fit-help" id="fitMeasureHelp">
+      Pick <b>Bull</b> or a triple sector, then enter each dart’s <b>distance from that aim</b> (mm).
+      Isotropic σ via Rayleigh MLE (same as zones aims).
+    </div>
+    <div class="fit-aim-block">
+      <div class="sector-pad" id="fitMeasureAimPad"></div>
     </div>
     <div class="fit-entry" style="grid-template-columns:1fr auto">
-      <input id="fitRadius" type="number" inputmode="decimal" min="0" max="170" step="0.1"
-             placeholder="Distance 0–170 mm">
+      <input id="fitRadius" type="number" inputmode="decimal" min="0" max="340" step="0.1"
+             placeholder="Distance from aim (mm)">
       <button type="button" class="primary" id="fitAdd">Add</button>
     </div>
     </div><!-- /fitPanelMeasure -->
 
     <div class="fit-panel" id="fitPanelZones">
     <div class="fit-help" id="fitZonesHelp">
-      Switch <b>Red bull</b> / <b>Triple</b>, log landings with +/− — one joint σ from all throws.
+      Pick <b>Bull</b> or a triple sector (20, 1, 18…), then count landings by board belt
+      (red/green bull, inner/outer single, triple, double, miss) — one joint σ.
     </div>
     <div id="zoneGrid"></div>
     </div><!-- /fitPanelZones -->
@@ -1554,16 +1548,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.45-beta / 2026-08-09 / bc00eac</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.49-beta / 2026-08-10 / bc00eac</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.45-beta / 2026-08-09 / bc00eac';
+const APP_VERSION = '0.1.49-beta / 2026-08-10 / bc00eac';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.45-beta-2026-08-09-bc00eac';
+const POLICY_CACHE_BUST = '0.1.49-beta-2026-08-10-bc00eac';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -1780,7 +1774,7 @@ function syncModalEntryDartFromName(name) {
   if (!el) return;
   const bot = isBotPlayerName(name) || isPlaceholderPlayerName(name);
   if (row) {
-    const hide = bot || cricketModeActive();
+    const hide = bot || cricketModeActive() || isFitPlayerEdit();
     row.classList.toggle('hidden', hide);
   }
   el.value = String(entryDartThresholdForName(name));
@@ -4098,7 +4092,9 @@ const GROUPS_MAX = 20;
 const GROUP_MEMBERS_MAX = 12;
 const MATCH_HISTORY_KEY = 'dartsMatchHistory';
 const MATCH_HISTORY_MAX = 200;
+const FIT_PLAYER_EDIT = -1;
 let playerEditIdx = 0;
+function isFitPlayerEdit() { return playerEditIdx === FIT_PLAYER_EDIT; }
 let playerListSel = null; // normalized name of highlighted saved row
 let contactListSel = null;
 let activeGroupId = null;
@@ -4663,7 +4659,7 @@ function renderContactList(filterName) {
       + '</div>';
     return;
   }
-  const takenKeys = otherPlayerNameKeys(playerEditIdx);
+  const takenKeys = isFitPlayerEdit() ? new Set() : otherPlayerNameKeys(playerEditIdx);
   list.innerHTML = shown.map(c => {
     const key = normPlayerName(c.name);
     const taken = takenKeys.has(key);
@@ -5219,6 +5215,13 @@ function findSavedPlayer(name) {
 
 function applyPlayerName(idx, name, opts) {
   let n = String(name || '').trim().slice(0, 16);
+  if (idx === FIT_PLAYER_EDIT) {
+    if (isBotPlayerName(n) || isPlaceholderPlayerName(n)) n = '';
+    if (elFitPlayerName) elFitPlayerName.value = n;
+    syncFitSaveButton();
+    renderFitSavedList();
+    return;
+  }
   if (isBotPlayerName(n)) {
     if (cricketModeActive()) n = '';
     else n = BOT_PLAYER_NAME;
@@ -5272,6 +5275,7 @@ function botSeatsUsedByOthers(idx) {
 }
 
 function nameTakenByOther(name, idx) {
+  if (idx === FIT_PLAYER_EDIT || idx < 0) return false;
   const key = normPlayerName(name);
   if (!key) return false;
   if (isBotPlayerName(name)) {
@@ -5292,8 +5296,8 @@ function renderPlayerList(filterName) {
     .filter(p => !isBotPlayerName(p.name))
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-  // Built-in Bot for x01 only — cricket has no CPU policy yet.
-  const players = (cricketModeActive()
+  // Built-in Bot for x01 seats only — not for Fit σ, and cricket has no CPU yet.
+  const players = (isFitPlayerEdit() || cricketModeActive()
     ? []
     : [{ name: BOT_PLAYER_NAME, builtin: true }]).concat(saved);
   const q = normPlayerName(filterName);
@@ -5352,7 +5356,7 @@ function renderPlayerList(filterName) {
 }
 
 function openPlayerModal(idx) {
-  if (lineupLocked()) {
+  if (idx !== FIT_PLAYER_EDIT && lineupLocked()) {
     if (match) {
       match.message = 'Names locked while the match is in progress — change lineup after it ends or via New match';
       render();
@@ -5366,9 +5370,12 @@ function openPlayerModal(idx) {
   const modal = document.getElementById('playerModal');
   const title = document.getElementById('playerModalTitle');
   const nameIn = document.getElementById('playerModalName');
-  title.textContent = 'Player ' + (idx + 1);
-  nameIn.value = names()[idx];
-  if (isBotPlayerName(nameIn.value)) {
+  const fitEdit = idx === FIT_PLAYER_EDIT;
+  title.textContent = fitEdit ? 'Fit player' : ('Player ' + (idx + 1));
+  nameIn.value = fitEdit
+    ? ((elFitPlayerName && elFitPlayerName.value) || '')
+    : names()[idx];
+  if (!fitEdit && isBotPlayerName(nameIn.value)) {
     if (cricketModeActive()) {
       nameIn.value = '';
       playerListSel = null;
@@ -5382,11 +5389,16 @@ function openPlayerModal(idx) {
   }
   const hint = document.querySelector('#playerRosterPanel .hint');
   if (hint) {
-    hint.innerHTML = cricketModeActive()
-      ? 'Shared roster for both sides. Tap a name to select it, then Save. '
-        + '<b>Bot</b> is unavailable in Cricket for now.'
-      : 'Shared roster for both sides. Tap a name to select it (adjust Dart ≤ if needed), then Save. '
+    if (fitEdit) {
+      hint.innerHTML = 'Same roster as Play. Tap a saved player, then Save. '
+        + 'Type a new name and Save to add them to the roster.';
+    } else if (cricketModeActive()) {
+      hint.innerHTML = 'Shared roster for both sides. Tap a name to select it, then Save. '
+        + '<b>Bot</b> is unavailable in Cricket for now.';
+    } else {
+      hint.innerHTML = 'Shared roster for both sides. Tap a name to select it (adjust Dart ≤ if needed), then Save. '
         + '<b>Bot</b> is always listed as the CPU opponent.';
+    }
   }
   syncModalEntryDartFromName(nameIn.value);
   const c = findContact(nameIn.value);
@@ -5421,7 +5433,7 @@ function saveCurrentPlayerFromModal() {
   }
   // Built-in Bot: assign to this seat, never persist/delete from roster.
   if (isBotPlayerName(name)) {
-    if (cricketModeActive()) {
+    if (isFitPlayerEdit() || cricketModeActive()) {
       nameIn.focus();
       return;
     }
@@ -5432,7 +5444,7 @@ function saveCurrentPlayerFromModal() {
     return;
   }
   applyPlayerName(playerEditIdx, name.slice(0, 16));
-  commitModalEntryDartThreshold(name.slice(0, 16));
+  if (!isFitPlayerEdit()) commitModalEntryDartThreshold(name.slice(0, 16));
   const profile = { name: name.slice(0, 16) };
   const list = loadSavedPlayers().filter(p => !isBotPlayerName(p.name));
   const key = normPlayerName(profile.name);
@@ -5442,7 +5454,7 @@ function saveCurrentPlayerFromModal() {
   storeSavedPlayers(list);
   playerListSel = key;
   closePlayerModal();
-  syncAutoScoreEntryMode({ force: true });
+  if (!isFitPlayerEdit()) syncAutoScoreEntryMode({ force: true });
   render();
 }
 
@@ -7153,7 +7165,8 @@ function showPage(id) {
   } else if (id === 'fit') {
     if (elFitPlayerName && !(elFitPlayerName.value || '').trim()) {
       const n0 = (document.getElementById('name0') && document.getElementById('name0').value || '').trim();
-      if (n0 && normPlayerName(n0) !== 'player 1') elFitPlayerName.value = n0.slice(0, 16);
+      if (n0 && findSavedPlayer(n0) && !isBotPlayerName(n0))
+        elFitPlayerName.value = n0.slice(0, 16);
     }
     renderFit();
     renderFitSavedList();
@@ -7894,26 +7907,24 @@ const FIT_ANNULI = [
   { key: 'miss', label: 'Miss / off', sub: '> 170 mm', lo: DOUBLE_OUTER, hi: null },
 ];
 const FIT_ANNULUS_BY_KEY = Object.fromEntries(FIT_ANNULI.map(a => [a.key, a]));
-/** Outcome buckets when aiming at a triple (multinomial MLE via MC). */
-const FIT_TRIPLE_REGIONS = [
-  { key: 'target', label: 'Target triple', short: 'T' },
-  { key: 'same_single', label: 'Same single', short: 'S' },
-  { key: 'same_double', label: 'Same double', short: 'D' },
-  { key: 'adj_triple', label: 'Adjacent triples', short: 'T±' },
-  { key: 'adj_single', label: 'Adjacent singles', short: 'S±' },
-  { key: 'elsewhere', label: 'Elsewhere', short: '…' },
-];
-const FIT_TRIPLE_BY_KEY = Object.fromEntries(FIT_TRIPLE_REGIONS.map(a => [a.key, a]));
-/** Zone hits: { aim: 'bull' | 'T20', key: belt/region }. */
+/** Old triple-sector buckets → board belts (best-effort when loading saved fits). */
+const LEGACY_TRIPLE_ZONE_KEY = {
+  target: 'triple',
+  same_single: 'single_outer',
+  same_double: 'double',
+  adj_triple: 'triple',
+  adj_single: 'single_outer',
+  elsewhere: 'miss',
+};
+/** Zone hits: { aim: 'bull' | 'T20', key: annulus }. */
 const fitZoneHits = [];
 const fitZoneCounts = Object.create(null); // display helper; rebuilt from hits
 let fitMethod = 'zones'; // 'measure' | 'zones'
-/** Which triple sector the triple-aim pad is logging into. */
+/** Aim target for the score-zones pad: 'bull' or sector 1–20 (triple aim). */
 let fitAimSector = 20;
-/** Score-zones pad: 'bull' | 'triple' — one visible set of +/− rows at a time. */
-let fitZonePad = 'bull';
+let fitZonePad = 'bull'; // 'bull' | 'triple' — derived from fitAimSector selection
 const TRIPLE_FIT_MC = 2500;
-const _tripleProbCache = Object.create(null);
+const _aimAnnulusProbCache = Object.create(null);
 
 const FIT_HISTORY_KEY = 'dartsFitHistory';
 const FIT_HISTORY_MAX = 100;
@@ -7933,7 +7944,8 @@ const elFitSave = document.getElementById('fitSave');
 const elFitSavedList = document.getElementById('fitSavedList');
 const fitCv = document.getElementById('fitChart');
 const fitCtx = fitCv.getContext('2d');
-const FIT_R_MAX = DOUBLE_OUTER;  // board outer radius (mm)
+const FIT_R_MAX = DOUBLE_OUTER;  // board outer radius (mm) — bull-from-centre
+const FIT_AIM_R_MAX = 340;       // distance from any aim point (mm)
 
 function loadFitHistory() {
   try {
@@ -7969,6 +7981,16 @@ function fitSummaryLabel(rec) {
     } else if (bull && trip) tag = ' · bull+T';
     else if (trip) tag = ' · T';
     else if (bull) tag = ' · bull';
+  } else if (rec.method === 'measure') {
+    const throws = rec.throws || [];
+    let bull = 0, trip = 0;
+    for (const t of throws) {
+      const a = (t && t.aim) || 'bull';
+      if (a === 'bull') bull++; else trip++;
+    }
+    if (bull && trip) tag = ' · bull+T';
+    else if (trip) tag = ' · T';
+    else if (bull) tag = ' · bull';
   }
   return 'σ ' + Number(s).toFixed(1) + ' mm' + tag;
 }
@@ -7991,14 +8013,14 @@ function buildFitSaveRecord(name, fit) {
     name: String(name || '').trim().slice(0, 16),
     method: fitMethod,
     mode: fit.mode,
-    aim: fitMethod === 'zones' ? { kind: 'joint' } : { kind: 'bull' },
+    aim: { kind: 'joint' },
     n: fit.n | 0,
     se: fit.se,
     ciLo: fit.ciLo,
     ciHi: fit.ciHi,
     quality: { level: q.level, label: q.label, pct: q.pct },
     throws: fitMethod === 'measure'
-      ? fitThrows.map(t => ({ r: t.r }))
+      ? fitThrows.map(t => ({ r: t.r, aim: t.aim || 'bull' }))
       : [],
     zoneCounts: null,
     zoneHits: fitMethod === 'zones'
@@ -8054,9 +8076,14 @@ function loadSavedFit(id) {
           else
             aim = 'bull';
         }
-        const schema = aim === 'bull' ? FIT_ANNULI : FIT_TRIPLE_REGIONS;
-        if (!schema.some(a => a.key === h.key)) continue;
-        fitZoneHits.push({ aim: aim, key: h.key });
+        let key = h.key;
+        if (!FIT_ANNULUS_BY_KEY[key]) {
+          if (aim !== 'bull' && LEGACY_TRIPLE_ZONE_KEY[key])
+            key = LEGACY_TRIPLE_ZONE_KEY[key];
+          else
+            continue;
+        }
+        fitZoneHits.push({ aim: aim, key: key });
         if (aim !== 'bull') {
           const sec = parseInt(String(aim).slice(1), 10);
           if (SECTORS.includes(sec)) fitAimSector = sec;
@@ -8073,8 +8100,18 @@ function loadSavedFit(id) {
     setFitMethod('measure');
     for (const t of (rec.throws || [])) {
       const r = Number(t.r);
-      if (!Number.isFinite(r) || r < 0 || r > FIT_R_MAX) continue;
-      fitThrows.push({ r });
+      if (!Number.isFinite(r) || r < 0 || r > FIT_AIM_R_MAX) continue;
+      const aim = (t.aim && String(t.aim)) || 'bull';
+      fitThrows.push({ r, aim });
+      if (aim !== 'bull') {
+        const sec = parseInt(String(aim).slice(1), 10);
+        if (SECTORS.includes(sec)) {
+          fitAimSector = sec;
+          fitZonePad = 'triple';
+        }
+      } else {
+        fitZonePad = 'bull';
+      }
     }
   }
   showFitError('');
@@ -8167,20 +8204,13 @@ function zoneAimId(h) {
 }
 
 function countsForAim(aim) {
-  const schema = aim === 'bull' ? FIT_ANNULI : FIT_TRIPLE_REGIONS;
-  const counts = Object.fromEntries(schema.map(a => [a.key, 0]));
+  const counts = Object.fromEntries(FIT_ANNULI.map(a => [a.key, 0]));
   for (const h of fitZoneHits) {
     if (zoneAimId(h) !== aim) continue;
     if (Object.prototype.hasOwnProperty.call(counts, h.key))
       counts[h.key] += 1;
   }
   return counts;
-}
-
-function adjacentSectors(n) {
-  const i = SECTORS.indexOf(n | 0);
-  if (i < 0) return [];
-  return [SECTORS[(i + 19) % 20], SECTORS[(i + 1) % 20]];
 }
 
 function tripleAimPoint(sector) {
@@ -8191,50 +8221,44 @@ function tripleAimPoint(sector) {
   return [r * Math.sin(theta), r * Math.cos(theta)];
 }
 
-function classifyTripleOutcome(aimSector, label) {
-  const lab = String(label || '');
-  if (lab === 'Bull' || lab === '25' || lab === 'Miss' || lab === 'Bounce')
-    return 'elsewhere';
-  const m = /^([TSD])(\d+)$/.exec(lab);
-  if (!m) return 'elsewhere';
-  const kind = m[1];
-  const n = parseInt(m[2], 10);
-  const aim = aimSector | 0;
-  if (n === aim) {
-    if (kind === 'T') return 'target';
-    if (kind === 'S') return 'same_single';
-    if (kind === 'D') return 'same_double';
+function annulusKeyFromR(r) {
+  const rr = Math.max(0, Number(r) || 0);
+  for (const a of FIT_ANNULI) {
+    if (a.hi == null) {
+      if (rr >= a.lo) return a.key;
+    } else if (rr >= a.lo && rr < a.hi) {
+      return a.key;
+    }
   }
-  if (adjacentSectors(aim).includes(n)) {
-    if (kind === 'T') return 'adj_triple';
-    if (kind === 'S') return 'adj_single';
-  }
-  return 'elsewhere';
+  return 'miss';
 }
 
-function tripleRegionProbs(sector, sigma) {
+/** P(belt | aim, σ). Bull aim is analytic Rayleigh; triple aims use MC. */
+function aimAnnulusProbs(aim, sigma) {
+  if (aim === 'bull') return annulusProbs(sigma);
+  const sec = parseInt(String(aim).slice(1), 10);
+  if (!SECTORS.includes(sec)) return annulusProbs(sigma);
   const s = Math.max(0.5, Number(sigma) || 25);
   const rounded = Math.round(s * 10) / 10;
-  const key = (sector | 0) + ':' + rounded.toFixed(1);
-  if (_tripleProbCache[key]) return _tripleProbCache[key].slice();
-  const [ax, ay] = tripleAimPoint(sector);
-  const tallies = Object.fromEntries(FIT_TRIPLE_REGIONS.map(r => [r.key, 0]));
+  const cacheKey = sec + ':' + rounded.toFixed(1);
+  if (_aimAnnulusProbCache[cacheKey]) return _aimAnnulusProbCache[cacheKey].slice();
+  const [ax, ay] = tripleAimPoint(sec);
+  const tallies = Object.fromEntries(FIT_ANNULI.map(a => [a.key, 0]));
   for (let i = 0; i < TRIPLE_FIT_MC; i++) {
     const [x, y] = sampleGaussianLanding(ax, ay, { sigma: rounded });
-    const reg = classifyTripleOutcome(sector, scoreLabelFromXY(x, y));
-    tallies[reg] = (tallies[reg] || 0) + 1;
+    tallies[annulusKeyFromR(Math.hypot(x, y))] += 1;
   }
   let sum = 0;
-  const probs = FIT_TRIPLE_REGIONS.map(r => {
-    const p = Math.max(tallies[r.key] / TRIPLE_FIT_MC, 1e-300);
+  const probs = FIT_ANNULI.map(a => {
+    const p = Math.max(tallies[a.key] / TRIPLE_FIT_MC, 1e-300);
     sum += p;
     return p;
   });
   const out = probs.map(p => p / sum);
-  _tripleProbCache[key] = out;
-  const keys = Object.keys(_tripleProbCache);
+  _aimAnnulusProbCache[cacheKey] = out;
+  const keys = Object.keys(_aimAnnulusProbCache);
   if (keys.length > 400) {
-    for (let i = 0; i < 80; i++) delete _tripleProbCache[keys[i]];
+    for (let i = 0; i < 80; i++) delete _aimAnnulusProbCache[keys[i]];
   }
   return out.slice();
 }
@@ -8242,28 +8266,18 @@ function tripleRegionProbs(sector, sigma) {
 /** Joint bull + triple score-zone MLE (one σ for all logged aims). */
 function fitScoreZonesJoint(hits) {
   if (!hits || !hits.length) return null;
-  const bullIdx = Object.fromEntries(FIT_ANNULI.map((a, i) => [a.key, i]));
-  const tripIdx = Object.fromEntries(FIT_TRIPLE_REGIONS.map((a, i) => [a.key, i]));
+  const beltIdx = Object.fromEntries(FIT_ANNULI.map((a, i) => [a.key, i]));
 
   function nll(logSigma) {
     const sigma = Math.exp(logSigma);
-    const bullP = annulusProbs(sigma);
-    const tripMemo = Object.create(null);
+    const memo = Object.create(null);
     let s = 0;
     for (const h of hits) {
       const aim = zoneAimId(h);
-      if (aim === 'bull') {
-        const i = bullIdx[h.key];
-        if (i == null) continue;
-        s += Math.log(bullP[i]);
-      } else {
-        const sec = parseInt(String(aim).slice(1), 10);
-        if (!SECTORS.includes(sec)) continue;
-        if (!tripMemo[sec]) tripMemo[sec] = tripleRegionProbs(sec, sigma);
-        const i = tripIdx[h.key];
-        if (i == null) continue;
-        s += Math.log(tripMemo[sec][i]);
-      }
+      const i = beltIdx[h.key];
+      if (i == null) continue;
+      if (!memo[aim]) memo[aim] = aimAnnulusProbs(aim, sigma);
+      s += Math.log(memo[aim][i]);
     }
     return -s;
   }
@@ -8299,36 +8313,29 @@ function fitScoreZonesJoint(hits) {
   const chartCounts = {};
   const chartProbs = [];
   const chartExpected = [];
-  if (nBull) {
-    const bp = annulusProbs(sigma);
-    const cBull = countsForAim('bull');
+  function pushAimChart(aim, labelPrefix, nAim) {
+    if (!nAim) return;
+    const bp = aimAnnulusProbs(aim, sigma);
+    const cAim = countsForAim(aim);
     FIT_ANNULI.forEach((a, i) => {
+      const short = a.key === 'red_bull' ? 'RB' : a.key === 'green_bull' ? 'GB'
+        : a.key === 'miss' ? 'X' : a.key[0].toUpperCase();
       chartRegions.push({
-        key: 'bull:' + a.key,
-        short: a.key === 'red_bull' ? 'RB' : a.key === 'green_bull' ? 'GB'
-          : a.key === 'miss' ? 'X' : a.key[0].toUpperCase(),
-        label: 'Bull ' + a.label,
+        key: aim + ':' + a.key,
+        short: (aim === 'bull' ? '' : aim) + short,
+        label: labelPrefix + ' ' + a.label,
       });
-      chartCounts['bull:' + a.key] = cBull[a.key] || 0;
+      chartCounts[aim + ':' + a.key] = cAim[a.key] || 0;
       chartProbs.push(bp[i]);
-      chartExpected.push(nBull * bp[i]);
+      chartExpected.push(nAim * bp[i]);
     });
   }
+  pushAimChart('bull', 'Bull', nBull);
   for (const sec of [...tripSectors].sort((a, b) => a - b)) {
-    const tp = tripleRegionProbs(sec, sigma);
-    const cAim = countsForAim('T' + sec);
     let nSec = 0;
+    const cAim = countsForAim('T' + sec);
     for (const k of Object.keys(cAim)) nSec += cAim[k] | 0;
-    FIT_TRIPLE_REGIONS.forEach((a, i) => {
-      chartRegions.push({
-        key: 'T' + sec + ':' + a.key,
-        short: 'T' + sec + (a.short || ''),
-        label: 'T' + sec + ' ' + a.label,
-      });
-      chartCounts['T' + sec + ':' + a.key] = cAim[a.key] || 0;
-      chartProbs.push(tp[i]);
-      chartExpected.push(nSec * tp[i]);
-    });
+    pushAimChart('T' + sec, 'T' + sec, nSec);
   }
 
   return {
@@ -8346,23 +8353,58 @@ function fitScoreZonesJoint(hits) {
   };
 }
 
-function syncFitAimSectorPad() {
-  const pad = document.getElementById('fitAimSectorPad');
+function activeFitAimId() {
+  return fitZonePad === 'bull' ? 'bull' : ('T' + (fitAimSector | 0));
+}
+function activeZoneAimId() { return activeFitAimId(); }
+
+function syncFitAimSectorPad(padId) {
+  const pad = document.getElementById(padId || 'fitAimSectorPad');
   if (!pad) return;
-  pad.innerHTML = SECTORS.map(n => {
-    const sel = n === fitAimSector ? ' sel' : '';
-    return '<button type="button" data-sector="' + n + '" class="' + sel.trim() + '">'
+  const onBull = fitZonePad === 'bull';
+  let html = '<button type="button" class="bull-opt'
+    + (onBull ? ' sel' : '') + '" data-aim-target="bull">Bull</button>';
+  html += SECTORS.map(n => {
+    const sel = (!onBull && n === (fitAimSector | 0)) ? ' sel' : '';
+    return '<button type="button" data-aim-target="' + n + '" class="' + sel.trim() + '">'
       + n + '</button>';
   }).join('');
+  pad.innerHTML = html;
   pad.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
-      const n = parseInt(btn.dataset.sector, 10);
-      if (!SECTORS.includes(n)) return;
-      fitAimSector = n;
-      syncFitAimSectorPad();
-      renderZoneGrid();
+      const t = btn.dataset.aimTarget;
+      if (t === 'bull') {
+        fitZonePad = 'bull';
+      } else {
+        const n = parseInt(t, 10);
+        if (!SECTORS.includes(n)) return;
+        fitAimSector = n;
+        fitZonePad = 'triple';
+      }
+      if (fitMethod === 'zones') renderZoneGrid();
+      else syncMeasureAimChrome();
     });
   });
+}
+
+function syncMeasureAimChrome() {
+  syncFitAimSectorPad('fitMeasureAimPad');
+  const aim = activeFitAimId();
+  const onBull = aim === 'bull';
+  const maxR = onBull ? FIT_R_MAX : FIT_AIM_R_MAX;
+  if (elFitRadius) {
+    elFitRadius.max = String(maxR);
+    elFitRadius.placeholder = onBull
+      ? ('Distance from bull 0–' + FIT_R_MAX + ' mm')
+      : ('Distance from ' + aim + ' 0–' + FIT_AIM_R_MAX + ' mm');
+  }
+  const help = document.getElementById('fitMeasureHelp');
+  if (help) {
+    help.innerHTML = onBull
+      ? 'Aim <b>bull</b>. Enter each dart’s <b>distance from the centre</b> (mm). Isotropic σ (Rayleigh MLE).'
+      : ('Aim <b>' + aim + '</b>. Enter each dart’s <b>distance from that triple</b> (mm), not from the bull. '
+        + 'Same Rayleigh MLE — mix bull and triple aims freely.');
+  }
 }
 
 function setFitMethod(method) {
@@ -8404,21 +8446,10 @@ function removeZoneHit(aim, key) {
 }
 
 function renderZoneRows(schema, aim, counts) {
-  const n = fitAimSector | 0;
-  const adj = adjacentSectors(n);
   return schema.map(a => {
-    let sub = a.sub || '';
-    if (aim !== 'bull') {
-      if (a.key === 'target') sub = 'T' + n;
-      else if (a.key === 'same_single') sub = 'S' + n;
-      else if (a.key === 'same_double') sub = 'D' + n;
-      else if (a.key === 'adj_triple') sub = 'T' + adj[0] + ' / T' + adj[1];
-      else if (a.key === 'adj_single') sub = 'S' + adj[0] + ' / S' + adj[1];
-      else sub = 'Bull, far sectors, miss';
-    }
     return '<div class="zone-row" data-aim="' + aim + '" data-key="' + a.key + '">'
       + '<div class="zlab">' + a.label
-      + '<span class="zsub">' + sub + '</span>'
+      + '<span class="zsub">' + (a.sub || '') + '</span>'
       + '</div>'
       + '<button type="button" class="minus" data-delta="-1" aria-label="minus">−</button>'
       + '<span class="zcount">' + (counts[a.key] || 0) + '</span>'
@@ -8435,58 +8466,32 @@ function aimHitCount(aim) {
   return n;
 }
 
-function setFitZonePad(pad) {
-  fitZonePad = (pad === 'triple') ? 'triple' : 'bull';
-  renderZoneGrid();
-}
-
 function renderZoneGrid() {
-  const bullCounts = countsForAim('bull');
-  const tripAim = 'T' + (fitAimSector | 0);
-  const tripCounts = countsForAim(tripAim);
-  const nBull = aimHitCount('bull');
-  const nTrip = aimHitCount(tripAim);
-  const onTriple = fitZonePad === 'triple';
+  const aim = activeFitAimId();
+  const onBull = aim === 'bull';
+  const counts = countsForAim(aim);
+  const nLogged = aimHitCount(aim);
 
-  let html = '<div class="fit-zone-aim-toggle" id="fitZoneAimToggle">'
-    + '<button type="button" data-zone-pad="bull"'
-    + (onTriple ? '' : ' class="active"') + '>Red bull'
-    + '<span class="n">' + nBull + ' logged</span></button>'
-    + '<button type="button" data-zone-pad="triple"'
-    + (onTriple ? ' class="active"' : '') + '>Triple T' + (fitAimSector | 0)
-    + '<span class="n">' + nTrip + ' logged</span></button>'
+  let html = '<div class="fit-zone-section">'
+    + '<p class="hint" style="margin:0 0 8px;text-align:center">'
+    + 'Aim target · ' + (onBull ? 'red bull' : ('T' + (fitAimSector | 0)))
+    + ' · ' + nLogged + ' logged</p>'
+    + '<div class="sector-pad" id="fitAimSectorPad"></div>'
+    + '<div class="zone-grid" style="margin-top:8px">'
+    + renderZoneRows(FIT_ANNULI, aim, counts) + '</div>'
     + '</div>';
 
-  html += '<div class="fit-zone-section">';
-  if (!onTriple) {
-    html += '<div class="zone-grid">'
-      + renderZoneRows(FIT_ANNULI, 'bull', bullCounts) + '</div>';
-  } else {
-    html += '<p class="hint" style="margin:0 0 8px;text-align:center">'
-      + 'Pick the triple you are aiming, then log landings</p>'
-      + '<div class="sector-pad" id="fitAimSectorPad"></div>'
-      + '<div class="zone-grid" style="margin-top:8px">'
-      + renderZoneRows(FIT_TRIPLE_REGIONS, tripAim, tripCounts) + '</div>';
-  }
-  html += '</div>';
-
   elZoneGrid.innerHTML = html;
-  const toggle = document.getElementById('fitZoneAimToggle');
-  if (toggle) {
-    toggle.querySelectorAll('button[data-zone-pad]').forEach(btn => {
-      btn.addEventListener('click', () => setFitZonePad(btn.dataset.zonePad));
-    });
-  }
-  if (onTriple) syncFitAimSectorPad();
+  syncFitAimSectorPad('fitAimSectorPad');
   elZoneGrid.querySelectorAll('.zone-row').forEach(row => {
-    const aim = row.dataset.aim;
+    const rowAim = row.dataset.aim;
     const key = row.dataset.key;
     row.querySelectorAll('button').forEach(btn => {
       btn.addEventListener('click', () => {
         const d = parseInt(btn.dataset.delta, 10);
-        if (d > 0) commitZoneHit(aim, key);
+        if (d > 0) commitZoneHit(rowAim, key);
         else {
-          removeZoneHit(aim, key);
+          removeZoneHit(rowAim, key);
           renderFit();
         }
       });
@@ -8714,7 +8719,7 @@ function drawIsoChart(fit, cssW, cssH) {
   fitCtx.fillStyle = '#888';
   fitCtx.font = '11px sans-serif';
   fitCtx.textAlign = 'center';
-  fitCtx.fillText('Radial distance (mm) — isotropic', padL + W / 2, cssH - 6);
+  fitCtx.fillText('Distance from aim (mm) — isotropic', padL + W / 2, cssH - 6);
 }
 
 function fitQuality(fit) {
@@ -8757,7 +8762,7 @@ function refreshFitSummary() {
     } else {
       elFitDetail.textContent = fitThrows.length
         ? 'Fix invalid rows to estimate σ'
-        : 'Add throws to estimate σ (angle optional)';
+        : 'Pick aim, then add distances from that aim';
     }
   } else {
     const q = fitQuality(fit);
@@ -8794,10 +8799,11 @@ function refreshFitSummary() {
   syncFitSaveButton();
 }
 
-function parseThrowFields(rRaw) {
+function parseThrowFields(rRaw, aim) {
   const r = parseFloat(rRaw);
-  if (!Number.isFinite(r) || r < 0 || r > FIT_R_MAX)
-    return { ok: false, err: 'Distance must be 0–' + FIT_R_MAX + ' mm' };
+  const maxR = (aim && aim !== 'bull') ? FIT_AIM_R_MAX : FIT_R_MAX;
+  if (!Number.isFinite(r) || r < 0 || r > maxR)
+    return { ok: false, err: 'Distance must be 0–' + maxR + ' mm from aim' };
   return { ok: true, r };
 }
 
@@ -8815,13 +8821,17 @@ function renderFitList() {
     elFitList.innerHTML = '<div class="empty">No throws yet — tap a row later to edit</div>';
     return;
   }
-  let html = '<div class="hdr"><span>#</span><span>Distance (mm)</span>'
+  let html = '<div class="hdr" style="grid-template-columns:28px 52px 1fr 36px">'
+    + '<span>#</span><span>Aim</span><span>Distance (mm)</span>'
     + '<span></span></div>';
   fitThrows.forEach((t, i) => {
-    html += '<div class="fit-row" data-i="' + i + '">'
+    const aim = t.aim || 'bull';
+    const aimLab = aim === 'bull' ? 'Bull' : aim;
+    html += '<div class="fit-row" data-i="' + i + '" style="grid-template-columns:28px 52px 1fr 36px">'
       + '<span class="idx">' + (i + 1) + '</span>'
+      + '<span class="idx" title="Aim">' + aimLab + '</span>'
       + '<input class="fit-r" type="number" inputmode="decimal" min="0" max="'
-      + FIT_R_MAX + '" step="0.1" value="' + t.r + '">'
+      + FIT_AIM_R_MAX + '" step="0.1" value="' + t.r + '">'
       + '<button type="button" class="del" title="Delete" data-del="' + i + '">×</button>'
       + '</div>';
   });
@@ -8831,7 +8841,8 @@ function renderFitList() {
     const i = parseInt(row.dataset.i, 10);
     const rIn = row.querySelector('.fit-r');
     const commit = () => {
-      const parsed = parseThrowFields(rIn.value);
+      const aim = fitThrows[i].aim || 'bull';
+      const parsed = parseThrowFields(rIn.value, aim);
       if (!parsed.ok) {
         rIn.classList.toggle('bad', true);
         showFitError(parsed.err + ' (throw #' + (i + 1) + ')');
@@ -8839,7 +8850,7 @@ function renderFitList() {
       }
       rIn.classList.remove('bad');
       showFitError('');
-      fitThrows[i] = { r: parsed.r };
+      fitThrows[i] = { r: parsed.r, aim: aim };
       refreshFitSummary();
     };
     rIn.addEventListener('change', commit);
@@ -8860,6 +8871,7 @@ function renderFitList() {
 
 function renderFit() {
   if (fitMethod === 'zones') renderZoneGrid();
+  else syncMeasureAimChrome();
   refreshFitSummary();
   renderFitList();
 }
@@ -8875,13 +8887,14 @@ function showFitError(msg) {
 }
 
 function addFitThrow() {
-  const parsed = parseThrowFields(elFitRadius.value);
+  const aim = activeFitAimId();
+  const parsed = parseThrowFields(elFitRadius.value, aim);
   if (!parsed.ok) {
     showFitError(parsed.err);
     return;
   }
   showFitError('');
-  fitThrows.push({ r: parsed.r });
+  fitThrows.push({ r: parsed.r, aim: aim });
   elFitRadius.value = '';
   elFitRadius.focus();
   renderFit();
@@ -8910,15 +8923,14 @@ document.getElementById('fitApply1').addEventListener('click', () => applyFitToP
 document.getElementById('fitApply2').addEventListener('click', () => applyFitToPlayer(2));
 if (elFitSave) elFitSave.addEventListener('click', saveCurrentFit);
 if (elFitPlayerName) {
-  elFitPlayerName.addEventListener('input', () => {
-    syncFitSaveButton();
-    renderFitSavedList();
+  elFitPlayerName.addEventListener('click', (e) => {
+    e.preventDefault();
+    openPlayerModal(FIT_PLAYER_EDIT);
   });
-  elFitPlayerName.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (!elFitSave.disabled) saveCurrentFit();
-    }
+  elFitPlayerName.addEventListener('focus', (e) => {
+    e.preventDefault();
+    elFitPlayerName.blur();
+    openPlayerModal(FIT_PLAYER_EDIT);
   });
 }
 renderFitSavedList();
