@@ -1520,16 +1520,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.41-beta / 2026-08-09 / bc00eac</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.42-beta / 2026-08-09 / bc00eac</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.41-beta / 2026-08-09 / bc00eac';
+const APP_VERSION = '0.1.42-beta / 2026-08-09 / bc00eac';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.41-beta-2026-08-09-bc00eac';
+const POLICY_CACHE_BUST = '0.1.42-beta-2026-08-09-bc00eac';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -3689,6 +3689,15 @@ function swapPlayerSides() {
   }
   syncBotSeatFromNames();
   cancelBotThrow();
+  // Before any dart, keep bot paused if it would throw first so sides can be swapped.
+  if (matchUiActive && match.winner === null && !matchPlayStarted(match)
+      && isBotSeat(match.current)) {
+    botPaused = true;
+    match.message = match.players[match.current].name
+      + ' to throw · swap sides to change order, then Continue bot';
+  } else if (!isBotSeat(match.current)) {
+    botPaused = false;
+  }
   visitDigits = '';
   render();
   if (scoreEntryMode === 'visit') buildPad();
@@ -3713,6 +3722,14 @@ function swapAdjacentSeats(i, j) {
   }
   syncBotSeatFromNames();
   cancelBotThrow();
+  if (matchUiActive && match.winner === null && !matchPlayStarted(match)
+      && isBotSeat(match.current)) {
+    botPaused = true;
+    match.message = match.players[match.current].name
+      + ' to throw · swap sides to change order, then Continue bot';
+  } else if (!isBotSeat(match.current)) {
+    botPaused = false;
+  }
   visitDigits = '';
   render();
   if (scoreEntryMode === 'visit') buildPad();
@@ -6712,7 +6729,6 @@ function startMatchWithBestOf(bestOf) {
     return;
   }
   cancelBotThrow();
-  botPaused = false;
   suppressAutoNextLeg = false;
   syncNames();
   const bo = normalizeBestOf(bestOf);
@@ -6736,12 +6752,36 @@ function startMatchWithBestOf(bestOf) {
   setMatchUiActive(true);
   syncBotSeatFromNames();
   visitDigits = '';
+  // If Bot throws first, pause so seats can still be swapped before it starts.
+  if (isBotSeat(match.current)) {
+    botPaused = true;
+    match.message = match.players[match.current].name
+      + ' to throw · swap sides to change who starts, then Continue bot';
+  } else {
+    botPaused = false;
+  }
   buildPad();
   render();
 }
 
 document.getElementById('btnMatch').addEventListener('click', () => {
   cancelBotThrow();
+  // After a finished match, return to lineup first so starter order can be changed
+  // before Best-of / Start (Bot no longer jumps straight into throwing).
+  if (match && matchUiActive && match.matchWinner != null) {
+    syncNames();
+    const m = mode();
+    const bo = match.bestOf || loadSavedBestOf();
+    match = newMatch(m.start_score, m.double_in, names(), m.game || 'x01', bo);
+    botPaused = false;
+    suppressAutoNextLeg = false;
+    setMatchUiActive(false);
+    visitDigits = '';
+    buildPad();
+    match.message = 'Swap seats to change who starts, then New match again';
+    render();
+    return;
+  }
   openBestOfModal();
 });
 (function wireBestOfModal() {
