@@ -1526,8 +1526,8 @@
 
     <div class="fit-panel" id="fitPanelZones">
     <div class="fit-help" id="fitZonesHelp">
-      Pick <b>Bull</b>, a <b>triple</b>, or a <b>double</b>, then count landings by board belt
-      (red/green bull, inner/outer single, triple, double, miss) — one joint σ.
+      <b>Bull</b>: count board belts. <b>Triple / double</b>: pick the landing
+      <b>score sector</b>, then count belts (e.g. T20 aim → inner single + sector 1 = S1).
     </div>
     <div id="zoneGrid"></div>
     </div><!-- /fitPanelZones -->
@@ -1554,16 +1554,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.52-beta / 2026-08-10 / bc00eac</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.54-beta / 2026-08-10 / bc00eac</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.52-beta / 2026-08-10 / bc00eac';
+const APP_VERSION = '0.1.54-beta / 2026-08-10 / bc00eac';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.52-beta-2026-08-10-bc00eac';
+const POLICY_CACHE_BUST = '0.1.54-beta-2026-08-10-bc00eac';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -5579,7 +5579,7 @@ function shapeSigmaEq(shape) {
   return snapPolicyShape(shape || {}).sigma;
 }
 
-/** Snap to isotropic policy grid: clamp/round σ to 1..50 → sσ_sσ_p0. */
+/** Snap to isotropic policy grid: clamp/round σ to 1..50 → sσ. */
 function snapPolicyShape(shape) {
   let s = Math.round(Number(
     shape && shape.sigma != null ? shape.sigma
@@ -5589,18 +5589,18 @@ function snapPolicyShape(shape) {
   return { sigma: s };
 }
 
-// On-demand policies: policies/{mode}/s{σ}_s{σ}_p0.json (compat stem)
+// On-demand policies: policies/{mode}/s{σ}.json
 const policyCache = Object.create(null);   // key -> policy object | false (404)
 const policyInflight = Object.create(null);
 let policyStatus = '';
 
 function policyCacheKey(modeKey, s) {
-  return modeKey + '|s' + s + '_s' + s + '_p0';
+  return modeKey + '|s' + s;
 }
 function policyUrl(modeKey, s) {
   // Beta builds use POLICY_BASE='../' to share root policies/ with prod.
   const base = (typeof POLICY_BASE === 'string' ? POLICY_BASE : '')
-    + 'policies/' + modeKey + '/s' + s + '_s' + s + '_p0.json';
+    + 'policies/' + modeKey + '/s' + s + '.json';
   const bust = (typeof POLICY_CACHE_BUST === 'string' && POLICY_CACHE_BUST
                 && POLICY_CACHE_BUST.indexOf('__') !== 0)
     ? POLICY_CACHE_BUST
@@ -7927,24 +7927,20 @@ const FIT_ANNULI = [
   { key: 'miss', label: 'Miss / off', sub: '> 170 mm', lo: DOUBLE_OUTER, hi: null },
 ];
 const FIT_ANNULUS_BY_KEY = Object.fromEntries(FIT_ANNULI.map(a => [a.key, a]));
-/** Old triple-sector buckets → board belts (best-effort when loading saved fits). */
-const LEGACY_TRIPLE_ZONE_KEY = {
-  target: 'triple',
-  same_single: 'single_outer',
-  same_double: 'double',
-  adj_triple: 'triple',
-  adj_single: 'single_outer',
-  elsewhere: 'miss',
-};
-/** Zone hits: { aim: 'bull' | 'T20', key: annulus }. */
+/** Zone hits: { aim, key: annulus, score?: 'S20'|'T1'|'Bull'|… }. */
 const fitZoneHits = [];
 const fitZoneCounts = Object.create(null); // display helper; rebuilt from hits
 let fitMethod = 'zones'; // 'measure' | 'zones'
 /** Aim target: 'bull' | 'triple' | 'double' plus sector 1–20 for T/D. */
 let fitAimSector = 20;
 let fitZonePad = 'bull'; // 'bull' | 'triple' | 'double'
+/** Landing score sector when logging T/D belt hits (defaults to aim sector). */
+let fitLandingSector = 20;
 const RING_FIT_MC = 2500;
 const _aimAnnulusProbCache = Object.create(null);
+const _ringBeltScoreProbCache = Object.create(null);
+const RING_SCORE_RELS = ['same', 'adj0', 'adj1', 'other'];
+const RING_BELTS_NEED_SCORE = ['single_inner', 'triple', 'single_outer', 'double'];
 
 const FIT_HISTORY_KEY = 'dartsFitHistory';
 const FIT_HISTORY_MAX = 100;
@@ -8015,7 +8011,70 @@ function parseFitAimId(aim) {
 function applyFitAimId(aim) {
   const p = parseFitAimId(aim);
   fitZonePad = p.kind;
-  if (p.sector != null) fitAimSector = p.sector;
+  if (p.sector != null) {
+    fitAimSector = p.sector;
+    fitLandingSector = p.sector;
+  }
+}
+
+function adjacentSectors(n) {
+  const i = SECTORS.indexOf(n | 0);
+  if (i < 0) return [];
+  return [SECTORS[(i + 19) % 20], SECTORS[(i + 1) % 20]];
+}
+
+function scoreLabelForBelt(belt, sector) {
+  if (belt === 'red_bull') return 'Bull';
+  if (belt === 'green_bull') return '25';
+  if (belt === 'miss') return 'Miss';
+  const n = sector | 0;
+  if (belt === 'triple') return 'T' + n;
+  if (belt === 'double') return 'D' + n;
+  return 'S' + n;
+}
+
+function sectorRelToAim(aim, score) {
+  const p = parseFitAimId(aim);
+  if (p.kind === 'bull') return 'other';
+  const m = /^([TSD])(\d+)$/.exec(String(score || ''));
+  if (!m) return 'other';
+  const n = parseInt(m[2], 10);
+  if (n === p.sector) return 'same';
+  const adj = adjacentSectors(p.sector);
+  if (adj[0] === n) return 'adj0';
+  if (adj[1] === n) return 'adj1';
+  return 'other';
+}
+
+/** Multinomial outcome for T/D aims: belt, or belt:same|adj0|adj1|other. */
+function ringBeltScoreOutcomeKey(aim, belt, score) {
+  if (belt === 'red_bull' || belt === 'green_bull' || belt === 'miss')
+    return belt;
+  return belt + ':' + sectorRelToAim(aim, score);
+}
+
+function ringBeltScoreOutcomeKeys() {
+  const keys = ['red_bull', 'green_bull', 'miss'];
+  for (const belt of RING_BELTS_NEED_SCORE) {
+    for (const rel of RING_SCORE_RELS) keys.push(belt + ':' + rel);
+  }
+  return keys;
+}
+
+function normalizeZoneHitKey(aim, key) {
+  if (FIT_ANNULUS_BY_KEY[key]) return key;
+  // Legacy T/D region buckets → approximate belt (score filled separately).
+  const legacy = {
+    target: aim && String(aim).charAt(0) === 'D' ? 'double' : 'triple',
+    same_single: 'single_outer',
+    same_double: 'double',
+    same_other: aim && String(aim).charAt(0) === 'D' ? 'triple' : 'double',
+    adj_triple: 'triple',
+    adj_target: aim && String(aim).charAt(0) === 'D' ? 'double' : 'triple',
+    adj_single: 'single_outer',
+    elsewhere: 'miss',
+  };
+  return legacy[key] || null;
 }
 
 function fitSummaryLabel(rec) {
@@ -8072,7 +8131,12 @@ function buildFitSaveRecord(name, fit) {
       : [],
     zoneCounts: null,
     zoneHits: fitMethod === 'zones'
-      ? fitZoneHits.map(h => ({ aim: h.aim || 'bull', key: h.key }))
+      ? fitZoneHits.map(h => ({
+          aim: h.aim || 'bull',
+          key: h.key,
+          score: h.score || scoreLabelForBelt(h.key,
+            (h.aim && parseFitAimId(h.aim).sector) || fitAimSector),
+        }))
       : null,
   };
   rec.sigma = fit.sigmaEq != null ? fit.sigmaEq : fit.sigma;
@@ -8129,14 +8193,16 @@ function loadSavedFit(id) {
           else
             aim = 'bull';
         }
-        let key = h.key;
-        if (!FIT_ANNULUS_BY_KEY[key]) {
-          if (aim !== 'bull' && LEGACY_TRIPLE_ZONE_KEY[key])
-            key = LEGACY_TRIPLE_ZONE_KEY[key];
-          else
-            continue;
+        let key = normalizeZoneHitKey(aim, h.key);
+        if (!key) continue;
+        let score = h.score || null;
+        if (!score) {
+          const sec = (aim !== 'bull' && parseFitAimId(aim).sector != null)
+            ? parseFitAimId(aim).sector
+            : fitAimSector;
+          score = scoreLabelForBelt(key, sec);
         }
-        fitZoneHits.push({ aim: aim, key: key });
+        fitZoneHits.push({ aim: aim, key: key, score: score });
         applyFitAimId(aim);
       }
     } else if (rec.zoneCounts) {
@@ -8277,37 +8343,58 @@ function annulusKeyFromR(r) {
   return 'miss';
 }
 
-/** P(belt | aim, σ). Bull aim is analytic Rayleigh; T/D aims use MC. */
+/** P(belt | bull aim, σ) — analytic Rayleigh. */
 function aimAnnulusProbs(aim, sigma) {
-  if (aim === 'bull') return annulusProbs(sigma);
+  return annulusProbs(sigma);
+}
+
+/** P(belt×score-rel | T/D aim, σ) via MC. Returns { outcomeKey: p }. */
+function ringBeltScoreProbs(aim, sigma) {
   const parsed = parseFitAimId(aim);
-  if (parsed.kind === 'bull') return annulusProbs(sigma);
+  if (parsed.kind === 'bull') return null;
   const s = Math.max(0.5, Number(sigma) || 25);
   const rounded = Math.round(s * 10) / 10;
   const cacheKey = aim + ':' + rounded.toFixed(1);
-  if (_aimAnnulusProbCache[cacheKey]) return _aimAnnulusProbCache[cacheKey].slice();
+  if (_ringBeltScoreProbCache[cacheKey])
+    return Object.assign({}, _ringBeltScoreProbCache[cacheKey]);
+  const keys = ringBeltScoreOutcomeKeys();
+  const tallies = Object.fromEntries(keys.map(k => [k, 0]));
   const [ax, ay] = ringAimPoint(parsed.kind, parsed.sector);
-  const tallies = Object.fromEntries(FIT_ANNULI.map(a => [a.key, 0]));
   for (let i = 0; i < RING_FIT_MC; i++) {
     const [x, y] = sampleGaussianLanding(ax, ay, { sigma: rounded });
-    tallies[annulusKeyFromR(Math.hypot(x, y))] += 1;
+    let lab = scoreLabelFromXY(x, y);
+    if (lab === 'Bounce') lab = 'Miss';
+    const belt = lab === 'Miss' ? 'miss'
+      : lab === 'Bull' ? 'red_bull'
+      : lab === '25' ? 'green_bull'
+      : annulusKeyFromR(Math.hypot(x, y));
+    const ok = ringBeltScoreOutcomeKey(aim, belt, lab);
+    if (Object.prototype.hasOwnProperty.call(tallies, ok))
+      tallies[ok] += 1;
+    else
+      tallies[belt === 'miss' ? 'miss' : (RING_BELTS_NEED_SCORE.includes(belt) ? (belt + ':other') : 'miss')] += 1;
   }
   let sum = 0;
-  const probs = FIT_ANNULI.map(a => {
-    const p = Math.max(tallies[a.key] / RING_FIT_MC, 1e-300);
-    sum += p;
-    return p;
-  });
-  const out = probs.map(p => p / sum);
-  _aimAnnulusProbCache[cacheKey] = out;
-  const keys = Object.keys(_aimAnnulusProbCache);
-  if (keys.length > 400) {
-    for (let i = 0; i < 80; i++) delete _aimAnnulusProbCache[keys[i]];
+  for (const k of keys) sum += tallies[k];
+  const out = Object.create(null);
+  for (const k of keys)
+    out[k] = Math.max((tallies[k] / Math.max(sum, 1)), 1e-300);
+  _ringBeltScoreProbCache[cacheKey] = out;
+  const ck = Object.keys(_ringBeltScoreProbCache);
+  if (ck.length > 400) {
+    for (let i = 0; i < 80; i++) delete _ringBeltScoreProbCache[ck[i]];
   }
-  return out.slice();
+  return Object.assign({}, out);
 }
 
-/** Joint bull + T/D score-zone MLE (one σ for all logged aims). */
+function hitOutcomeKey(h) {
+  const aim = zoneAimId(h);
+  if (aim === 'bull') return h.key;
+  const score = h.score || scoreLabelForBelt(h.key, parseFitAimId(aim).sector || fitLandingSector);
+  return ringBeltScoreOutcomeKey(aim, h.key, score);
+}
+
+/** Joint bull belts + T/D (belt×score) MLE. */
 function fitScoreZonesJoint(hits) {
   if (!hits || !hits.length) return null;
   const beltIdx = Object.fromEntries(FIT_ANNULI.map((a, i) => [a.key, i]));
@@ -8318,10 +8405,18 @@ function fitScoreZonesJoint(hits) {
     let s = 0;
     for (const h of hits) {
       const aim = zoneAimId(h);
-      const i = beltIdx[h.key];
-      if (i == null) continue;
-      if (!memo[aim]) memo[aim] = aimAnnulusProbs(aim, sigma);
-      s += Math.log(memo[aim][i]);
+      if (aim === 'bull') {
+        const i = beltIdx[h.key];
+        if (i == null) continue;
+        if (!memo.bull) memo.bull = aimAnnulusProbs('bull', sigma);
+        s += Math.log(memo.bull[i]);
+      } else {
+        if (!memo[aim]) memo[aim] = ringBeltScoreProbs(aim, sigma);
+        const ok = hitOutcomeKey(h);
+        const p = memo[aim][ok];
+        if (p == null) continue;
+        s += Math.log(p);
+      }
     }
     return -s;
   }
@@ -8358,24 +8453,46 @@ function fitScoreZonesJoint(hits) {
   const chartCounts = {};
   const chartProbs = [];
   const chartExpected = [];
-  function pushAimChart(aim, labelPrefix, nAim) {
+  function pushBullChart(nAim) {
     if (!nAim) return;
-    const bp = aimAnnulusProbs(aim, sigma);
-    const cAim = countsForAim(aim);
+    const bp = aimAnnulusProbs('bull', sigma);
+    const cAim = countsForAim('bull');
     FIT_ANNULI.forEach((a, i) => {
-      const short = a.key === 'red_bull' ? 'RB' : a.key === 'green_bull' ? 'GB'
-        : a.key === 'miss' ? 'X' : a.key[0].toUpperCase();
       chartRegions.push({
-        key: aim + ':' + a.key,
-        short: (aim === 'bull' ? '' : aim) + short,
-        label: labelPrefix + ' ' + a.label,
+        key: 'bull:' + a.key,
+        short: a.key === 'red_bull' ? 'RB' : a.key === 'green_bull' ? 'GB'
+          : a.key === 'miss' ? 'X' : a.key[0].toUpperCase(),
+        label: 'Bull ' + a.label,
       });
-      chartCounts[aim + ':' + a.key] = cAim[a.key] || 0;
+      chartCounts['bull:' + a.key] = cAim[a.key] || 0;
       chartProbs.push(bp[i]);
       chartExpected.push(nAim * bp[i]);
     });
   }
-  pushAimChart('bull', 'Bull', nBull);
+  function pushRingChart(aim, nAim) {
+    if (!nAim) return;
+    const probs = ringBeltScoreProbs(aim, sigma);
+    const cAim = countsForAim(aim);
+    FIT_ANNULI.forEach((a) => {
+      let pBelt = 0;
+      if (a.key === 'red_bull' || a.key === 'green_bull' || a.key === 'miss') {
+        pBelt = probs[a.key] || 0;
+      } else {
+        for (const rel of RING_SCORE_RELS) pBelt += probs[a.key + ':' + rel] || 0;
+      }
+      const short = a.key === 'red_bull' ? 'RB' : a.key === 'green_bull' ? 'GB'
+        : a.key === 'miss' ? 'X' : a.key[0].toUpperCase();
+      chartRegions.push({
+        key: aim + ':' + a.key,
+        short: aim + short,
+        label: aim + ' ' + a.label,
+      });
+      chartCounts[aim + ':' + a.key] = cAim[a.key] || 0;
+      chartProbs.push(pBelt);
+      chartExpected.push(nAim * pBelt);
+    });
+  }
+  pushBullChart(nBull);
   const sortedRings = [...ringAims].sort((a, b) => {
     const pa = parseFitAimId(a), pb = parseFitAimId(b);
     if (pa.kind !== pb.kind) return pa.kind === 'triple' ? -1 : 1;
@@ -8385,7 +8502,7 @@ function fitScoreZonesJoint(hits) {
     let nSec = 0;
     const cAim = countsForAim(aim);
     for (const k of Object.keys(cAim)) nSec += cAim[k] | 0;
-    pushAimChart(aim, aim, nSec);
+    pushRingChart(aim, nSec);
   }
 
   return {
@@ -8440,6 +8557,7 @@ function syncFitAimSectorPad(padId) {
         const n = parseInt(t.slice(7), 10);
         if (!SECTORS.includes(n)) return;
         fitAimSector = n;
+        fitLandingSector = n;
         if (fitZonePad === 'bull') fitZonePad = 'triple';
       } else {
         return;
@@ -8495,12 +8613,34 @@ function zoneTotal() {
 }
 
 function commitZoneHit(aim, key) {
-  fitZoneHits.push({ aim: aim, key: key });
+  let score = null;
+  if (aim === 'bull') {
+    score = scoreLabelForBelt(key, 0);
+  } else {
+    if (RING_BELTS_NEED_SCORE.includes(key) && !SECTORS.includes(fitLandingSector | 0)) {
+      showFitError('Pick the landing score sector first');
+      return;
+    }
+    score = scoreLabelForBelt(key, fitLandingSector);
+  }
+  fitZoneHits.push({ aim: aim, key: key, score: score });
   _zoneFitCache = { sig: null, fit: null };
+  showFitError('');
   renderFit();
 }
 
 function removeZoneHit(aim, key) {
+  const wantScore = (aim !== 'bull' && RING_BELTS_NEED_SCORE.includes(key))
+    ? scoreLabelForBelt(key, fitLandingSector)
+    : null;
+  for (let i = fitZoneHits.length - 1; i >= 0; i--) {
+    if (zoneAimId(fitZoneHits[i]) !== aim || fitZoneHits[i].key !== key) continue;
+    if (wantScore && fitZoneHits[i].score && fitZoneHits[i].score !== wantScore) continue;
+    fitZoneHits.splice(i, 1);
+    _zoneFitCache = { sig: null, fit: null };
+    return true;
+  }
+  // Fallback: remove any hit on this aim+belt.
   for (let i = fitZoneHits.length - 1; i >= 0; i--) {
     if (zoneAimId(fitZoneHits[i]) === aim && fitZoneHits[i].key === key) {
       fitZoneHits.splice(i, 1);
@@ -8511,17 +8651,57 @@ function removeZoneHit(aim, key) {
   return false;
 }
 
+function beltScoreBreakdown(aim, belt) {
+  const tallies = Object.create(null);
+  for (const h of fitZoneHits) {
+    if (zoneAimId(h) !== aim || h.key !== belt) continue;
+    const sc = h.score || '?';
+    tallies[sc] = (tallies[sc] || 0) + 1;
+  }
+  return Object.keys(tallies).sort().map(sc => sc + '×' + tallies[sc]).join(' · ');
+}
+
 function renderZoneRows(schema, aim, counts) {
+  const onBull = aim === 'bull';
   return schema.map(a => {
+    let sub = a.sub || '';
+    if (!onBull) {
+      if (RING_BELTS_NEED_SCORE.includes(a.key)) {
+        const sc = scoreLabelForBelt(a.key, fitLandingSector);
+        const br = beltScoreBreakdown(aim, a.key);
+        sub = 'next + → ' + sc + (br ? (' · logged ' + br) : '');
+      } else {
+        sub = a.label === 'Miss / off' ? 'Miss' : (a.key === 'red_bull' ? '50' : '25');
+      }
+    }
     return '<div class="zone-row" data-aim="' + aim + '" data-key="' + a.key + '">'
       + '<div class="zlab">' + a.label
-      + '<span class="zsub">' + (a.sub || '') + '</span>'
+      + '<span class="zsub">' + sub + '</span>'
       + '</div>'
       + '<button type="button" class="minus" data-delta="-1" aria-label="minus">−</button>'
       + '<span class="zcount">' + (counts[a.key] || 0) + '</span>'
       + '<button type="button" class="plus" data-delta="1" aria-label="plus">+</button>'
       + '</div>';
   }).join('');
+}
+
+function syncFitLandingSectorPad() {
+  const pad = document.getElementById('fitLandingSectorPad');
+  if (!pad) return;
+  let html = SECTORS.map(n => {
+    const sel = (n === (fitLandingSector | 0)) ? 'sel' : '';
+    return '<button type="button" data-landing-sector="' + n + '" class="' + sel + '">'
+      + n + '</button>';
+  }).join('');
+  pad.innerHTML = html;
+  pad.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const n = parseInt(btn.dataset.landingSector, 10);
+      if (!SECTORS.includes(n)) return;
+      fitLandingSector = n;
+      renderZoneGrid();
+    });
+  });
 }
 
 function aimHitCount(aim) {
@@ -8542,13 +8722,20 @@ function renderZoneGrid() {
     + '<p class="hint" style="margin:0 0 8px;text-align:center">'
     + 'Aim target · ' + (onBull ? 'red bull' : activeFitAimId())
     + ' · ' + nLogged + ' logged</p>'
-    + '<div class="sector-pad" id="fitAimSectorPad"></div>'
-    + '<div class="zone-grid" style="margin-top:8px">'
+    + '<div class="sector-pad" id="fitAimSectorPad"></div>';
+  if (!onBull) {
+    html += '<p class="hint" style="margin:10px 0 6px;text-align:center">'
+      + 'Landing <b>score sector</b> (highlighted) · belt + logs '
+      + 'T/D/S' + (fitLandingSector | 0) + ' as appropriate</p>'
+      + '<div class="sector-pad" id="fitLandingSectorPad"></div>';
+  }
+  html += '<div class="zone-grid" style="margin-top:8px">'
     + renderZoneRows(FIT_ANNULI, aim, counts) + '</div>'
     + '</div>';
 
   elZoneGrid.innerHTML = html;
   syncFitAimSectorPad('fitAimSectorPad');
+  if (!onBull) syncFitLandingSectorPad();
   elZoneGrid.querySelectorAll('.zone-row').forEach(row => {
     const rowAim = row.dataset.aim;
     const key = row.dataset.key;
@@ -8825,7 +9012,7 @@ function refreshFitSummary() {
     elFitQuality.textContent = '';
     elFitQuality.className = 'quality';
     if (fitMethod === 'zones') {
-      elFitDetail.textContent = 'Log bull / triple / double landings for a joint σ';
+      elFitDetail.textContent = 'Log bull belts, or T/D belts with a landing score sector';
     } else {
       elFitDetail.textContent = fitThrows.length
         ? 'Fix invalid rows to estimate σ'
@@ -8841,12 +9028,12 @@ function refreshFitSummary() {
       elFitDetail.textContent =
         'bull belt MLE · 95% CI ' + fit.ciLo.toFixed(1)
         + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s + '_s' + s + '_p0';
+        + ' · policy s' + s;
     } else if (fit.mode === 'triple_regions') {
       elFitDetail.textContent =
         'T' + fit.aimSector + ' region MLE · 95% CI ' + fit.ciLo.toFixed(1)
         + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s + '_s' + s + '_p0';
+        + ' · policy s' + s;
     } else if (fit.mode === 'score_zones_joint') {
       const bits = [];
       if (fit.nBull) bits.push(fit.nBull + ' bull');
@@ -8855,12 +9042,12 @@ function refreshFitSummary() {
       elFitDetail.textContent =
         'joint MLE (' + bits.join(' + ') + ') · 95% CI ' + fit.ciLo.toFixed(1)
         + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s + '_s' + s + '_p0';
+        + ' · policy s' + s;
     } else {
       elFitDetail.textContent =
         'isotropic · 95% CI ' + fit.ciLo.toFixed(1)
         + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s + '_s' + s + '_p0';
+        + ' · policy s' + s;
     }
   }
   drawFitChart(fit);
