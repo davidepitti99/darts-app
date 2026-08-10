@@ -427,6 +427,18 @@
   .card .meta { font-size: 11px; color: var(--mute); margin-bottom: 6px; }
   .card.bot-seat { border-color: #4a6a3a; }
   .card.bot-seat .name { color: #b8e0a8; }
+  .card .name-row {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
+  }
+  .card .name-row .name { flex: 1; min-width: 0; margin-bottom: 0; }
+  .card .bot-continue {
+    flex: 0 0 auto; padding: 5px 8px; font-size: 11px; font-weight: 800;
+    line-height: 1.1; border-radius: 8px; border: 1px solid #6a9a5a;
+    background: #2a4a2a; color: #b8e0a8; cursor: pointer;
+    white-space: nowrap;
+  }
+  .card .bot-continue:active { background: #3a6a3a; }
+  .card .bot-continue.hidden { display: none !important; }
   .pad.bot-locked { opacity: 0.45; pointer-events: none; }
   .player-list button.bot-entry { color: #b8e0a8; }
   .player-list button.bot-entry .sub { color: #8cda7a; }
@@ -724,11 +736,7 @@
   .actions {
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
   }
-  .actions.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-  .actions.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .actions.has-ok { grid-template-columns: 1fr 1fr 1fr; }
-  .actions.has-ok.cols-4,
-  .actions.has-ok.has-bot-continue { grid-template-columns: 1fr 1fr 1fr 1fr; }
   .actions button, .pad button {
     background: var(--field); color: #fff; border: 1px solid #555;
     border-radius: 10px; padding: 12px 6px; font-size: 15px; font-weight: 600;
@@ -1245,8 +1253,12 @@
 
   <div class="scores" id="scoreCards">
     <div class="card" id="card0">
-      <input class="name" id="name0" value="" placeholder="Select player" maxlength="16" readonly
-             inputmode="none" title="Tap to load or save player">
+      <div class="name-row">
+        <input class="name" id="name0" value="" placeholder="Select player" maxlength="16" readonly
+               inputmode="none" title="Tap to load or save player">
+        <button type="button" class="bot-continue hidden" data-bot-continue="0"
+                title="Resume bot throw">Continue</button>
+      </div>
       <div class="rem cricket-hide" id="rem0" title="Tap to see visit scores"
            role="button" tabindex="0">0</div>
       <div class="meta" id="meta0">Legs 0</div>
@@ -1261,8 +1273,12 @@
     <button type="button" class="swap-sides" id="btnSwapSides"
             title="Swap these two players" aria-label="Swap seat 1 and seat 2">⇄</button>
     <div class="card" id="card1">
-      <input class="name" id="name1" value="" placeholder="Select player" maxlength="16" readonly
-             inputmode="none" title="Tap to load or save player">
+      <div class="name-row">
+        <input class="name" id="name1" value="" placeholder="Select player" maxlength="16" readonly
+               inputmode="none" title="Tap to load or save player">
+        <button type="button" class="bot-continue hidden" data-bot-continue="1"
+                title="Resume bot throw">Continue</button>
+      </div>
       <div class="rem cricket-hide" id="rem1" title="Tap to see visit scores"
            role="button" tabindex="0">0</div>
       <div class="meta" id="meta1">Legs 0</div>
@@ -1277,8 +1293,12 @@
     <button type="button" class="swap-sides swap-adj-extra hidden" id="btnSwap12"
             title="Swap these two players" aria-label="Swap seat 2 and seat 3">⇄</button>
     <div class="card seat-extra hidden" id="card2">
-      <input class="name" id="name2" value="" placeholder="Select player" maxlength="16" readonly
-             inputmode="none" title="Tap to load or save player">
+      <div class="name-row">
+        <input class="name" id="name2" value="" placeholder="Select player" maxlength="16" readonly
+               inputmode="none" title="Tap to load or save player">
+        <button type="button" class="bot-continue hidden" data-bot-continue="2"
+                title="Resume bot throw">Continue</button>
+      </div>
       <div class="rem cricket-hide" id="rem2" title="Tap to see visit scores"
            role="button" tabindex="0">0</div>
       <div class="meta" id="meta2">Legs 0</div>
@@ -1306,7 +1326,6 @@
   <div class="actions" id="scoreActions">
     <button type="button" id="btnMatch" class="primary">New match</button>
     <button type="button" id="btnUndo">Undo</button>
-    <button type="button" id="btnBotContinue" class="ok-btn hidden">Continue bot</button>
     <button type="button" id="btnVisitOk" class="ok-btn hidden">OK</button>
   </div>
 
@@ -1520,16 +1539,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.42-beta / 2026-08-09 / bc00eac</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.43-beta / 2026-08-09 / bc00eac</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.42-beta / 2026-08-09 / bc00eac';
+const APP_VERSION = '0.1.43-beta / 2026-08-09 / bc00eac';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.42-beta-2026-08-09-bc00eac';
+const POLICY_CACHE_BUST = '0.1.43-beta-2026-08-09-bc00eac';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2873,11 +2892,14 @@ function resumeBotAfterUndo() {
 }
 
 function syncBotContinueButton() {
-  const btn = document.getElementById('btnBotContinue');
-  if (!btn) return;
   const show = !!(botPaused && match && matchUiActive
     && match.winner === null && isBotSeat(match.current));
-  btn.classList.toggle('hidden', !show);
+  const cur = match ? (match.current | 0) : -1;
+  for (let idx = 0; idx < 3; idx++) {
+    const btn = document.querySelector('[data-bot-continue="' + idx + '"]');
+    if (!btn) continue;
+    btn.classList.toggle('hidden', !(show && idx === cur));
+  }
 }
 
 function syncBotUi() {
@@ -3249,7 +3271,7 @@ function undoMatch(m) {
   botPaused = true;
   suppressAutoNextLeg = true;
   if (prevWinner != null || prevMatchWinner != null)
-    m.message = 'Undone · bot paused — tap Continue bot when ready';
+    m.message = 'Undone · bot paused — tap Continue next to Bot';
   return true;
 }
 
@@ -3694,7 +3716,7 @@ function swapPlayerSides() {
       && isBotSeat(match.current)) {
     botPaused = true;
     match.message = match.players[match.current].name
-      + ' to throw · swap sides to change order, then Continue bot';
+      + ' to throw · swap sides to change order, then tap Continue next to Bot';
   } else if (!isBotSeat(match.current)) {
     botPaused = false;
   }
@@ -3726,7 +3748,7 @@ function swapAdjacentSeats(i, j) {
       && isBotSeat(match.current)) {
     botPaused = true;
     match.message = match.players[match.current].name
-      + ' to throw · swap sides to change order, then Continue bot';
+      + ' to throw · swap sides to change order, then tap Continue next to Bot';
   } else if (!isBotSeat(match.current)) {
     botPaused = false;
   }
@@ -5973,19 +5995,11 @@ function syncEntryToggle() {
 function syncScoreActionRow() {
   const actions = document.getElementById('scoreActions');
   const ok = document.getElementById('btnVisitOk');
-  const botBtn = document.getElementById('btnBotContinue');
   if (!actions || !ok) return;
   const cricket = !!(match && match.game === 'cricket') || isCricket();
   const showOk = !cricket && scoreEntryMode === 'visit';
-  const showBot = !!(botPaused && match && matchUiActive
-    && match.winner === null && isBotSeat(match.current));
   ok.classList.toggle('hidden', !showOk);
-  if (botBtn) botBtn.classList.toggle('hidden', !showBot);
   actions.classList.toggle('has-ok', showOk);
-  actions.classList.toggle('has-bot-continue', showBot);
-  const n = 2 + (showOk ? 1 : 0) + (showBot ? 1 : 0);
-  actions.classList.toggle('cols-3', n === 3);
-  actions.classList.toggle('cols-4', n >= 4);
 }
 
 function buildPad() {
@@ -6557,11 +6571,13 @@ document.getElementById('btnUndo').addEventListener('click', () => {
   }
 });
 (function wireBotContinue() {
-  const btn = document.getElementById('btnBotContinue');
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    resumeBotAfterUndo();
-    syncScoreActionRow();
+  document.querySelectorAll('[data-bot-continue]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      resumeBotAfterUndo();
+      syncBotContinueButton();
+    });
   });
 })();
 document.getElementById('btnSwapSides').addEventListener('click', () => {
@@ -6756,7 +6772,7 @@ function startMatchWithBestOf(bestOf) {
   if (isBotSeat(match.current)) {
     botPaused = true;
     match.message = match.players[match.current].name
-      + ' to throw · swap sides to change who starts, then Continue bot';
+      + ' to throw · swap sides to change who starts, then tap Continue next to Bot';
   } else {
     botPaused = false;
   }
