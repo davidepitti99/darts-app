@@ -896,6 +896,21 @@
     margin: 0 0 8px; font-size: 13px; color: var(--accent); font-weight: 800;
     text-align: center; letter-spacing: 0.02em;
   }
+  .fit-zone-aim-toggle {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px;
+  }
+  .fit-zone-aim-toggle button {
+    padding: 10px 8px; font-size: 13px; font-weight: 700;
+    background: var(--field); color: #ccc; border: 1px solid #555; border-radius: 10px;
+    cursor: pointer;
+  }
+  .fit-zone-aim-toggle button .n {
+    display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--mute);
+  }
+  .fit-zone-aim-toggle button.active {
+    background: var(--accent); color: #1a1a1a; border-color: var(--accent);
+  }
+  .fit-zone-aim-toggle button.active .n { color: #1a1a1a; opacity: 0.75; }
   .zone-grid {
     display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 8px;
   }
@@ -1512,7 +1527,7 @@
 
     <div class="fit-panel" id="fitPanelZones">
     <div class="fit-help" id="fitZonesHelp">
-      Log landings from <b>red bull</b> and/or <b>any triple</b> — one joint σ from all throws.
+      Switch <b>Red bull</b> / <b>Triple</b>, log landings with +/− — one joint σ from all throws.
     </div>
     <div id="zoneGrid"></div>
     </div><!-- /fitPanelZones -->
@@ -1539,16 +1554,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.44-beta / 2026-08-09 / bc00eac</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.45-beta / 2026-08-09 / bc00eac</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.44-beta / 2026-08-09 / bc00eac';
+const APP_VERSION = '0.1.45-beta / 2026-08-09 / bc00eac';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.44-beta-2026-08-09-bc00eac';
+const POLICY_CACHE_BUST = '0.1.45-beta-2026-08-09-bc00eac';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -7893,8 +7908,10 @@ const FIT_TRIPLE_BY_KEY = Object.fromEntries(FIT_TRIPLE_REGIONS.map(a => [a.key,
 const fitZoneHits = [];
 const fitZoneCounts = Object.create(null); // display helper; rebuilt from hits
 let fitMethod = 'zones'; // 'measure' | 'zones'
-/** Which triple sector the triple-aim pad is logging into (bull pad is always available). */
+/** Which triple sector the triple-aim pad is logging into. */
 let fitAimSector = 20;
+/** Score-zones pad: 'bull' | 'triple' — one visible set of +/− rows at a time. */
+let fitZonePad = 'bull';
 const TRIPLE_FIT_MC = 2500;
 const _tripleProbCache = Object.create(null);
 
@@ -8410,19 +8427,57 @@ function renderZoneRows(schema, aim, counts) {
   }).join('');
 }
 
+function aimHitCount(aim) {
+  let n = 0;
+  for (const h of fitZoneHits) {
+    if (zoneAimId(h) === aim) n++;
+  }
+  return n;
+}
+
+function setFitZonePad(pad) {
+  fitZonePad = (pad === 'triple') ? 'triple' : 'bull';
+  renderZoneGrid();
+}
+
 function renderZoneGrid() {
   const bullCounts = countsForAim('bull');
   const tripAim = 'T' + (fitAimSector | 0);
   const tripCounts = countsForAim(tripAim);
-  let html = '<div class="fit-zone-section"><h3>Red bull aim</h3>'
-    + '<div class="zone-grid">' + renderZoneRows(FIT_ANNULI, 'bull', bullCounts) + '</div></div>';
-  html += '<div class="fit-zone-section"><h3>Triple aim — T' + fitAimSector + '</h3>'
-    + '<p class="hint" style="margin:0 0 8px;text-align:center">Pick the triple you are aiming, then log landings</p>'
-    + '<div class="sector-pad" id="fitAimSectorPad"></div>'
-    + '<div class="zone-grid" style="margin-top:8px">'
-    + renderZoneRows(FIT_TRIPLE_REGIONS, tripAim, tripCounts) + '</div></div>';
+  const nBull = aimHitCount('bull');
+  const nTrip = aimHitCount(tripAim);
+  const onTriple = fitZonePad === 'triple';
+
+  let html = '<div class="fit-zone-aim-toggle" id="fitZoneAimToggle">'
+    + '<button type="button" data-zone-pad="bull"'
+    + (onTriple ? '' : ' class="active"') + '>Red bull'
+    + '<span class="n">' + nBull + ' logged</span></button>'
+    + '<button type="button" data-zone-pad="triple"'
+    + (onTriple ? ' class="active"' : '') + '>Triple T' + (fitAimSector | 0)
+    + '<span class="n">' + nTrip + ' logged</span></button>'
+    + '</div>';
+
+  html += '<div class="fit-zone-section">';
+  if (!onTriple) {
+    html += '<div class="zone-grid">'
+      + renderZoneRows(FIT_ANNULI, 'bull', bullCounts) + '</div>';
+  } else {
+    html += '<p class="hint" style="margin:0 0 8px;text-align:center">'
+      + 'Pick the triple you are aiming, then log landings</p>'
+      + '<div class="sector-pad" id="fitAimSectorPad"></div>'
+      + '<div class="zone-grid" style="margin-top:8px">'
+      + renderZoneRows(FIT_TRIPLE_REGIONS, tripAim, tripCounts) + '</div>';
+  }
+  html += '</div>';
+
   elZoneGrid.innerHTML = html;
-  syncFitAimSectorPad();
+  const toggle = document.getElementById('fitZoneAimToggle');
+  if (toggle) {
+    toggle.querySelectorAll('button[data-zone-pad]').forEach(btn => {
+      btn.addEventListener('click', () => setFitZonePad(btn.dataset.zonePad));
+    });
+  }
+  if (onTriple) syncFitAimSectorPad();
   elZoneGrid.querySelectorAll('.zone-row').forEach(row => {
     const aim = row.dataset.aim;
     const key = row.dataset.key;
