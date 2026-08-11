@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a1a1a">
-<title>501 Scorekeeper (BETA)</title>
+<title>Darts AIm (BETA)</title>
 <style>
   :root {
     --bg:#1e1e1e; --panel:#141414; --field:#333; --accent:#ffd23f;
@@ -1178,8 +1178,8 @@
 <body>
 <div class="gate" id="accessGate">
   <div class="gate-box">
-    <h2>Darts Aim</h2>
-    <p>Know your throw. Get the right aim. See yourself improve.</p>
+    <h2>Darts AIm</h2>
+    <p>Darts + Aim + AI — a game of words with artificial intelligence. Know your throw. Get the right aim.</p>
     <button type="button" class="google" id="gateGoogle">Continue with Google</button>
     <button type="button" class="secondary" id="gateGuest">Continue free (no account)</button>
     <div class="divider">or</div>
@@ -1626,16 +1626,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.70-beta / 2026-08-10 / 86e8bec</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.71-beta / 2026-08-10 / 86e8bec</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.70-beta / 2026-08-10 / 86e8bec';
+const APP_VERSION = '0.1.71-beta / 2026-08-10 / 86e8bec';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.70-beta-2026-08-10-86e8bec';
+const POLICY_CACHE_BUST = '0.1.71-beta-2026-08-10-86e8bec';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2531,7 +2531,7 @@ function buildMatchShareText(m) {
   const winner = m.players[m.winner];
   const losers = matchLosers(m);
   const lines = [];
-  lines.push('Darts Aim — match result');
+  lines.push('Darts AIm — match result');
   lines.push(modeName + ' · ' + when);
   lines.push('');
   lines.push(winner.name + ' beat ' + losers.map(p => p.name).join(' / '));
@@ -2559,8 +2559,8 @@ function buildMatchShareText(m) {
   }
   lines.push('');
   lines.push('Rematch with personal aims — fit your throw, get coached aims.');
-  lines.push('Try Darts Aim (free): ' + shareAppUrl());
-  lines.push('Know your throw. Get the right aim. See yourself improve.');
+  lines.push('Try Darts AIm (free): ' + shareAppUrl());
+  lines.push('Darts + Aim + AI — know your throw. Get the right aim.');
   return lines.join('\n');
 }
 
@@ -2571,7 +2571,7 @@ function shareMatchResults() {
   const text = shareGreetingFor(match) + buildMatchShareText(match);
   const losers = matchLosers(match);
   const title = match.players[match.winner].name + ' beat '
-    + losers.map(p => p.name).join(' / ') + ' · Darts Aim';
+    + losers.map(p => p.name).join(' / ') + ' · Darts AIm';
   sharePayload(title, text, '#shareMatchFeedback');
 }
 
@@ -7620,16 +7620,16 @@ function shareCoachProfile() {
   const sig = fits[0] ? latestFitSigma(fits[0]) : null;
   const wr = formRows.length ? Math.round(100 * wins / formRows.length) : null;
   const lines = [
-    'Darts Aim · ' + name,
+    'Darts AIm · ' + name,
     sig != null ? ('σ ≈ ' + Number(sig).toFixed(1) + ' mm') : 'σ not fitted yet',
     formRows.length
       ? (wins + 'W–' + (formRows.length - wins) + 'L'
         + (wr != null ? (' · ' + wr + '% win rate') : ''))
       : 'No matches yet',
-    'Know your throw. Get the right aim. See yourself improve.',
+    'Darts + Aim + AI — know your throw. Get the right aim.',
     'Try free: ' + shareAppUrl(),
   ];
-  sharePayload('Darts Aim · ' + name, lines.join('\n'), '#coachPayoffDetail');
+  sharePayload('Darts AIm · ' + name, lines.join('\n'), '#coachPayoffDetail');
 }
 
 function hideCheckoutAimPreview() {
@@ -8385,6 +8385,8 @@ function loadSavedFit(id) {
   renderFit();
   if (elFitList) elFitList.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+function deleteSavedFit(id) {
   if (!id) return;
   const rec = loadFitHistory().find(r => r && r.id === id);
   if (!rec) return;
