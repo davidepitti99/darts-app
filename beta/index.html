@@ -116,26 +116,18 @@
   }
   .scores:not(.players-3) .swap-adj-extra { display: none !important; }
   .card.seat-extra.hidden { display: none !important; }
-  .seat-rail {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 6px; flex-shrink: 0;
+  .card .seat-remove {
+    display: block; width: 100%; margin-top: 8px; padding: 5px 6px;
+    border-radius: 8px; border: 1px solid #5a3a3a;
+    background: #2a1a1a; color: #ff8a8a;
+    font-size: 11px; font-weight: 800; cursor: pointer; line-height: 1.2;
   }
-  .seat-count-btn {
-    width: auto; min-width: 40px; max-width: 56px;
-    padding: 4px 6px; margin: 0;
-    border-radius: 8px; border: 1px solid #555;
-    background: #222; color: var(--accent);
-    font-size: 10px; font-weight: 800; line-height: 1.15;
-    letter-spacing: 0.01em; cursor: pointer; white-space: normal;
-    text-align: center;
+  .card .seat-remove.hidden { display: none !important; }
+  .card .seat-remove:active { background: #3a2a2a; }
+  .card .seat-remove.is-add {
+    border-color: #555; background: #222; color: var(--accent);
   }
-  .scores.players-3 .seat-count-btn {
-    min-width: 28px; max-width: 40px; padding: 3px 4px; font-size: 9px;
-  }
-  .seat-count-btn:active { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
-  .seat-count-btn:disabled {
-    opacity: 0.35; cursor: default; pointer-events: none;
-  }
+  .card .seat-remove.is-add:active { background: var(--accent); color: #1a1a1a; }
 
   /* Before New match: lineup / mode only — hide scoring chrome. */
   #pageScore.prematch .pad,
@@ -335,6 +327,13 @@
     font-weight: 700;
   }
   .player-list .dart-inline input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .player-list .dart-del {
+    flex: 0 0 auto; width: 28px; height: 28px; padding: 0; margin: 0 4px 0 0;
+    border-radius: 8px; border: 1px solid #5a3a3a; background: #2a1a1a;
+    color: #ff8a8a; font-size: 16px; font-weight: 800; line-height: 1;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .player-list .dart-del:active { background: #3a2a2a; }
   .player-list button {
     display: flex; width: 100%; align-items: center; justify-content: space-between;
     gap: 8px; background: transparent; border: none; border-bottom: 1px solid #2a2a2a;
@@ -1202,7 +1201,7 @@
     </div>
     <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
     <div class="player-panel" id="playerRosterPanel">
-      <p class="hint">Shared roster for both sides. Edit <b>Dart ≤</b> on the list, tap a name, then Select. Cancel returns to the list. <b>Bot</b> is always listed as the CPU opponent.</p>
+      <p class="hint">Shared roster for both sides. Tap a name to pick them. Edit <b>Dart ≤</b> on the row, or tap <b>×</b> to delete. Type a new name and <b>Save</b> to add. <b>Bot</b> is the CPU opponent.</p>
       <div class="player-list" id="playerList"></div>
       <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr">
         <button type="button" id="playerDelete" class="danger">Delete</button>
@@ -1352,13 +1351,11 @@
         <button type="button" class="sigma-info" data-sigma-info
                 title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
+      <button type="button" class="seat-remove hidden" data-seat-remove="0"
+              title="Remove this player">Remove</button>
     </div>
-    <div class="seat-rail" id="seatRail01">
-      <button type="button" class="seat-count-btn" id="btnSeatCount"
-              title="Add a third player">Add</button>
-      <button type="button" class="swap-sides" id="btnSwapSides"
-              title="Swap these two players" aria-label="Swap seat 1 and seat 2">⇄</button>
-    </div>
+    <button type="button" class="swap-sides" id="btnSwapSides"
+            title="Swap these two players" aria-label="Swap seat 1 and seat 2">⇄</button>
     <div class="card" id="card1">
       <div class="name-row">
         <input class="name" id="name1" value="" placeholder="Select player" maxlength="16" readonly
@@ -1376,6 +1373,8 @@
         <button type="button" class="sigma-info" data-sigma-info
                 title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
+      <button type="button" class="seat-remove hidden" data-seat-remove="1"
+              title="Remove this player">Remove</button>
     </div>
     <button type="button" class="swap-sides swap-adj-extra hidden" id="btnSwap12"
             title="Swap these two players" aria-label="Swap seat 2 and seat 3">⇄</button>
@@ -1396,6 +1395,8 @@
         <button type="button" class="sigma-info" data-sigma-info
                 title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
+      <button type="button" class="seat-remove hidden" data-seat-remove="2"
+              title="Remove this player">Remove</button>
     </div>
   </div>
 
@@ -1626,16 +1627,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.71-beta / 2026-08-10 / 86e8bec</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.73-beta / 2026-08-10 / 86e8bec</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.71-beta / 2026-08-10 / 86e8bec';
+const APP_VERSION = '0.1.73-beta / 2026-08-10 / 86e8bec';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.71-beta-2026-08-10-86e8bec';
+const POLICY_CACHE_BUST = '0.1.73-beta-2026-08-10-86e8bec';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -5367,6 +5368,31 @@ function nameTakenByOther(name, idx) {
   return otherPlayerNameKeys(idx).has(key);
 }
 
+function clearEntryDartThresholdForName(name) {
+  const key = normPlayerName(name);
+  if (!key) return;
+  try {
+    const map = loadEntryDartThresholdMap();
+    if (!Object.prototype.hasOwnProperty.call(map, key)) return;
+    delete map[key];
+    localStorage.setItem(ENTRY_THRESH_KEY, JSON.stringify(map));
+  } catch (_) {}
+}
+
+function deleteRosterPlayerByName(name) {
+  const key = normPlayerName(name);
+  if (!key || isBotPlayerName(name)) return false;
+  const ok = window.confirm('Delete "' + name + '" from the roster?');
+  if (!ok) return false;
+  storeSavedPlayers(loadSavedPlayers().filter(p =>
+    normPlayerName(p.name) !== key && !isBotPlayerName(p.name)));
+  clearEntryDartThresholdForName(name);
+  if (playerListSel === key) playerListSel = null;
+  const nameIn = document.getElementById('playerModalName');
+  if (nameIn && normPlayerName(nameIn.value) === key) nameIn.value = '';
+  return true;
+}
+
 function renderPlayerList(filterName) {
   const list = document.getElementById('playerList');
   const saved = loadSavedPlayers()
@@ -5389,8 +5415,7 @@ function renderPlayerList(filterName) {
       + '</div>';
     return;
   }
-  // After a player is clicked, hide Dart ≤ editors until Cancel returns to the list.
-  const showDart = !playerListSel && !isFitPlayerEdit() && !cricketModeActive();
+  const showDart = !isFitPlayerEdit() && !cricketModeActive();
   list.innerHTML = shown.map(p => {
     const key = normPlayerName(p.name);
     const bot = !!p.builtin || isBotPlayerName(p.name);
@@ -5404,12 +5429,16 @@ function renderPlayerList(filterName) {
     ].filter(Boolean).join(' ');
     const sub = taken ? '<span class="sub">in use</span>' : '';
     let dart = '';
-    if (showDart && !bot && !taken && thr != null) {
+    if (showDart && !bot && thr != null) {
       dart = '<label class="dart-inline" title="By dart when remaining is at or below this">'
         + 'Dart ≤'
         + '<input type="number" inputmode="numeric" min="0" max="501" step="1"'
         + ' data-dart-name="' + encodeURIComponent(p.name) + '"'
-        + ' value="' + thr + '"></label>';
+        + (taken ? ' disabled' : '')
+        + ' value="' + thr + '"></label>'
+        + '<button type="button" class="dart-del" data-del-name="'
+        + encodeURIComponent(p.name) + '" title="Delete player" aria-label="Delete '
+        + p.name + '">×</button>';
     }
     return '<div class="' + cls + '" data-name="' + encodeURIComponent(p.name) + '">'
       + '<button type="button" class="pick"'
@@ -5434,12 +5463,10 @@ function renderPlayerList(filterName) {
       }
       const prof = findSavedPlayer(name);
       if (!prof) return;
-      const nameIn = document.getElementById('playerModalName');
-      if (nameIn) nameIn.value = prof.name;
-      playerListSel = normPlayerName(prof.name);
-      syncModalEntryDartFromName(prof.name);
-      renderPlayerList(nameIn ? nameIn.value : '');
-      syncPlayerModalPrimaryLabel();
+      applyPlayerName(playerEditIdx, prof.name);
+      closePlayerModal();
+      if (!isFitPlayerEdit()) syncAutoScoreEntryMode({ force: true });
+      render();
     });
   });
   list.querySelectorAll('input[data-dart-name]').forEach(inp => {
@@ -5456,6 +5483,17 @@ function renderPlayerList(filterName) {
     inp.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); commit(); inp.blur(); }
       e.stopPropagation();
+    });
+  });
+  list.querySelectorAll('button.dart-del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const name = decodeURIComponent(btn.dataset.delName || '');
+      if (!name) return;
+      if (!deleteRosterPlayerByName(name)) return;
+      const nameIn = document.getElementById('playerModalName');
+      renderPlayerList(nameIn ? nameIn.value : '');
+      syncPlayerModalPrimaryLabel();
     });
   });
 }
@@ -5504,16 +5542,15 @@ function openPlayerModal(idx) {
   const hint = document.querySelector('#playerRosterPanel .hint');
   if (hint) {
     if (fitEdit) {
-      hint.innerHTML = 'Same roster as Play. Tap a saved player, then <b>Select</b>. '
+      hint.innerHTML = 'Same roster as Play. Tap a saved player to use them. '
         + 'Type a new name and <b>Save</b> to add them to the roster.';
     } else if (cricketModeActive()) {
-      hint.innerHTML = 'Shared roster for both sides. Tap a name, then <b>Select</b>. '
+      hint.innerHTML = 'Shared roster for both sides. Tap a name to pick them. '
         + 'Type a new name and <b>Save</b> to add them. '
         + '<b>Bot</b> is unavailable in Cricket for now.';
     } else {
-      hint.innerHTML = 'Shared roster for both sides. Edit <b>Dart ≤</b> on the list, tap a name to <b>Select</b>. '
-        + '<b>Cancel</b> returns to the list. Type a new name and <b>Save</b> to add them. '
-        + '<b>Bot</b> is always listed as the CPU opponent.';
+      hint.innerHTML = 'Tap a name to pick them. Edit <b>Dart ≤</b> on the row, or tap <b>×</b> to delete. '
+        + 'Type a new name and <b>Save</b> to add. <b>Bot</b> is the CPU opponent.';
     }
   }
   syncModalEntryDartFromName(nameIn.value);
@@ -5621,16 +5658,14 @@ function deleteSelectedPlayerFromModal() {
   const nameIn = document.getElementById('playerModalName');
   const key = playerListSel || normPlayerName(nameIn.value);
   if (!key) return;
-  if (key === normPlayerName(BOT_PLAYER_NAME) || isBotPlayerName(nameIn.value)) {
-    // Built-in Bot cannot be removed from the roster.
+  const disp = (nameIn.value || '').trim() || key;
+  if (key === normPlayerName(BOT_PLAYER_NAME) || isBotPlayerName(disp)) {
     renderPlayerList(nameIn.value);
     return;
   }
-  const list = loadSavedPlayers().filter(p =>
-    normPlayerName(p.name) !== key && !isBotPlayerName(p.name));
-  storeSavedPlayers(list);
-  playerListSel = null;
+  if (!deleteRosterPlayerByName(disp || key)) return;
   renderPlayerList(nameIn.value);
+  syncPlayerModalPrimaryLabel();
 }
 
 function buildModeToggle() {
@@ -5905,16 +5940,62 @@ function syncCricketChrome() {
   syncEntryToggle();
 }
 
-function syncSeatCountButton() {
-  const btn = document.getElementById('btnSeatCount');
-  if (!btn) return;
+function syncSeatCountButtons() {
   const n = match ? playerCount(match) : lineupSeatCount();
-  const at3 = n >= 3;
-  btn.textContent = at3 ? 'Remove' : 'Add';
-  btn.title = at3 ? 'Remove player 3' : 'Add a third player';
-  btn.setAttribute('aria-label', btn.title);
   const locked = lineupLocked();
-  btn.disabled = locked && !!match;
+  const show = !locked;
+  document.querySelectorAll('[data-seat-remove]').forEach(btn => {
+    const idx = parseInt(btn.dataset.seatRemove, 10);
+    if (!show) {
+      btn.classList.add('hidden');
+      return;
+    }
+    if (n >= 3) {
+      btn.classList.remove('hidden');
+      btn.classList.remove('is-add');
+      btn.textContent = 'Remove';
+      btn.title = 'Remove this player';
+      btn.dataset.seatAction = 'remove';
+    } else if (n === 2 && idx < 2) {
+      btn.classList.remove('hidden');
+      btn.classList.add('is-add');
+      btn.textContent = 'Add';
+      btn.title = 'Add a third player';
+      btn.dataset.seatAction = 'add';
+    } else {
+      btn.classList.add('hidden');
+    }
+  });
+}
+
+function removeLineupSeat(idx) {
+  idx = idx | 0;
+  const n = match ? playerCount(match) : lineupSeatCount();
+  if (n < 3 || idx < 0 || idx > 2) return;
+  if (match && lineupLocked()) {
+    match.message = 'Seat count locked while the match is in progress — change after it ends or via New match';
+    syncCricketChrome();
+    render();
+    return;
+  }
+  // Compact remaining seats into 0 and 1.
+  const keep = [0, 1, 2].filter(i => i !== idx);
+  const nm = names();
+  const sig = [0, 1, 2].map(i => {
+    const el = document.getElementById('sigma' + i);
+    return el ? el.value : '25';
+  });
+  const name0 = document.getElementById('name0');
+  const name1 = document.getElementById('name1');
+  const name2 = document.getElementById('name2');
+  const sig0 = document.getElementById('sigma0');
+  const sig1 = document.getElementById('sigma1');
+  if (name0) name0.value = nm[keep[0]] || '';
+  if (name1) name1.value = nm[keep[1]] || '';
+  if (name2) name2.value = '';
+  if (sig0) sig0.value = sig[keep[0]];
+  if (sig1) sig1.value = sig[keep[1]];
+  setLineupPlayerCount(2);
 }
 
 function syncPlayerSeatsChrome() {
@@ -5925,7 +6006,7 @@ function syncPlayerSeatsChrome() {
   if (card2) card2.classList.toggle('hidden', n < 3);
   const swap12 = document.getElementById('btnSwap12');
   if (swap12) swap12.classList.toggle('hidden', n < 3);
-  syncSeatCountButton();
+  syncSeatCountButtons();
   syncLineupLockChrome();
 }
 
@@ -5943,7 +6024,7 @@ function syncLineupLockChrome() {
     const b = document.getElementById(id);
     if (b) b.disabled = locked;
   }
-  syncSeatCountButton();
+  syncSeatCountButtons();
 }
 
 function setLineupPlayerCount(n) {
@@ -7084,13 +7165,22 @@ for (const idx of [0, 1, 2]) {
     row.click();
   });
 })();
-(function wireSeatCountButton() {
-  const btn = document.getElementById('btnSeatCount');
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    const n = match ? playerCount(match) : lineupSeatCount();
-    setLineupPlayerCount(n >= 3 ? 2 : 3);
+(function wireSeatCountButtons() {
+  document.querySelectorAll('[data-seat-remove]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = btn.dataset.seatAction || 'remove';
+      if (action === 'add') {
+        setLineupPlayerCount(3);
+        return;
+      }
+      removeLineupSeat(parseInt(btn.dataset.seatRemove, 10));
+    });
   });
+  const addCard = document.getElementById('btnAddSeat');
+  if (addCard) {
+    addCard.addEventListener('click', () => setLineupPlayerCount(3));
+  }
 })();
 document.getElementById('playerCancel').addEventListener('click', cancelPlayerModal);
 document.getElementById('histClose').addEventListener('click', closePlayerModal);
