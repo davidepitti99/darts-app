@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a1a1a">
-<title>501 Scorekeeper</title>
+<title>Darts AIm</title>
 <style>
   :root {
     --bg:#1e1e1e; --panel:#141414; --field:#333; --accent:#ffd23f;
@@ -106,6 +106,12 @@
     visibility: hidden; pointer-events: none;
   }
   .cricket-hit button:active { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
+  .cricket-miss {
+    display: block; width: 100%; margin-top: 8px; padding: 10px 8px;
+    border-radius: 10px; border: 1px solid #555; background: #222;
+    color: #fff; font-size: 14px; font-weight: 800; cursor: pointer;
+  }
+  .cricket-miss:active { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
   .cricket-mode .scores { margin-bottom: 6px; }
   .cricket-mode .card .meta { margin-bottom: 0; }
   .scores.players-3 {
@@ -116,8 +122,35 @@
   }
   .scores:not(.players-3) .swap-adj-extra { display: none !important; }
   .card.seat-extra.hidden { display: none !important; }
-  .players-toggle.hidden,
-  .cricket-players-toggle.hidden { display: none !important; }
+  .seat-rail {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; flex-shrink: 0;
+  }
+  .seat-count-btn {
+    width: auto; min-width: 40px; max-width: 56px;
+    padding: 4px 6px; margin: 0;
+    border-radius: 8px; border: 1px solid #555;
+    background: #222; color: var(--accent);
+    font-size: 10px; font-weight: 800; line-height: 1.15;
+    letter-spacing: 0.01em; cursor: pointer; white-space: normal;
+    text-align: center;
+  }
+  .scores.players-3 .seat-count-btn {
+    min-width: 28px; max-width: 40px; padding: 3px 4px; font-size: 9px;
+  }
+  .seat-count-btn:active { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
+  .seat-count-btn.hidden { display: none !important; }
+  .seat-count-btn:disabled {
+    opacity: 0.35; cursor: default; pointer-events: none;
+  }
+  .card .seat-remove {
+    display: block; width: 100%; margin-top: 8px; padding: 5px 6px;
+    border-radius: 8px; border: 1px solid #5a3a3a;
+    background: #2a1a1a; color: #ff8a8a;
+    font-size: 11px; font-weight: 800; cursor: pointer; line-height: 1.2;
+  }
+  .card .seat-remove.hidden { display: none !important; }
+  .card .seat-remove:active { background: #3a2a2a; }
 
   /* Before New match: lineup / mode only — hide scoring chrome. */
   #pageScore.prematch .pad,
@@ -247,6 +280,16 @@
   }
   .hist-detail .d-title { font-size: 14px; font-weight: 700; margin: 0 0 6px; }
   .hist-detail .d-meta { color: var(--mute); font-size: 11px; margin-bottom: 10px; word-break: break-all; }
+  .hist-detail .d-leg-title {
+    font-size: 12px; font-weight: 800; color: var(--accent);
+    margin: 12px 0 6px; letter-spacing: 0.02em;
+  }
+  .hist-detail .d-leg-title:first-of-type { margin-top: 0; }
+  .hist-detail .grid {
+    display: grid; gap: 4px 8px; margin-bottom: 4px; font-size: 12px;
+  }
+  .hist-detail .grid .head { color: var(--mute); font-size: 11px; }
+  .hist-detail .grid .lbl { color: var(--mute); }
   .hist-detail .d-grid {
     display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 4px 8px;
   }
@@ -287,6 +330,43 @@
     min-height: 80px; max-height: 220px; background: #141414;
   }
   .player-list .empty { color: var(--mute); padding: 16px; text-align: center; font-size: 13px; }
+  .player-list .player-row {
+    display: flex; width: 100%; align-items: center; gap: 8px;
+    border-bottom: 1px solid #2a2a2a; padding: 4px 8px 4px 0;
+  }
+  .player-list .player-row:last-child { border-bottom: none; }
+  .player-list .player-row.sel { background: #2a2a20; }
+  .player-list .player-row.taken { opacity: 0.55; }
+  .player-list .player-row button.pick {
+    flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; background: transparent; border: none;
+    color: #eee; padding: 10px 8px 10px 12px; font-size: 15px; font-weight: 600;
+    cursor: pointer; text-align: left;
+  }
+  .player-list .player-row.sel button.pick { color: var(--accent); }
+  .player-list .player-row.taken button.pick {
+    color: #666; cursor: not-allowed;
+  }
+  .player-list .player-row button.pick .sub { color: var(--mute); font-size: 11px; font-weight: 500; }
+  .player-list .player-row.taken button.pick .sub { color: #555; }
+  .player-list .player-row.bot-entry button.pick { color: #b8e0a8; }
+  .player-list .dart-inline {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--mute); font-weight: 600; white-space: nowrap;
+  }
+  .player-list .dart-inline input {
+    width: 56px; background: var(--field); color: #fff; border: 1px solid #555;
+    border-radius: 8px; padding: 6px 4px; font-size: 13px; text-align: center;
+    font-weight: 700;
+  }
+  .player-list .dart-inline input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .player-list .dart-del {
+    flex: 0 0 auto; width: 28px; height: 28px; padding: 0; margin: 0 4px 0 0;
+    border-radius: 8px; border: 1px solid #5a3a3a; background: #2a1a1a;
+    color: #ff8a8a; font-size: 16px; font-weight: 800; line-height: 1;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .player-list .dart-del:active { background: #3a2a2a; }
   .player-list button {
     display: flex; width: 100%; align-items: center; justify-content: space-between;
     gap: 8px; background: transparent; border: none; border-bottom: 1px solid #2a2a2a;
@@ -358,7 +438,7 @@
   }
   .checkout-attempts-picks {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
-    gap: 8px; margin: 12px 0 4px;
+    gap: 8px; margin: 8px 0 4px;
   }
   .checkout-attempts-picks button {
     padding: 14px 8px; font-size: 20px; font-weight: 800;
@@ -369,6 +449,47 @@
   .checkout-attempts-picks button.sel {
     background: var(--accent); color: #1a1a1a; border-color: var(--accent);
   }
+  .checkout-stack-block { margin-top: 12px; }
+  .checkout-stack-block:first-child { margin-top: 0; }
+  .checkout-stack-label {
+    font-size: 12px; font-weight: 700; color: var(--mute); margin: 0 0 4px;
+  }
+  .aim-board-toggle {
+    flex: 0 0 auto; width: 36px; height: 36px; padding: 0;
+    border-radius: 9px; border: 1px solid #555; background: #1a1a1a;
+    color: #eee; cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; position: relative;
+  }
+  .aim-board-toggle:active, .aim-board-toggle.open {
+    border-color: var(--accent); background: #242018; color: var(--accent);
+  }
+  .aim-board-toggle .abt-ring {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid currentColor; position: relative;
+    box-sizing: border-box;
+  }
+  .aim-board-toggle .abt-ring::before,
+  .aim-board-toggle .abt-ring::after {
+    content: ''; position: absolute; background: currentColor;
+  }
+  .aim-board-toggle .abt-ring::before {
+    left: 50%; top: 3px; bottom: 3px; width: 2px; margin-left: -1px;
+  }
+  .aim-board-toggle .abt-ring::after {
+    top: 50%; left: 3px; right: 3px; height: 2px; margin-top: -1px;
+  }
+  .aim-board-toggle .abt-dot {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%;
+    background: var(--accent); left: 50%; top: 50%;
+    margin: -2px 0 0 -2px;
+  }
+  /* AI solve sparkle (usual ★/✦ affordance) on the board toggle. */
+  .aim-board-toggle .abt-ai {
+    position: absolute; right: 1px; top: 0; font-size: 11px; line-height: 1;
+    color: var(--accent); font-weight: 900; pointer-events: none;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.85);
+  }
+  .aim-board-toggle.open .abt-ai { color: var(--accent); }
   .card .rem {
     font-size: 42px; font-weight: 800; line-height: 1.05; margin: 4px 0;
     user-select: none;
@@ -442,6 +563,7 @@
   .pad.bot-locked { opacity: 0.45; pointer-events: none; }
   .player-list button.bot-entry { color: #b8e0a8; }
   .player-list button.bot-entry .sub { color: #8cda7a; }
+  .player-list .player-row.bot-entry button.pick .sub { color: #8cda7a; }
   .app-version {
     margin: 18px 0 8px; padding: 10px 4px 4px;
     text-align: center; font-size: 11px; color: #666;
@@ -507,7 +629,10 @@
   }
   .info .turn { color: #cfcfcf; font-size: 13px; margin-bottom: 4px; }
   .info .aim-row {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .info .aim-row .aim-main {
+    display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;
   }
   .info .aim { font-size: 24px; font-weight: 800; color: var(--accent); line-height: 1.2; min-width: 0; }
   .info .aim .next { color: #fff; font-size: 16px; font-weight: 700; margin-left: 0.3em; }
@@ -533,6 +658,15 @@
     color: #ff8a8a; font-size: 13px; font-weight: 700; line-height: 1.35;
     background: #2a1818; border: 1px solid #5a2f2f; border-radius: 8px;
     padding: 8px 10px;
+  }
+  .stats .head.win, .hist-detail .grid .head.win, .leg-win {
+    color: #6dce6d; font-weight: 800;
+  }
+  .stats .head.lose, .hist-detail .grid .head.lose, .leg-lose {
+    color: #ff8a8a; font-weight: 800;
+  }
+  .stats .head.tie, .hist-detail .grid .head.tie {
+    color: #f0a040; font-weight: 800;
   }
   .stats .review {
     margin-top: 12px; padding-top: 10px; border-top: 1px solid #333;
@@ -766,6 +900,18 @@
     font-size: 12px; color: #cfcfcf; line-height: 1.55;
   }
   .stats h2 { font-size: 13px; margin: 0 0 8px; color: #fff; }
+  .stats h3 {
+    font-size: 12px; margin: 14px 0 6px; color: var(--accent);
+    font-weight: 800; letter-spacing: 0.02em;
+  }
+  .stats h3:first-of-type { margin-top: 4px; }
+  .stats .stats-more {
+    display: block; width: 100%; margin-top: 10px; padding: 8px 10px;
+    border-radius: 10px; border: 1px solid #555; background: #222;
+    color: var(--accent); font-size: 12px; font-weight: 800; cursor: pointer;
+  }
+  .stats .stats-more:active { background: var(--accent); color: #1a1a1a; }
+  .stats .stats-history { margin-top: 4px; }
   .stats .grid {
     display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 4px 8px;
   }
@@ -848,7 +994,7 @@
     padding: 4px 8px; cursor: pointer; line-height: 1;
   }
   .fit-list {
-    max-height: 220px; overflow-y: auto; background: var(--panel);
+    max-height: 320px; overflow-y: auto; background: var(--panel);
     border-radius: 12px; padding: 8px; font-size: 13px; color: #cfcfcf;
     margin-top: 8px; font-variant-numeric: tabular-nums;
   }
@@ -868,6 +1014,19 @@
     background: #3a2a2a; color: #ff8a8a; border: 1px solid #555;
     border-radius: 8px; padding: 8px 0; font-size: 14px; font-weight: 700;
     cursor: pointer;
+  }
+  .fit-list .fit-hit-row {
+    display: grid; grid-template-columns: 28px 52px 1fr 36px; gap: 6px;
+    align-items: center; margin-bottom: 4px; padding: 4px 2px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .fit-list .fit-hit-row:last-child { border-bottom: none; }
+  .fit-list .fit-hit-row .aim { color: var(--accent); font-weight: 700; font-size: 12px; }
+  .fit-list .fit-hit-row .out { color: #eee; font-weight: 600; }
+  .fit-list .fit-hit-row .belt { color: var(--mute); font-size: 11px; }
+  .fit-saved .fit-save-row .preview {
+    color: #aaa; font-size: 11px; margin-top: 4px; line-height: 1.35;
+    white-space: normal; word-break: break-word;
   }
   .fit-list .hdr {
     display: grid; grid-template-columns: 28px 1fr 36px; gap: 6px;
@@ -906,10 +1065,31 @@
   .zone-grid {
     display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 8px;
   }
+  .zone-grid-wrap { position: relative; margin-top: 8px; }
+  .fit-landing-pop {
+    position: absolute; inset: 0; z-index: 6;
+    background: rgba(16, 16, 16, 0.97);
+    border: 1px solid var(--accent); border-radius: 12px;
+    padding: 12px 10px 10px;
+    display: flex; flex-direction: column; justify-content: center;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  }
+  .fit-landing-pop .hint {
+    margin: 0 0 10px; font-size: 13px; color: #ddd; text-align: center;
+  }
+  .fit-landing-pop .sector-pad { margin: 0 0 8px; }
+  .fit-landing-pop .fit-pop-cancel {
+    background: var(--field); color: #ccc; border: 1px solid #555;
+    border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600;
+    cursor: pointer; width: 100%;
+  }
   .zone-row {
     display: grid; grid-template-columns: 1fr auto auto auto; gap: 6px;
     align-items: center; background: var(--panel); border-radius: 10px;
     padding: 8px 10px;
+  }
+  .zone-row.pending {
+    outline: 2px solid var(--accent); background: #222818;
   }
   .zone-row .zlab { font-size: 13px; font-weight: 600; text-align: left; }
   .zone-row .zsub { display: block; font-size: 11px; color: var(--mute); font-weight: 400; }
@@ -978,7 +1158,7 @@
   .app.locked { visibility: hidden; }
   .account-bar {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    margin: 0 0 10px; padding: 8px 10px; background: var(--panel); border-radius: 10px;
+    margin: 16px 0 8px; padding: 8px 10px; background: var(--panel); border-radius: 10px;
     font-size: 12px;
   }
   .account-bar .who { color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1048,6 +1228,9 @@
   }
   .checkout-table td.path { color: #ffe08a; font-weight: 700; }
   .checkout-table td.et { color: var(--mute); white-space: nowrap; }
+  .checkout-table td.score-impossible {
+    color: #ff8a8a; font-weight: 800;
+  }
   .checkout-table tbody tr.checkout-row {
     cursor: pointer; -webkit-tap-highlight-color: transparent;
   }
@@ -1095,8 +1278,8 @@
 <body>
 <div class="gate" id="accessGate">
   <div class="gate-box">
-    <h2>Darts Aim</h2>
-    <p>Know your throw. Get the right aim. See yourself improve.</p>
+    <h2>Darts AIm</h2>
+    <p>Darts + Aim + AI — a game of words with artificial intelligence. Know your throw. Get the right aim.</p>
     <button type="button" class="google" id="gateGoogle">Continue with Google</button>
     <button type="button" class="secondary" id="gateGuest">Continue free (no account)</button>
     <div class="divider">or</div>
@@ -1119,16 +1302,9 @@
     </div>
     <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
     <div class="player-panel" id="playerRosterPanel">
-      <p class="hint">Shared roster for both sides. Tap a name to select it (adjust Dart ≤ if needed), then Select. <b>Bot</b> is always listed as the CPU opponent.</p>
-      <div class="entry-dart-row cricket-hide" id="playerModalEntryDartRow">
-        <label for="playerModalEntryDart" title="Auto By dart when remaining is at or below this">Dart ≤</label>
-        <input id="playerModalEntryDart" type="number" inputmode="numeric" min="0" max="501" step="1"
-               value="170" title="Leave at or below → By dart entry">
-        <span class="sub">By dart when remaining is at or below this</span>
-      </div>
+      <p class="hint">Shared roster for both sides. Tap a name to pick them. Edit <b>Switch ≤</b> on the row (use <b>2</b> to disable the auto switch), or tap <b>×</b> to delete. Type a new name and <b>Save</b> to add. <b>Bot</b> is the CPU opponent.</p>
       <div class="player-list" id="playerList"></div>
-      <div class="player-actions" style="grid-template-columns:1fr 1fr 1fr">
-        <button type="button" id="playerDelete" class="danger">Delete</button>
+      <div class="player-actions" style="grid-template-columns:1fr 1fr">
         <button type="button" id="playerCancel">Cancel</button>
         <button type="button" id="playerSave" class="primary">Save</button>
       </div>
@@ -1200,11 +1376,11 @@
   </div>
 </div>
 <div class="player-modal hidden" id="checkoutAttemptsModal" role="dialog" aria-modal="true"
-     aria-label="Checkout attempts">
+     aria-label="Checkout visit details">
   <div class="player-box">
-    <h2>Checkout attempts</h2>
-    <p class="hint" id="checkoutAttemptsHint">Leave was in checkout range. How many darts at a finishing double?</p>
-    <div class="checkout-attempts-picks" id="checkoutAttemptsPicks"></div>
+    <h2 id="checkoutAttemptsTitle">Checkout</h2>
+    <p class="hint" id="checkoutAttemptsHint">Confirm darts for this visit</p>
+    <div id="checkoutAttemptsBody"></div>
     <div class="player-actions" style="grid-template-columns:1fr">
       <button type="button" id="checkoutAttemptsCancel">Cancel</button>
     </div>
@@ -1232,13 +1408,6 @@
 </div>
 <div class="app locked" id="mainApp">
   
-  <div class="account-bar" id="accountBar">
-    <div class="who" id="accountWho"><span class="badge free">FREE</span> Guest</div>
-    <div>
-      <button type="button" class="upgrade hidden" id="btnUpgrade">Upgrade</button>
-      <button type="button" id="btnAccount">Sign in</button>
-    </div>
-  </div>
   <div class="pro-banner" id="proBanner">
     Pro — personal coach: profile, aim-with-why, practice, groups &amp; progress.
     <button type="button" id="proBannerUpgrade">Upgrade</button>
@@ -1251,10 +1420,6 @@
 
   <div class="page active" id="pageScore">
   <div class="segmented" id="modeToggle"></div>
-  <div class="segmented players-toggle" id="playersToggle">
-    <button type="button" class="active" data-cp="2">2 players</button>
-    <button type="button" data-cp="3">3 players</button>
-  </div>
 
   <div class="entry-toggle cricket-hide" id="entryToggle">
     <button type="button" class="active" data-entry="visit">Visit total</button>
@@ -1267,7 +1432,7 @@
         <input class="name" id="name0" value="" placeholder="Select player" maxlength="16" readonly
                inputmode="none" title="Tap to load or save player">
         <button type="button" class="bot-continue hidden" data-bot-continue="0"
-                title="Resume bot throw">Continue</button>
+                title="Start bot throw">Start</button>
       </div>
       <div class="rem cricket-hide" id="rem0" title="Tap to see visit scores"
            role="button" tabindex="0">0</div>
@@ -1279,15 +1444,21 @@
         <button type="button" class="sigma-info" data-sigma-info
                 title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
+      <button type="button" class="seat-remove hidden" data-seat-remove="0"
+              title="Remove this player">Remove</button>
     </div>
-    <button type="button" class="swap-sides" id="btnSwapSides"
-            title="Swap these two players" aria-label="Swap seat 1 and seat 2">⇄</button>
+    <div class="seat-rail" id="seatRail01">
+      <button type="button" class="seat-count-btn" id="btnSeatCount"
+              title="Add a third player">Add</button>
+      <button type="button" class="swap-sides" id="btnSwapSides"
+              title="Swap these two players" aria-label="Swap seat 1 and seat 2">⇄</button>
+    </div>
     <div class="card" id="card1">
       <div class="name-row">
         <input class="name" id="name1" value="" placeholder="Select player" maxlength="16" readonly
                inputmode="none" title="Tap to load or save player">
         <button type="button" class="bot-continue hidden" data-bot-continue="1"
-                title="Resume bot throw">Continue</button>
+                title="Start bot throw">Start</button>
       </div>
       <div class="rem cricket-hide" id="rem1" title="Tap to see visit scores"
            role="button" tabindex="0">0</div>
@@ -1299,6 +1470,8 @@
         <button type="button" class="sigma-info" data-sigma-info
                 title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
+      <button type="button" class="seat-remove hidden" data-seat-remove="1"
+              title="Remove this player">Remove</button>
     </div>
     <button type="button" class="swap-sides swap-adj-extra hidden" id="btnSwap12"
             title="Swap these two players" aria-label="Swap seat 2 and seat 3">⇄</button>
@@ -1307,7 +1480,7 @@
         <input class="name" id="name2" value="" placeholder="Select player" maxlength="16" readonly
                inputmode="none" title="Tap to load or save player">
         <button type="button" class="bot-continue hidden" data-bot-continue="2"
-                title="Resume bot throw">Continue</button>
+                title="Start bot throw">Start</button>
       </div>
       <div class="rem cricket-hide" id="rem2" title="Tap to see visit scores"
            role="button" tabindex="0">0</div>
@@ -1319,15 +1492,17 @@
         <button type="button" class="sigma-info" data-sigma-info
                 title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
+      <button type="button" class="seat-remove hidden" data-seat-remove="2"
+              title="Remove this player">Remove</button>
     </div>
   </div>
 
   <div class="cricket-board hidden" id="cricketBoard"></div>
   <div class="cricket-help hidden" id="cricketHelp">
     Targets <b>20–15 &amp; Bull</b>: 3 hits to close (S=1, D=2, T=3; outer bull=1, red bull=2).
-    Extra hits score the face value only while the opponent has not closed that number.
-    Win by closing all targets with points ≥ opponent; if you close first but trail, keep
-    scoring on numbers they still have open.
+    Tap <b>Miss</b> for a dart that scores nothing. Extra hits score the face value only while
+    the opponent has not closed that number. Win by closing all targets with points ≥ opponent;
+    if you close first but trail, keep scoring on numbers they still have open.
   </div>
 
   <div class="pad" id="pad"></div>
@@ -1526,8 +1701,8 @@
 
     <div class="fit-panel" id="fitPanelZones">
     <div class="fit-help" id="fitZonesHelp">
-      <b>Bull</b>: count board belts. <b>Triple / double</b>: pick the landing
-      <b>score sector</b>, then count belts (e.g. T20 aim → inner single + sector 1 = S1).
+      <b>Bull</b>: count board belts. <b>Triple / double</b>: tap + on a belt, then pick the
+      landing <b>score sector</b> (used as board steps from the aim for σ).
     </div>
     <div id="zoneGrid"></div>
     </div><!-- /fitPanelZones -->
@@ -1543,27 +1718,29 @@
     <div class="fit-actions single">
       <button type="button" id="fitClear">Clear</button>
     </div>
-    <div class="fit-actions">
-      <button type="button" class="primary" id="fitApply0">Use for Player 1</button>
-      <button type="button" class="primary" id="fitApply1">Use for Player 2</button>
-      <button type="button" class="primary" id="fitApply2">Use for Player 3</button>
-    </div>
     <div class="fit-saved" id="fitSavedList">
       <div class="hdr"><span>Saved fits</span><span>this device</span></div>
       <div class="empty">No saved fits yet</div>
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.54 / 2026-08-10 / bc00eac</span></div>
+  <div class="account-bar" id="accountBar">
+    <div class="who" id="accountWho"><span class="badge free">FREE</span> Guest</div>
+    <div>
+      <button type="button" class="upgrade hidden" id="btnUpgrade">Upgrade</button>
+      <button type="button" id="btnAccount">Sign in</button>
+    </div>
+  </div>
+  <div class="app-version" id="appVersion">v<span>0.1.98 / 2026-08-15 / ead7ea2</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"prod"};
-const APP_VERSION = '0.1.54 / 2026-08-10 / bc00eac';
+const APP_VERSION = '0.1.98 / 2026-08-15 / ead7ea2';
 const APP_CHANNEL = 'prod';
 const POLICY_BASE = '';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.54-2026-08-10-bc00eac';
+const POLICY_CACHE_BUST = '0.1.98-2026-08-15-ead7ea2';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -1726,7 +1903,7 @@ function clampEntryDartThreshold(v) {
   let n = Math.round(Number(v));
   if (!Number.isFinite(n)) n = ENTRY_DART_AT_OR_BELOW_DEFAULT;
   if (n < 0) n = 0;
-  // 1 is never a valid leave (bust) — skip to the lowest checkout leave.
+  // 1 is never a valid leave (bust) — treat like 2 (auto-switch off).
   if (n === 1) n = 2;
   if (n > 501) n = 501;
   return n;
@@ -1775,14 +1952,11 @@ function entryDartThresholdForSeat(idx) {
 }
 
 function syncModalEntryDartFromName(name) {
-  const el = document.getElementById('playerModalEntryDart');
+  // Dart ≤ is edited on the roster list; keep the legacy field hidden if present.
   const row = document.getElementById('playerModalEntryDartRow');
+  if (row) row.classList.add('hidden');
+  const el = document.getElementById('playerModalEntryDart');
   if (!el) return;
-  const bot = isBotPlayerName(name) || isPlaceholderPlayerName(name);
-  if (row) {
-    const hide = bot || cricketModeActive() || isFitPlayerEdit();
-    row.classList.toggle('hidden', hide);
-  }
   el.value = String(entryDartThresholdForName(name));
 }
 
@@ -1794,9 +1968,11 @@ function readModalEntryDartThreshold() {
 
 function commitModalEntryDartThreshold(name) {
   if (isPlaceholderPlayerName(name) || isBotPlayerName(name)) return;
-  const thr = readModalEntryDartThreshold();
   const el = document.getElementById('playerModalEntryDart');
-  if (el) el.value = String(thr);
+  // Roster Dart ≤ is edited on the list; skip if the old field is gone.
+  if (!el) return;
+  const thr = readModalEntryDartThreshold();
+  el.value = String(thr);
   storeEntryDartThresholdForName(name, thr);
 }
 
@@ -2460,7 +2636,7 @@ function buildMatchShareText(m) {
   const winner = m.players[m.winner];
   const losers = matchLosers(m);
   const lines = [];
-  lines.push('Darts Aim — match result');
+  lines.push('Darts AIm — match result');
   lines.push(modeName + ' · ' + when);
   lines.push('');
   lines.push(winner.name + ' beat ' + losers.map(p => p.name).join(' / '));
@@ -2472,8 +2648,16 @@ function buildMatchShareText(m) {
   lines.push(shareStatRow('', ps.map(p => p.name)));
   if (m.game === 'cricket') {
     const closed = (p) => CRICKET_KEYS.filter(k => ((p.marks || {})[k] || 0) >= 3).length;
+    lines.push(shareStatRow('MPR', ps.map(p => fmtShareStat(cricketMpr(p), 2))));
+    lines.push(shareStatRow('Marks', ps.map(p => p.marksHit | 0)));
+    lines.push(shareStatRow('First 9 MPR', ps.map(p => fmtShareStat(cricketFirst9Mpr(p), 2))));
     lines.push(shareStatRow('Points', ps.map(p => p.points | 0)));
     lines.push(shareStatRow('Closed', ps.map(p => closed(p) + '/7')));
+    lines.push(shareStatRow('5-mark', ps.map(p => p.marks5 | 0)));
+    lines.push(shareStatRow('6-mark', ps.map(p => p.marks6 | 0)));
+    lines.push(shareStatRow('9-mark', ps.map(p => p.marks9 | 0)));
+    lines.push(shareStatRow('White horses', ps.map(p => p.whiteHorses | 0)));
+    lines.push(shareStatRow('Bulls', ps.map(p => p.bullHits | 0)));
     lines.push(shareStatRow('Darts', ps.map(p => p.dartsThrown | 0)));
   } else {
     lines.push(shareStatRow('3-dart avg', ps.map(p => fmtShareStat(avg3(p), 1))));
@@ -2488,8 +2672,8 @@ function buildMatchShareText(m) {
   }
   lines.push('');
   lines.push('Rematch with personal aims — fit your throw, get coached aims.');
-  lines.push('Try Darts Aim (free): ' + shareAppUrl());
-  lines.push('Know your throw. Get the right aim. See yourself improve.');
+  lines.push('Try Darts AIm (free): ' + shareAppUrl());
+  lines.push('Darts + Aim + AI — know your throw. Get the right aim.');
   return lines.join('\n');
 }
 
@@ -2500,7 +2684,7 @@ function shareMatchResults() {
   const text = shareGreetingFor(match) + buildMatchShareText(match);
   const losers = matchLosers(match);
   const title = match.players[match.winner].name + ' beat '
-    + losers.map(p => p.name).join(' / ') + ' · Darts Aim';
+    + losers.map(p => p.name).join(' / ') + ' · Darts AIm';
   sharePayload(title, text, '#shareMatchFeedback');
 }
 
@@ -2575,6 +2759,14 @@ function makePlayer(name, start, doubleIn, game) {
     p.remaining = 0; // cricket points shown in rem
     p.marks = emptyCricketMarks();
     p.points = 0;
+    p.marksHit = 0;
+    p.first9Marks = 0;
+    p.first9MarkDarts = 0;
+    p.marks5 = 0;
+    p.marks6 = 0;
+    p.marks9 = 0;
+    p.whiteHorses = 0;
+    p.bullHits = 0;
   }
   return p;
 }
@@ -2619,6 +2811,7 @@ function applyLegWin(m, seat) {
   p.legsWon = (p.legsWon | 0) + 1;
   m.winner = seat;
   m.matchWinner = null;
+  snapshotLegSheet(m);
   const need = m.legsToWin | 0;
   if (need > 0 && (p.legsWon | 0) >= need) {
     m.matchWinner = seat;
@@ -2774,7 +2967,9 @@ function newMatch(startScore, doubleIn, namesArr, game, bestOf) {
     players,
     current: 0, legStarter: 0, legNumber: 1, dartsLeft: 3, turnStart: startScore,
     visitDarts: [], visitPoints: 0, visitCheckoutCounted: false,
+    visitCheckoutAttemptsAdded: 0,
     visitLog: [],  // chronological visits (darts) for archive / history
+    legSheets: [], // per-leg stats snapshots (filled when a leg ends)
     botSeat: null,
     finishOrder: [],  // x01 3p: checkout order this leg (1st, 2nd, …)
     winner: null, matchWinner: null, archiveId: null,
@@ -3026,6 +3221,8 @@ function throwCricketDart(m, label) {
   const t = cricketTarget(label);
   let scored = 0;
   let note = label;
+  let marksThisDart = 0;
+  let whiteHorse = false;
   if (t) {
     let left = t.marks;
     const before = p.marks[t.key] || 0;
@@ -3033,6 +3230,7 @@ function throwCricketDart(m, label) {
     const used = Math.min(left, room);
     p.marks[t.key] = before + used;
     left -= used;
+    marksThisDart = used;
     if (left > 0) {
       const face = left * t.value;
       if (cutThroat) {
@@ -3050,15 +3248,17 @@ function throwCricketDart(m, label) {
           }
         }
         scored = dealt;
-        if (hitOpen)
+        if (hitOpen) {
+          marksThisDart += left;
           note = label + ' +' + face + ' → ' + hitOpen + ' open';
-        else
+        } else
           note = label + ' (dead)';
       } else {
         const opp = m.players[1 - m.current];
         if ((opp.marks[t.key] || 0) < 3) {
           // Classic: points only after you own the number, while opponent is open.
           scored = face;
+          marksThisDart += left;
           p.points += scored;
           p.remaining = p.points;
           p.pointsScored += scored;
@@ -3071,8 +3271,31 @@ function throwCricketDart(m, label) {
     if (!note.includes('dead') && !note.includes('+')
         && t && (p.marks[t.key] || 0) >= 3)
       note = label + (before < 3 ? ' closed' : '');
+    // White horse: close a number while every opponent still has 0 on it.
+    if (before < 3 && (p.marks[t.key] || 0) >= 3) {
+      let oppClean = true;
+      for (let i = 0; i < m.players.length; i++) {
+        if (i === m.current) continue;
+        if ((m.players[i].marks[t.key] || 0) > 0) { oppClean = false; break; }
+      }
+      if (oppClean) {
+        whiteHorse = true;
+        p.whiteHorses = (p.whiteHorses | 0) + 1;
+      }
+    }
   } else if (label !== 'Miss' && label !== 'Bounce') {
     note = label + ' (inactive)';
+  }
+  if (marksThisDart > 0) {
+    p.marksHit = (p.marksHit | 0) + marksThisDart;
+    if ((p.first9MarkDarts | 0) < 9) {
+      p.first9Marks = (p.first9Marks || 0) + marksThisDart;
+      p.first9MarkDarts = (p.first9MarkDarts | 0) + 1;
+    }
+    if (t && t.key === 'Bull')
+      p.bullHits = (p.bullHits | 0) + 1;
+  } else if ((p.first9MarkDarts | 0) < 9) {
+    p.first9MarkDarts = (p.first9MarkDarts | 0) + 1;
   }
   if (cutThroat && scored)
     p.pointsScored += scored; // damage dealt this visit
@@ -3080,6 +3303,8 @@ function throwCricketDart(m, label) {
     label, points: scored, isDouble: false,
     outcome: scored ? 'ok' : (t ? 'mark' : 'no_score'),
     remainingAfter: p.points,
+    marks: marksThisDart,
+    whiteHorse: whiteHorse,
   }, suggested);
   m.visitDarts.push(result);
   m.visitPoints += scored;
@@ -3127,12 +3352,41 @@ function avgFirst9(p) {
   if ((p.first9Darts | 0) < 9) return null;
   return p.first9Points / p.first9Darts * 3;
 }
+/** Cricket marks per round (3-dart visit equivalent). */
+function cricketMpr(p) {
+  const d = p.dartsThrown | 0;
+  if (!d) return null;
+  return ((p.marksHit | 0) * 3) / d;
+}
+/** Cricket MPR over the first 9 darts (null until 9 thrown). */
+function cricketFirst9Mpr(p) {
+  if ((p.first9MarkDarts | 0) < 9) return null;
+  return ((p.first9Marks || 0) * 3) / (p.first9MarkDarts | 0);
+}
 function checkoutPct(p) {
   return p.checkoutAttempts ? (100 * p.checkoutHits / p.checkoutAttempts) : null;
 }
-function isCheckoutChance(rem) { return rem >= 2 && rem <= 170; }
+/**
+ * True if rem can be finished double-out in ≤3 darts.
+ * Excludes bogeys (159, 162, 163, 165, 166, 168, 169) and >170.
+ */
+function isCheckoutChance(rem) {
+  rem = rem | 0;
+  if (rem < 2 || rem > 170) return false;
+  // Can leave a finishing double (D1–D20 / bull) with at most 2 setup darts.
+  return isFinite(minDartsToOneDartFinish(rem, 2));
+}
 
-/** True if n is a legal double score (D1–D20 or bull) — required to open on 301 DI. */
+/** True if rem can be checked out double-out with at most maxDarts (1–3). */
+function canCheckoutWithDarts(rem, maxDarts) {
+  rem = rem | 0;
+  maxDarts = maxDarts | 0;
+  if (rem < 2 || rem > 170 || maxDarts < 1) return false;
+  if (maxDarts >= 3) return isCheckoutChance(rem);
+  return isFinite(minDartsToOneDartFinish(rem, maxDarts - 1));
+}
+
+/** True if n is a legal double score (D1–D20 or bull). */
 function isValidOpeningDoubleScore(n) {
   n = n | 0;
   if (n === 50) return true;
@@ -3151,6 +3405,41 @@ const ONE_DART_SCORES = (function () {
   for (let i = 1; i <= 20; i++) s.push(i, 2 * i, 3 * i);
   return s;
 })();
+const ONE_DART_SCORE_SET = (function () {
+  const set = {};
+  for (let i = 0; i < ONE_DART_SCORES.length; i++) set[ONE_DART_SCORES[i]] = true;
+  return set;
+})();
+/** Sums of two legal single-dart scores (incl. miss). */
+const TWO_DART_SCORE_SET = (function () {
+  const set = {};
+  for (let i = 0; i < ONE_DART_SCORES.length; i++) {
+    for (let j = 0; j < ONE_DART_SCORES.length; j++)
+      set[ONE_DART_SCORES[i] + ONE_DART_SCORES[j]] = true;
+  }
+  return set;
+})();
+
+/**
+ * 301 DI visit-total: positive score is legal if it can be
+ * (opening double) + up to two more darts after opening.
+ * e.g. Bull + 9 = 59; max Bull + T20 + T20 = 170.
+ */
+function isValidOpeningVisitScore(n) {
+  n = n | 0;
+  if (n <= 0 || n > 170) return false;
+  if (isValidOpeningDoubleScore(n)) return true;
+  for (let d = 2; d <= 40; d += 2) {
+    const rest = n - d;
+    if (rest < 0) continue;
+    if (ONE_DART_SCORE_SET[rest] || TWO_DART_SCORE_SET[rest]) return true;
+  }
+  const restBull = n - 50;
+  if (restBull >= 0
+      && (ONE_DART_SCORE_SET[restBull] || TWO_DART_SCORE_SET[restBull]))
+    return true;
+  return false;
+}
 
 /**
  * Fewest darts needed to leave a one-dart finish (0 if already there).
@@ -3211,6 +3500,7 @@ function addCheckoutAttempts(m, p, n) {
   if (k < 0) k = 0;
   if (k > maxK) k = maxK;
   p.checkoutAttempts = (p.checkoutAttempts | 0) + k;
+  m.visitCheckoutAttemptsAdded = k;
   m.visitCheckoutCounted = true;
 }
 
@@ -3221,6 +3511,19 @@ function visitDartCount(m) {
     if (lab.startsWith('Visit') || lab === 'Bust') return 3;
   }
   return m.visitDarts.length;
+}
+
+/** Darts credited for a saved visit (visit-total visits always count as 3). */
+function visitRecDartCount(v) {
+  if (!v) return 0;
+  if (v.dartCount != null && Number.isFinite(+v.dartCount))
+    return Math.max(0, v.dartCount | 0);
+  if (!v.darts || !v.darts.length) return 0;
+  if (v.darts.length === 1) {
+    const lab = v.darts[0].label || '';
+    if (lab.startsWith('Visit') || lab === 'Bust') return 3;
+  }
+  return v.darts.length;
 }
 
 function creditFirst9Visit(p, score, dartsInVisit) {
@@ -3260,7 +3563,7 @@ function undoMatch(m) {
   botPaused = true;
   suppressAutoNextLeg = true;
   if (prevWinner != null || prevMatchWinner != null)
-    m.message = 'Undone · bot paused — tap Continue next to Bot';
+    m.message = 'Undone · bot paused — tap Start next to Bot';
   return true;
 }
 
@@ -3284,16 +3587,38 @@ function finishVisit(m, busted) {
   } else {
     score = m.visitPoints;
   }
-  creditFirst9Visit(p, score, visitDartCount(m));
+  const dartCount = (m.visitForcedDartCount != null)
+    ? (m.visitForcedDartCount | 0)
+    : visitDartCount(m);
+  if (m.game !== 'cricket')
+    creditFirst9Visit(p, score, dartCount);
   p.visitScores.push(score);
+  let checkoutFrom = 0;
+  for (const d of (m.visitDarts || [])) {
+    if (d && d.outcome === 'checkout')
+      checkoutFrom = (d.remainingAfter | 0) + (d.points | 0);
+  }
+  const visitMarks = (m.visitDarts || []).reduce(
+    (a, d) => a + ((d && d.marks) | 0), 0);
   const visitRec = {
     player: m.current,
     name: p.name,
     leg: m.legNumber | 0,
     score: score,
     busted: !!busted,
+    dartCount: dartCount,
+    checkoutAttempts: m.visitCheckoutAttemptsAdded | 0,
     darts: (m.visitDarts || []).map(cloneDartRec),
   };
+  if (checkoutFrom > 0) visitRec.checkoutFrom = checkoutFrom;
+  if (m.game === 'cricket') {
+    visitRec.marks = visitMarks;
+    if (!busted) {
+      if (visitMarks === 5) p.marks5 = (p.marks5 | 0) + 1;
+      else if (visitMarks === 6) p.marks6 = (p.marks6 | 0) + 1;
+      else if (visitMarks === 9) p.marks9 = (p.marks9 | 0) + 1;
+    }
+  }
   if (!p.visitHistory) p.visitHistory = [];
   if (!m.visitLog) m.visitLog = [];
   p.visitHistory.push(visitRec);
@@ -3302,6 +3627,8 @@ function finishVisit(m, busted) {
   if (score === 180) p.scores180++;
   else if (score >= 140) p.scores140++;
   else if (score >= 100) p.scores100++;
+  m.visitCheckoutAttemptsAdded = 0;
+  m.visitForcedDartCount = null;
 }
 
 function nextPlayer(m) {
@@ -3319,6 +3646,8 @@ function nextPlayer(m) {
   m.visitDarts = [];
   m.visitPoints = 0;
   m.visitCheckoutCounted = false;
+  m.visitCheckoutAttemptsAdded = 0;
+  m.visitForcedDartCount = null;
   m.message = m.players[m.current].name + ' to throw';
 }
 
@@ -3424,10 +3753,10 @@ function throwVisitTotal(m, score, opts) {
   const remCheck = pCheck.remaining;
   // Validate before mutating / undo so OK can refuse cleanly.
   if (m.doubleIn && !pCheck.opened && !forceBust && score > 0
-      && !isValidOpeningDoubleScore(score))
-    throw new Error('301 DI: first score must be a double (2, 4, … 40, or 50)');
+      && !isValidOpeningVisitScore(score))
+    throw new Error('301 DI: open score between 2 and 170');
   if (!forceBust && score === remCheck && !isCheckoutChance(remCheck))
-    throw new Error('Cannot check out ' + remCheck + ' with a visit total');
+    throw new Error('Cannot check out ' + remCheck);
 
   pushUndo(m);
   const p = m.players[m.current];
@@ -3438,9 +3767,12 @@ function throwVisitTotal(m, score, opts) {
   m.visitPoints = 0;
   m.dartsLeft = 3;
   m.visitCheckoutCounted = false;
+  m.visitCheckoutAttemptsAdded = 0;
+  m.visitForcedDartCount = null;
 
   function countVisitDarts(n) {
     p.dartsThrown += n;
+    m.visitForcedDartCount = n;
     if (opts.checkoutAttempts != null)
       addCheckoutAttempts(m, p, opts.checkoutAttempts);
     else
@@ -3487,7 +3819,13 @@ function throwVisitTotal(m, score, opts) {
     // A finish always counts at least one attempt.
     if (opts.checkoutAttempts != null && (opts.checkoutAttempts | 0) < 1)
       opts.checkoutAttempts = 1;
-    countVisitDarts(3);
+    let dartsUsed = (opts.dartCount != null) ? (opts.dartCount | 0) : 3;
+    if (dartsUsed < 1) dartsUsed = 1;
+    if (dartsUsed > 3) dartsUsed = 3;
+    // Attempts cannot exceed darts thrown this visit.
+    if (opts.checkoutAttempts != null && (opts.checkoutAttempts | 0) > dartsUsed)
+      opts.checkoutAttempts = dartsUsed;
+    countVisitDarts(dartsUsed);
     p.remaining = 0;
     p.checkoutHits += 1;
     if (remBefore > p.highestCheckout) p.highestCheckout = remBefore;
@@ -3541,6 +3879,7 @@ function newLeg(m, opts) {
   m.visitDarts = [];
   m.visitPoints = 0;
   m.visitCheckoutCounted = false;
+  m.visitCheckoutAttemptsAdded = 0;
   m.finishOrder = [];
   m.winner = null;
   m.matchWinner = null;
@@ -3705,7 +4044,7 @@ function swapPlayerSides() {
       && isBotSeat(match.current)) {
     botPaused = true;
     match.message = match.players[match.current].name
-      + ' to throw · swap sides to change order, then tap Continue next to Bot';
+      + ' to throw · swap sides to change order, then tap Start next to Bot';
   } else if (!isBotSeat(match.current)) {
     botPaused = false;
   }
@@ -3714,7 +4053,7 @@ function swapPlayerSides() {
   if (scoreEntryMode === 'visit') buildPad();
 }
 
-/** Swap two cricket seats; the throwing person follows their name. */
+/** Swap two seats; names/σ move, throw-order seats stay put until play has started. */
 function swapAdjacentSeats(i, j) {
   if (!match) return;
   if (lineupLocked()) {
@@ -3724,8 +4063,24 @@ function swapAdjacentSeats(i, j) {
   }
   syncNames();
   pushUndo(match);
+  // Prematch / before first dart: keep starter seat (yellow box) fixed — only
+  // rearrange who sits where. Mid-visit remaps are blocked by lineupLocked().
+  const keepThrowSeats = match.winner === null && !matchPlayStarted(match);
+  const seatCurrent = match.current;
+  const seatStarter = match.legStarter;
   exchangePlayerSeatsPair(i, j);
-  if (match.winner === null) {
+  if (keepThrowSeats) {
+    match.current = seatCurrent;
+    match.legStarter = seatStarter;
+    match.dartsLeft = 3;
+    match.turnStart = match.game === 'cricket'
+      ? (match.players[match.current].points | 0)
+      : match.players[match.current].remaining;
+    match.visitDarts = [];
+    match.visitPoints = 0;
+    match.visitCheckoutCounted = false;
+    match.message = match.players[match.current].name + ' to throw';
+  } else if (match.winner === null) {
     match.turnStart = match.game === 'cricket'
       ? (match.players[match.current].points | 0)
       : match.players[match.current].remaining;
@@ -3737,7 +4092,7 @@ function swapAdjacentSeats(i, j) {
       && isBotSeat(match.current)) {
     botPaused = true;
     match.message = match.players[match.current].name
-      + ' to throw · swap sides to change order, then tap Continue next to Bot';
+      + ' to throw · swap sides to change order, then tap Start next to Bot';
   } else if (!isBotSeat(match.current)) {
     botPaused = false;
   }
@@ -3783,7 +4138,7 @@ function remBeforePlayerVisit(m, playerIdx, histIdx) {
     const sc = v.score | 0;
     if (m.doubleIn && !opened) {
       if (sc <= 0) continue;
-      if (!isValidOpeningDoubleScore(sc)) continue;
+      if (!isValidOpeningVisitScore(sc)) continue;
       opened = true;
     }
     if (sc > rem || (rem - sc) === 1) continue;
@@ -3801,6 +4156,7 @@ function remBeforePlayerVisit(m, playerIdx, histIdx) {
 
 function recomputePlayerVisitAggregates(p) {
   p.pointsScored = 0;
+  p.dartsThrown = 0;
   p.highestVisit = 0;
   p.scores180 = 0;
   p.scores140 = 0;
@@ -3809,11 +4165,16 @@ function recomputePlayerVisitAggregates(p) {
   p.first9Points = 0;
   p.first9Darts = 0;
   p.highestCheckout = 0;
+  p.checkoutHits = 0;
+  p.checkoutAttempts = 0;
   const hist = p.visitHistory || [];
   const scores = p.visitScores || [];
   for (let i = 0; i < hist.length; i++) {
     const v = hist[i];
     const sc = (v && (v.score | 0)) || (scores[i] | 0) || 0;
+    const dartsN = visitRecDartCount(v) || 3;
+    p.dartsThrown = (p.dartsThrown | 0) + dartsN;
+    p.checkoutAttempts = (p.checkoutAttempts | 0) + ((v && v.checkoutAttempts) | 0);
     if (v && v.busted) p.busts = (p.busts | 0) + 1;
     else {
       p.pointsScored = (p.pointsScored | 0) + sc;
@@ -3822,14 +4183,11 @@ function recomputePlayerVisitAggregates(p) {
       else if (sc >= 140) p.scores140 = (p.scores140 | 0) + 1;
       else if (sc >= 100) p.scores100 = (p.scores100 | 0) + 1;
     }
-    const dartsN = (v && v.darts && v.darts.length === 1
-      && String(v.darts[0].label || '').startsWith('Visit'))
-      ? 3
-      : ((v && v.darts && v.darts.length) ? v.darts.length : 3);
     creditFirst9Visit(p, v && v.busted ? 0 : sc, dartsN);
     if (v && v.darts && v.darts.some(d => d && d.outcome === 'checkout')) {
-      // Checkout value ≈ leave before that visit — approximate from remBefore if possible.
-      if (sc > (p.highestCheckout | 0)) p.highestCheckout = sc;
+      p.checkoutHits = (p.checkoutHits | 0) + 1;
+      const leave = (v.checkoutFrom != null) ? (v.checkoutFrom | 0) : sc;
+      if (leave > (p.highestCheckout | 0)) p.highestCheckout = leave;
     }
   }
   // Keep visitScores aligned with history.
@@ -3850,7 +4208,7 @@ function syncPlayerRemainingFromHistory(m, playerIdx) {
     const sc = v.score | 0;
     if (m.doubleIn && !opened) {
       if (sc <= 0) continue;
-      if (!isValidOpeningDoubleScore(sc)) continue;
+      if (!isValidOpeningVisitScore(sc)) continue;
       opened = true;
     }
     if (sc > rem || (rem - sc) === 1) continue;
@@ -3897,23 +4255,24 @@ function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
   const before = remBeforePlayerVisit(match, playerIdx, histIdx);
   const remBefore = before.remBefore | 0;
   if (match.doubleIn && !before.opened && !bust && sc > 0
-      && !isValidOpeningDoubleScore(sc))
-    return '301 DI: opening score must be a double (2…40 or 50)';
+      && !isValidOpeningVisitScore(sc))
+    return '301 DI: open score between 2 and 170';
   if (!bust && sc > remBefore) return 'Score cannot exceed leave (' + remBefore + ')';
   if (!bust && sc > 0 && (remBefore - sc) === 1) return 'Cannot leave 1';
-  // Bust button or impossible leave → record as bust.
-  if (!bust && sc > 0 && sc === remBefore && remBefore > 170)
-    return 'Cannot check out ' + remBefore + ' with a visit total';
+  // Bust button or impossible leave (incl. bogeys like 169) → refuse checkout.
+  if (!bust && sc > 0 && sc === remBefore && !isCheckoutChance(remBefore))
+    return 'Cannot check out ' + remBefore;
 
   pushUndo(match);
   const wasCheckout = !!(v.darts && v.darts.some(d => d && d.outcome === 'checkout'));
-  const nowCheckout = !bust && sc === remBefore && remBefore >= 2;
+  const nowCheckout = !bust && sc === remBefore && isCheckoutChance(remBefore);
   if (bust || (sc > remBefore) || (remBefore - sc) === 1) {
     bust = true;
     sc = 0;
   }
   v.score = sc;
   v.busted = bust;
+  v.dartCount = 3;
   if (bust) {
     v.darts = [{
       label: 'Bust', points: 0, isDouble: false, outcome: 'bust',
@@ -3924,6 +4283,7 @@ function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
       label: 'Visit ' + sc, points: sc, isDouble: true, outcome: 'checkout',
       remainingAfter: 0, suggested: '',
     }];
+    v.checkoutFrom = remBefore;
   } else {
     v.darts = [{
       label: 'Visit ' + sc, points: sc, isDouble: false, outcome: 'ok',
@@ -4118,19 +4478,156 @@ function cloneDartRec(d) {
   };
   if (Number.isFinite(d.suggestedX)) out.suggestedX = +d.suggestedX;
   if (Number.isFinite(d.suggestedY)) out.suggestedY = +d.suggestedY;
+  if (d.marks != null) out.marks = d.marks | 0;
+  if (d.whiteHorse) out.whiteHorse = true;
   return out;
 }
 
 function cloneVisitRec(v) {
   if (!v) return null;
-  return {
+  const out = {
     player: v.player,
     name: v.name,
     leg: v.leg | 0,
     score: v.score | 0,
     busted: !!v.busted,
+    dartCount: visitRecDartCount(v),
+    checkoutAttempts: v.checkoutAttempts | 0,
     darts: (v.darts || []).map(cloneDartRec),
   };
+  if (v.checkoutFrom != null) out.checkoutFrom = v.checkoutFrom | 0;
+  if (v.marks != null) out.marks = v.marks | 0;
+  return out;
+}
+
+/** Aggregate x01/cricket counting stats from a list of visit records. */
+function statsFromVisits(visits, game) {
+  const s = {
+    dartsThrown: 0, pointsScored: 0,
+    first9Points: 0, first9Darts: 0,
+    checkoutHits: 0, checkoutAttempts: 0,
+    highestCheckout: 0, highestVisit: 0,
+    scores100: 0, scores140: 0, scores180: 0, busts: 0,
+    marksHit: 0, first9Marks: 0, first9MarkDarts: 0,
+    marks5: 0, marks6: 0, marks9: 0, whiteHorses: 0, bullHits: 0,
+  };
+  for (const v of (visits || [])) {
+    if (!v) continue;
+    const dc = visitRecDartCount(v);
+    s.dartsThrown += dc;
+    s.checkoutAttempts += (v.checkoutAttempts | 0);
+    if (v.busted) {
+      s.busts += 1;
+      if (game !== 'cricket') creditFirst9Visit(s, 0, dc);
+      continue;
+    }
+    const sc = v.score | 0;
+    s.pointsScored += sc;
+    if (sc > (s.highestVisit | 0)) s.highestVisit = sc;
+    if (sc === 180) s.scores180 += 1;
+    else if (sc >= 140) s.scores140 += 1;
+    else if (sc >= 100) s.scores100 += 1;
+    const isOut = !!(v.darts && v.darts.some(d => d && d.outcome === 'checkout'));
+    if (isOut) {
+      s.checkoutHits += 1;
+      const leave = (v.checkoutFrom != null) ? (v.checkoutFrom | 0) : sc;
+      if (leave > (s.highestCheckout | 0)) s.highestCheckout = leave;
+    }
+    if (game === 'cricket') {
+      let vm = (v.marks != null) ? (v.marks | 0) : 0;
+      if (v.marks == null && v.darts) {
+        vm = v.darts.reduce((a, d) => a + ((d && d.marks) | 0), 0);
+      }
+      s.marksHit += vm;
+      if (vm === 5) s.marks5 += 1;
+      else if (vm === 6) s.marks6 += 1;
+      else if (vm === 9) s.marks9 += 1;
+      for (const d of (v.darts || [])) {
+        if (!d) continue;
+        if (d.whiteHorse) s.whiteHorses += 1;
+        const mk = d.marks | 0;
+        if (mk > 0 && (d.label === 'Bull' || d.label === '25'))
+          s.bullHits += 1;
+        if ((s.first9MarkDarts | 0) < 9) {
+          s.first9Marks = (s.first9Marks || 0) + mk;
+          s.first9MarkDarts = (s.first9MarkDarts | 0) + 1;
+        }
+      }
+      // Visits shorter than dart list (shouldn't happen) — pad first-9 dart count.
+      const dartN = (v.darts && v.darts.length) ? v.darts.length : dc;
+      if (dartN < dc && (s.first9MarkDarts | 0) < 9) {
+        const pad = Math.min(dc - dartN, 9 - (s.first9MarkDarts | 0));
+        s.first9MarkDarts = (s.first9MarkDarts | 0) + pad;
+      }
+    } else {
+      creditFirst9Visit(s, sc, dc);
+    }
+  }
+  if (game === 'cricket') {
+    s.mpr = s.dartsThrown ? (s.marksHit * 3 / s.dartsThrown) : null;
+    s.mprFirst9 = (s.first9MarkDarts | 0) >= 9
+      ? (s.first9Marks * 3 / s.first9MarkDarts) : null;
+  } else {
+    s.avg3 = s.dartsThrown ? (s.pointsScored / s.dartsThrown * 3) : null;
+    s.avgFirst9 = (s.first9Darts | 0) >= 9
+      ? (s.first9Points / s.first9Darts * 3) : null;
+    s.checkoutPct = s.checkoutAttempts
+      ? (100 * s.checkoutHits / s.checkoutAttempts) : null;
+  }
+  return s;
+}
+
+function visitsForLegPlayer(mOrVisits, leg, playerIdx) {
+  const visits = Array.isArray(mOrVisits) ? mOrVisits
+    : ((mOrVisits && mOrVisits.visitLog) || []);
+  const L = leg | 0;
+  return visits.filter(v => ((v.leg | 0) || 1) === L && (v.player | 0) === playerIdx);
+}
+
+function playerLegSnapshot(m, playerIdx, leg) {
+  const p = m.players[playerIdx];
+  const visits = visitsForLegPlayer(m, leg, playerIdx);
+  const s = statsFromVisits(visits, m.game);
+  // Include in-progress darts for the current thrower on this leg.
+  if (m.winner === null && (m.legNumber | 0) === (leg | 0)
+      && (m.current | 0) === (playerIdx | 0)
+      && (m.visitDarts || []).length) {
+    s.dartsThrown += visitDartCount(m);
+    if (m.game === 'cricket') {
+      for (const d of m.visitDarts) {
+        const mk = (d && d.marks) | 0;
+        s.marksHit = (s.marksHit | 0) + mk;
+        if (d && d.whiteHorse) s.whiteHorses = (s.whiteHorses | 0) + 1;
+        if (mk > 0 && d && (d.label === 'Bull' || d.label === '25'))
+          s.bullHits = (s.bullHits | 0) + 1;
+      }
+      s.mpr = s.dartsThrown ? (s.marksHit * 3 / s.dartsThrown) : null;
+    }
+  }
+  s.name = p.name;
+  if (m.game === 'cricket') {
+    s.points = p.points | 0;
+    s.closed = CRICKET_KEYS.filter(k => ((p.marks || {})[k] || 0) >= 3).length;
+    if (s.mpr == null && (p.dartsThrown | 0))
+      s.mpr = cricketMpr(p);
+    if (s.mprFirst9 == null) s.mprFirst9 = cricketFirst9Mpr(p);
+  }
+  return s;
+}
+
+/** Freeze stats for the just-finished leg (idempotent per leg number). */
+function snapshotLegSheet(m) {
+  if (!m) return;
+  const leg = m.legNumber | 0;
+  if (!m.legSheets) m.legSheets = [];
+  m.legSheets = m.legSheets.filter(s => (s.leg | 0) !== leg);
+  m.legSheets.push({
+    leg: leg,
+    winner: m.winner,
+    finishOrder: Array.isArray(m.finishOrder) ? m.finishOrder.slice() : [],
+    players: m.players.map((_, i) => playerLegSnapshot(m, i, leg)),
+  });
+  m.legSheets.sort((a, b) => (a.leg | 0) - (b.leg | 0));
 }
 
 function playerStatsSnapshot(p, game) {
@@ -4144,6 +4641,16 @@ function playerStatsSnapshot(p, game) {
     snap.points = p.points | 0;
     snap.marks = Object.assign({}, p.marks || emptyCricketMarks());
     snap.closed = CRICKET_KEYS.filter(k => (snap.marks[k] || 0) >= 3).length;
+    snap.marksHit = p.marksHit | 0;
+    snap.mpr = cricketMpr(p);
+    snap.mprFirst9 = cricketFirst9Mpr(p);
+    snap.first9Marks = p.first9Marks || 0;
+    snap.first9MarkDarts = p.first9MarkDarts | 0;
+    snap.marks5 = p.marks5 | 0;
+    snap.marks6 = p.marks6 | 0;
+    snap.marks9 = p.marks9 | 0;
+    snap.whiteHorses = p.whiteHorses | 0;
+    snap.bullHits = p.bullHits | 0;
   } else {
     snap.pointsScored = p.pointsScored | 0;
     snap.avg3 = avg3(p);
@@ -4204,6 +4711,13 @@ function archiveFinishedMatch(m) {
     players: m.players.map(p => playerStatsSnapshot(p, m.game)),
     // Chronological throw history for the whole match (visits → darts).
     visits: (m.visitLog || []).map(cloneVisitRec),
+    // Per-leg stats (each visit-total visit counts 3 darts; closing attempts stored).
+    legs: (m.legSheets || []).map(sheet => ({
+      leg: sheet.leg | 0,
+      winner: sheet.winner,
+      finishOrder: Array.isArray(sheet.finishOrder) ? sheet.finishOrder.slice() : [],
+      players: (sheet.players || []).map(sp => Object.assign({}, sp)),
+    })),
   };
   const hist = loadMatchHistory();
   hist.unshift(rec);
@@ -4422,44 +4936,49 @@ function renderMatchDetailHtml(rec, focusName) {
     ? rec.players
     : [{ name: '—' }, { name: '—' }];
   const cricket = rec.game === 'cricket' || rec.mode === 'cricket';
+  const game = cricket ? 'cricket' : 'x01';
   const winName = rec.winnerName || (ps[rec.winner] && ps[rec.winner].name) || '—';
-  const rows = cricket
-    ? [
-        ['Points', ...ps.map(p => p.points)],
-        ['Closed', ...ps.map(p => (p.closed != null ? p.closed : '—') + '/7')],
-        ['Darts', ...ps.map(p => p.dartsThrown)],
-        ['Legs', ...ps.map(p => p.legsWon)],
-      ]
-    : [
-        ['3-dart avg', ...ps.map(p => p.avg3 == null ? '—' : Number(p.avg3).toFixed(1))],
-        ['First 9', ...ps.map(p => p.avgFirst9 == null ? '—' : Number(p.avgFirst9).toFixed(1))],
-        ['Darts', ...ps.map(p => p.dartsThrown)],
-        ['100–139', ...ps.map(p => p.scores100)],
-        ['140–179', ...ps.map(p => p.scores140)],
-        ['180', ...ps.map(p => p.scores180)],
-        ['Checkout %', ...ps.map(p =>
-          p.checkoutPct == null ? '—' : Math.round(p.checkoutPct) + '%')],
-        ['Hi checkout', ...ps.map(p => p.highestCheckout || '—')],
-        ['Hi visit', ...ps.map(p => p.highestVisit || '—')],
-        ['Busts', ...ps.map(p => p.busts)],
-        ['Legs', ...ps.map(p => p.legsWon)],
-      ];
-  let grid = '<div class="h"></div>';
-  for (const p of ps) {
-    const cls = normPlayerName(p.name) === normPlayerName(winName) ? ' winner' : '';
-    grid += '<div class="h' + cls + '">' + p.name + '</div>';
+  const colStyle = 'grid-template-columns: 1.1fr repeat(' + ps.length + ', 1fr)';
+  let body = '';
+  const legs = Array.isArray(rec.legs) ? rec.legs.slice() : [];
+  if (!legs.length && Array.isArray(rec.visits) && rec.visits.length) {
+    // Rebuild per-leg sheets from stored visits (older archives).
+    const legNos = [...new Set(rec.visits.map(v => (v.leg | 0) || 1))].sort((a, b) => a - b);
+    for (const leg of legNos) {
+      legs.push({
+        leg: leg,
+        players: ps.map((_, i) => {
+          const s = statsFromVisits(
+            rec.visits.filter(v => ((v.leg | 0) || 1) === leg && (v.player | 0) === i),
+            game);
+          s.name = (ps[i] && ps[i].name) || ('P' + (i + 1));
+          return s;
+        }),
+      });
+    }
   }
-  for (const row of rows) {
-    grid += '<div class="lbl">' + row[0] + '</div>';
-    for (let i = 1; i < row.length; i++) grid += '<div>' + row[i] + '</div>';
+  for (const sheet of legs) {
+    const wIdx = (sheet.winner != null) ? (sheet.winner | 0) : -1;
+    const sheetPs = sheet.players || [];
+    body += '<div class="d-leg-title">Leg ' + (sheet.leg | 0) + '</div>';
+    body += statsGridHtml(
+      sheetPs,
+      statsRowsForPlayers(sheetPs, game, { includeLegs: false }),
+      colStyle,
+      wIdx >= 0 ? { winnerIdx: wIdx } : null);
   }
+  body += '<div class="d-leg-title">Match total</div>';
+  body += statsGridHtml(
+    ps,
+    statsRowsForPlayers(ps, game, { includeLegs: true }),
+    colStyle,
+    { resultClasses: resultClassesFromLegs(ps) });
   return '<div class="hist-detail">'
     + '<div class="d-title">' + matchTitle(rec) + '</div>'
     + '<div class="d-meta">' + formatHistWhen(rec.ts || rec.id)
     + ' · ' + winName + ' won'
     + '<br>' + formatIsoSeconds(rec.id) + '</div>'
-    + '<div class="d-grid" style="grid-template-columns: 1.1fr repeat('
-    + ps.length + ', 1fr)">' + grid + '</div>'
+    + body
     + renderMatchThrowsHtml(rec, focusName)
     + '</div>';
 }
@@ -4492,6 +5011,7 @@ function renderMatchThrowsHtml(rec, focusName) {
     }
     const who = v.name || ('P' + ((v.player | 0) + 1));
     const whoCls = (focus && normPlayerName(who) === focus) ? ' focus' : '';
+    const dartN = visitRecDartCount(v);
     const darts = (v.darts && v.darts.length)
       ? v.darts.map(formatHistDart).join(' · ')
       : '—';
@@ -4501,9 +5021,14 @@ function renderMatchThrowsHtml(rec, focusName) {
     else if (v.darts && v.darts.some(d => d.outcome === 'checkout')) {
       scoreCls = ' out'; scoreTxt = (v.score | 0) + ' out';
     }
+    let meta = dartN ? (dartN + 'd') : '';
+    if ((v.checkoutAttempts | 0) > 0)
+      meta += (meta ? ' · ' : '') + (v.checkoutAttempts | 0) + ' chk';
     body += '<div class="th-row">'
       + '<div><span class="th-who' + whoCls + '">' + who + '</span>'
-      + '<div class="th-darts">' + darts + '</div></div>'
+      + '<div class="th-darts">' + darts
+      + (meta ? (' <span class="aim">(' + meta + ')</span>') : '')
+      + '</div></div>'
       + '<div class="th-score' + scoreCls + '">' + scoreTxt + '</div>'
       + '</div>';
   }
@@ -5296,6 +5821,31 @@ function nameTakenByOther(name, idx) {
   return otherPlayerNameKeys(idx).has(key);
 }
 
+function clearEntryDartThresholdForName(name) {
+  const key = normPlayerName(name);
+  if (!key) return;
+  try {
+    const map = loadEntryDartThresholdMap();
+    if (!Object.prototype.hasOwnProperty.call(map, key)) return;
+    delete map[key];
+    localStorage.setItem(ENTRY_THRESH_KEY, JSON.stringify(map));
+  } catch (_) {}
+}
+
+function deleteRosterPlayerByName(name) {
+  const key = normPlayerName(name);
+  if (!key || isBotPlayerName(name)) return false;
+  const ok = window.confirm('Delete "' + name + '" from the roster?');
+  if (!ok) return false;
+  storeSavedPlayers(loadSavedPlayers().filter(p =>
+    normPlayerName(p.name) !== key && !isBotPlayerName(p.name)));
+  clearEntryDartThresholdForName(name);
+  if (playerListSel === key) playerListSel = null;
+  const nameIn = document.getElementById('playerModalName');
+  if (nameIn && normPlayerName(nameIn.value) === key) nameIn.value = '';
+  return true;
+}
+
 function renderPlayerList(filterName) {
   const list = document.getElementById('playerList');
   const saved = loadSavedPlayers()
@@ -5318,31 +5868,45 @@ function renderPlayerList(filterName) {
       + '</div>';
     return;
   }
+  const showDart = !isFitPlayerEdit() && !cricketModeActive();
   list.innerHTML = shown.map(p => {
     const key = normPlayerName(p.name);
     const bot = !!p.builtin || isBotPlayerName(p.name);
     const taken = nameTakenByOther(p.name, playerEditIdx);
     const thr = bot ? null : entryDartThresholdForName(p.name);
-    const sub = taken
-      ? 'in use'
-      : (thr == null ? '' : ('Dart ≤' + thr));
     const cls = [
+      'player-row',
       playerListSel === key ? 'sel' : '',
       taken ? 'taken' : '',
       bot ? 'bot-entry' : '',
     ].filter(Boolean).join(' ');
-    return '<button type="button" data-name="' + encodeURIComponent(p.name) + '"'
-      + (cls ? (' class="' + cls + '"') : '')
+    const sub = taken ? '<span class="sub">in use</span>' : '';
+    let dart = '';
+    if (showDart && !bot && thr != null) {
+      dart = '<label class="dart-inline" title="Switch to by-dart at or below this leave (2 = never auto-switch)">'
+        + 'Switch ≤'
+        + '<input type="number" inputmode="numeric" min="0" max="501" step="1"'
+        + ' data-dart-name="' + encodeURIComponent(p.name) + '"'
+        + (taken ? ' disabled' : '')
+        + ' value="' + thr + '"></label>'
+        + '<button type="button" class="dart-del" data-del-name="'
+        + encodeURIComponent(p.name) + '" title="Delete player" aria-label="Delete '
+        + p.name + '">×</button>';
+    }
+    return '<div class="' + cls + '" data-name="' + encodeURIComponent(p.name) + '">'
+      + '<button type="button" class="pick"'
       + (taken ? ' disabled aria-disabled="true"' : '') + '>'
-      + '<span>' + p.name + '</span>'
-      + (sub ? ('<span class="sub">' + sub + '</span>') : '')
-      + '</button>';
+      + '<span>' + p.name + '</span>' + sub
+      + '</button>'
+      + dart
+      + '</div>';
   }).join('');
-  list.querySelectorAll('button').forEach(btn => {
+  list.querySelectorAll('button.pick').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (btn.disabled || btn.classList.contains('taken')) return;
-      const name = decodeURIComponent(btn.dataset.name);
-      if (nameTakenByOther(name, playerEditIdx)) return;
+      if (btn.disabled) return;
+      const row = btn.closest('.player-row');
+      const name = decodeURIComponent((row && row.dataset.name) || '');
+      if (!name || nameTakenByOther(name, playerEditIdx)) return;
       if (isBotPlayerName(name)) {
         if (cricketModeActive()) return;
         applyPlayerName(playerEditIdx, BOT_PLAYER_NAME);
@@ -5352,10 +5916,35 @@ function renderPlayerList(filterName) {
       }
       const prof = findSavedPlayer(name);
       if (!prof) return;
+      applyPlayerName(playerEditIdx, prof.name);
+      closePlayerModal();
+      if (!isFitPlayerEdit()) syncAutoScoreEntryMode({ force: true });
+      render();
+    });
+  });
+  list.querySelectorAll('input[data-dart-name]').forEach(inp => {
+    const commit = () => {
+      const name = decodeURIComponent(inp.dataset.dartName || '');
+      if (!name || isBotPlayerName(name)) return;
+      const thr = clampEntryDartThreshold(inp.value);
+      inp.value = String(thr);
+      storeEntryDartThresholdForName(name, thr);
+    };
+    inp.addEventListener('click', (e) => e.stopPropagation());
+    inp.addEventListener('pointerdown', (e) => e.stopPropagation());
+    inp.addEventListener('change', commit);
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); inp.blur(); }
+      e.stopPropagation();
+    });
+  });
+  list.querySelectorAll('button.dart-del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const name = decodeURIComponent(btn.dataset.delName || '');
+      if (!name) return;
+      if (!deleteRosterPlayerByName(name)) return;
       const nameIn = document.getElementById('playerModalName');
-      if (nameIn) nameIn.value = prof.name;
-      playerListSel = normPlayerName(prof.name);
-      syncModalEntryDartFromName(prof.name);
       renderPlayerList(nameIn ? nameIn.value : '');
       syncPlayerModalPrimaryLabel();
     });
@@ -5367,8 +5956,12 @@ function syncPlayerModalPrimaryLabel() {
   if (!btn) return;
   const nameIn = document.getElementById('playerModalName');
   const name = (nameIn && nameIn.value || '').trim();
-  const fromList = !!(name && (isBotPlayerName(name) || findSavedPlayer(name)));
-  btn.textContent = fromList ? 'Select' : 'Save';
+  // Tap assigns known players; primary is only for creating a new name.
+  btn.textContent = 'Save';
+  const known = !!(name && (isBotPlayerName(name) || findSavedPlayer(name)));
+  btn.classList.toggle('hidden', known);
+  const actions = btn.closest('.player-actions');
+  if (actions) actions.style.gridTemplateColumns = known ? '1fr' : '1fr 1fr';
 }
 
 function openPlayerModal(idx) {
@@ -5406,16 +5999,16 @@ function openPlayerModal(idx) {
   const hint = document.querySelector('#playerRosterPanel .hint');
   if (hint) {
     if (fitEdit) {
-      hint.innerHTML = 'Same roster as Play. Tap a saved player, then <b>Select</b>. '
+      hint.innerHTML = 'Same roster as Play. Tap a saved player to use them. '
         + 'Type a new name and <b>Save</b> to add them to the roster.';
     } else if (cricketModeActive()) {
-      hint.innerHTML = 'Shared roster for both sides. Tap a name, then <b>Select</b>. '
+      hint.innerHTML = 'Shared roster for both sides. Tap a name to pick them. '
         + 'Type a new name and <b>Save</b> to add them. '
         + '<b>Bot</b> is unavailable in Cricket for now.';
     } else {
-      hint.innerHTML = 'Shared roster for both sides. Tap a name to <b>Select</b> it (adjust Dart ≤ if needed). '
-        + 'Type a new name and <b>Save</b> to add them. '
-        + '<b>Bot</b> is always listed as the CPU opponent.';
+      hint.innerHTML = 'Tap a name to pick them. Edit <b>Switch ≤</b> on the row '
+        + '(use <b>2</b> to disable the auto switch), or tap <b>×</b> to delete. '
+        + 'Type a new name and <b>Save</b> to add. <b>Bot</b> is the CPU opponent.';
     }
   }
   syncModalEntryDartFromName(nameIn.value);
@@ -5434,6 +6027,26 @@ function closePlayerModal() {
   document.getElementById('playerModal').classList.add('hidden');
   histDetailId = null;
   playerModalTab = 'roster';
+  playerListSel = null;
+  contactListSel = null;
+}
+
+/** Cancel on roster: if a player / Dart ≤ is selected, return to the list; else close. */
+function cancelPlayerModal() {
+  if (playerModalTab === 'roster') {
+    const nameIn = document.getElementById('playerModalName');
+    const hasSel = !!(playerListSel || ((nameIn && nameIn.value) || '').trim());
+    if (hasSel) {
+      if (nameIn) nameIn.value = '';
+      playerListSel = null;
+      syncModalEntryDartFromName('');
+      renderPlayerList('');
+      syncPlayerModalPrimaryLabel();
+      if (nameIn) setTimeout(() => nameIn.focus(), 30);
+      return;
+    }
+  }
+  closePlayerModal();
 }
 
 function saveCurrentPlayerFromModal() {
@@ -5503,16 +6116,14 @@ function deleteSelectedPlayerFromModal() {
   const nameIn = document.getElementById('playerModalName');
   const key = playerListSel || normPlayerName(nameIn.value);
   if (!key) return;
-  if (key === normPlayerName(BOT_PLAYER_NAME) || isBotPlayerName(nameIn.value)) {
-    // Built-in Bot cannot be removed from the roster.
+  const disp = (nameIn.value || '').trim() || key;
+  if (key === normPlayerName(BOT_PLAYER_NAME) || isBotPlayerName(disp)) {
     renderPlayerList(nameIn.value);
     return;
   }
-  const list = loadSavedPlayers().filter(p =>
-    normPlayerName(p.name) !== key && !isBotPlayerName(p.name));
-  storeSavedPlayers(list);
-  playerListSel = null;
+  if (!deleteRosterPlayerByName(disp || key)) return;
   renderPlayerList(nameIn.value);
+  syncPlayerModalPrimaryLabel();
 }
 
 function buildModeToggle() {
@@ -5681,13 +6292,24 @@ const parkedMatches = Object.create(null);
 const parkedUiActive = Object.create(null);
 /** False until the user starts a match via New match (best-of dialog). */
 let matchUiActive = false;
+/** Live x01: aim dartboard (canvas) hidden until toggled from the Aim row. */
+let aimBoardVisible = false;
+/** While a match is live: past-leg / match-total stats stay collapsed until opened. */
+let statsHistoryOpen = false;
 
 function setMatchUiActive(on) {
   const was = matchUiActive;
   matchUiActive = !!on;
   const page = document.getElementById('pageScore');
   if (page) page.classList.toggle('prematch', !matchUiActive);
-  if (!matchUiActive) cancelBotThrow();
+  if (!matchUiActive) {
+    cancelBotThrow();
+    aimBoardVisible = false;
+    statsHistoryOpen = false;
+  } else if (!was) {
+    aimBoardVisible = false;
+    statsHistoryOpen = false;
+  }
   // Board was display:none in prematch — clientWidth was 0, so the canvas
   // bitmap stayed empty. Re-measure after it becomes visible.
   if (matchUiActive && !was) {
@@ -5771,27 +6393,73 @@ function syncCricketChrome() {
     help.classList.toggle('hidden', !showBoard);
     if (cricket) {
       if (isCutThroat(match) || cricketPlayerCount >= 3) {
-        help.innerHTML = 'Targets <b>20–15 &amp; Bull</b>: 3 hits to close. '
+        help.innerHTML = 'Targets <b>20–15 &amp; Bull</b>: 3 hits to close. Tap <b>Miss</b> for no score. '
           + '<b>Cut-throat (3 players)</b>: after you close a number, extra hits add '
           + 'that face value to each opponent who has <b>not</b> closed it. '
           + 'Lowest points wins once you have closed everything.';
       } else {
         help.innerHTML = 'Targets <b>20–15 &amp; Bull</b>: 3 hits to close (S=1, D=2, T=3; outer bull=1, red bull=2). '
+          + 'Tap <b>Miss</b> for a dart that scores nothing. '
           + 'Extra hits score the face value only while the opponent has not closed that number. '
           + 'Win by closing all targets with points ≥ opponent; if you close first but trail, keep '
           + 'scoring on numbers they still have open.';
       }
     }
   }
-  const cpToggle = document.getElementById('playersToggle')
-    || document.getElementById('cricketPlayersToggle');
-  if (cpToggle) {
-    cpToggle.classList.remove('hidden');
-    for (const b of cpToggle.querySelectorAll('button[data-cp]'))
-      b.classList.toggle('active', (b.dataset.cp | 0) === lineupPlayerCount);
-  }
   syncPlayerSeatsChrome();
   syncEntryToggle();
+}
+
+function syncSeatCountButtons() {
+  const n = match ? playerCount(match) : lineupSeatCount();
+  const locked = lineupLocked();
+  const addBtn = document.getElementById('btnSeatCount');
+  if (addBtn) {
+    // Add stays above ⇄; hide once at 3 seats or when lineup is locked.
+    const showAdd = !locked && n < 3;
+    addBtn.classList.toggle('hidden', !showAdd);
+    addBtn.disabled = locked;
+    addBtn.textContent = 'Add';
+    addBtn.title = 'Add a third player';
+    addBtn.setAttribute('aria-label', 'Add a third player');
+  }
+  // Remove only lives inside each player card (3-seat lineup).
+  document.querySelectorAll('[data-seat-remove]').forEach(btn => {
+    const showRemove = !locked && n >= 3;
+    btn.classList.toggle('hidden', !showRemove);
+    btn.textContent = 'Remove';
+    btn.title = 'Remove this player';
+  });
+}
+
+function removeLineupSeat(idx) {
+  idx = idx | 0;
+  const n = match ? playerCount(match) : lineupSeatCount();
+  if (n < 3 || idx < 0 || idx > 2) return;
+  if (match && lineupLocked()) {
+    match.message = 'Seat count locked while the match is in progress — change after it ends or via New match';
+    syncCricketChrome();
+    render();
+    return;
+  }
+  // Compact remaining seats into 0 and 1.
+  const keep = [0, 1, 2].filter(i => i !== idx);
+  const nm = names();
+  const sig = [0, 1, 2].map(i => {
+    const el = document.getElementById('sigma' + i);
+    return el ? el.value : '25';
+  });
+  const name0 = document.getElementById('name0');
+  const name1 = document.getElementById('name1');
+  const name2 = document.getElementById('name2');
+  const sig0 = document.getElementById('sigma0');
+  const sig1 = document.getElementById('sigma1');
+  if (name0) name0.value = nm[keep[0]] || '';
+  if (name1) name1.value = nm[keep[1]] || '';
+  if (name2) name2.value = '';
+  if (sig0) sig0.value = sig[keep[0]];
+  if (sig1) sig1.value = sig[keep[1]];
+  setLineupPlayerCount(2);
 }
 
 function syncPlayerSeatsChrome() {
@@ -5802,6 +6470,7 @@ function syncPlayerSeatsChrome() {
   if (card2) card2.classList.toggle('hidden', n < 3);
   const swap12 = document.getElementById('btnSwap12');
   if (swap12) swap12.classList.toggle('hidden', n < 3);
+  syncSeatCountButtons();
   syncLineupLockChrome();
 }
 
@@ -5819,12 +6488,7 @@ function syncLineupLockChrome() {
     const b = document.getElementById(id);
     if (b) b.disabled = locked;
   }
-  const cpToggle = document.getElementById('playersToggle')
-    || document.getElementById('cricketPlayersToggle');
-  if (cpToggle) {
-    for (const b of cpToggle.querySelectorAll('button[data-cp]'))
-      b.disabled = locked && !!match;
-  }
+  syncSeatCountButtons();
 }
 
 function setLineupPlayerCount(n) {
@@ -5932,13 +6596,19 @@ function renderCricketBoard() {
       + (seats[1].points || 0) + '</td>';
   }
   body += '</tr></tbody>';
-  el.innerHTML = '<table>' + colgroup + head + body + '</table>';
+  el.innerHTML = '<table>' + colgroup + head + body + '</table>'
+    + '<button type="button" class="cricket-miss" id="cricketMiss"'
+    + ' title="Miss or off the cricket numbers (0)">Miss</button>';
   el.querySelectorAll('button[data-cricket-target]').forEach(btn => {
     if (btn.classList.contains('ghost')) return;
     btn.addEventListener('click', () => {
       cricketCommit(btn.dataset.cricketTarget, btn.dataset.mult || 'S');
     });
   });
+  const missBtn = document.getElementById('cricketMiss');
+  if (missBtn) {
+    missBtn.addEventListener('click', () => commitLabel('Miss'));
+  }
 }
 
 function setScoreEntryMode(mode, opts) {
@@ -5973,11 +6643,13 @@ function setScoreEntryMode(mode, opts) {
   if (opts && opts.render !== false) render();
 }
 
-/** Visit total while remaining > this seat's Dart≤; By dart at or below it. */
+/** Visit total while remaining > this seat's Switch≤; By dart at or below it.
+ *  Switch≤ of 2 (or less) disables auto-switch — stay on visit total. */
 function autoScoreEntryMode() {
   if (!match || match.game === 'cricket' || match.winner !== null) return null;
   const rem = match.players[match.current].remaining | 0;
   const thr = entryDartThresholdForSeat(match.current);
+  if (thr <= 2) return 'visit';
   return rem <= thr ? 'dart' : 'visit';
 }
 
@@ -6222,53 +6894,226 @@ function isThrowOnlyMessage(msg) {
   return /^[^·]+ to throw(\s*\(leg \d+\))?\.?$/i.test(String(msg || '').trim());
 }
 
+function aimBoardToggleHtml() {
+  // Only for live x01 — cricket has no aim canvas.
+  if (!match || !matchUiActive || match.game === 'cricket') return '';
+  return '<button type="button" class="aim-board-toggle'
+    + (aimBoardVisible ? ' open' : '')
+    + '" id="btnAimBoard" title="'
+    + (aimBoardVisible ? 'Hide AI aim board' : 'Show AI aim board')
+    + '" aria-label="'
+    + (aimBoardVisible ? 'Hide AI aim board' : 'Show AI aim board')
+    + '"><span class="abt-ring"><span class="abt-dot"></span></span>'
+    + '<span class="abt-ai" aria-hidden="true">✦</span></button>';
+}
+
+function wrapAimWithBoardToggle(aimInnerHtml, etHtml) {
+  let html = '<div class="aim-row"><div class="aim-main">';
+  html += aimBoardToggleHtml();
+  html += '<div class="aim">' + aimInnerHtml + '</div></div>';
+  if (etHtml) html += etHtml;
+  html += '</div>';
+  return html;
+}
+
+(function wireAimBoardToggle() {
+  if (!elInfo) return;
+  elInfo.addEventListener('click', (e) => {
+    const btn = e.target.closest('#btnAimBoard');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    aimBoardVisible = !aimBoardVisible;
+    syncPlayBoardChrome();
+    if (aimBoardVisible) {
+      requestAnimationFrame(() => {
+        if (typeof sizeCanvas === 'function') sizeCanvas();
+        render();
+      });
+    } else {
+      // Update button chrome without full redraw of aims.
+      const b = document.getElementById('btnAimBoard');
+      if (b) {
+        b.classList.toggle('open', false);
+        b.title = 'Show AI aim board';
+        b.setAttribute('aria-label', 'Show AI aim board');
+      }
+    }
+  });
+})();
+
 function statusMessageHtml(msg) {
   if (!msg || isThrowOnlyMessage(msg)) return '';
   // Bot throws already show on the board / remaining — don't echo "Bot: …" under Aim.
   if (/^Bot\b/i.test(String(msg).trim())) return '';
+  // Visit-total errors show on the pad (#visitReject) — don't duplicate under Aim.
+  if (match && match.messageIsError && scoreEntryMode === 'visit') return '';
   const err = !!(match && match.messageIsError);
   return '<div class="msg' + (err ? ' err' : '') + '">' + msg + '</div>';
 }
 
-function renderStats() {
-  const ps = match.players;
-  const n = ps.length;
-  const finished = match.winner !== null;
-  const closed = (p) => CRICKET_KEYS.filter(k => ((p.marks || {})[k] || 0) >= 3).length;
-  let rows;
-  if (match.game === 'cricket') {
-    rows = [
-      ['Points', ...ps.map(p => p.points | 0)],
-      ['Numbers closed', ...ps.map(p => closed(p) + '/7')],
+function statsRowsForPlayers(ps, game, opts) {
+  opts = opts || {};
+  const includeLegs = !!opts.includeLegs;
+  const closed = (p) => {
+    if (p.closed != null) return (p.closed | 0) + '/7';
+    return CRICKET_KEYS.filter(k => ((p.marks || {})[k] || 0) >= 3).length + '/7';
+  };
+  if (game === 'cricket') {
+    const rows = [
+      ['MPR', ...ps.map(p => fmt(p.mpr != null ? p.mpr : cricketMpr(p), 2))],
+      ['Marks', ...ps.map(p => p.marksHit | 0)],
+      ['First 9 MPR', ...ps.map(p => fmt(
+        p.mprFirst9 != null ? p.mprFirst9 : cricketFirst9Mpr(p), 2))],
+      ['Points', ...ps.map(p => (p.points != null ? p.points : 0) | 0)],
+      ['Numbers closed', ...ps.map(p => closed(p))],
+      ['5-mark visits', ...ps.map(p => p.marks5 | 0)],
+      ['6-mark visits', ...ps.map(p => p.marks6 | 0)],
+      ['9-mark visits', ...ps.map(p => p.marks9 | 0)],
+      ['White horses', ...ps.map(p => p.whiteHorses | 0)],
+      ['Bulls', ...ps.map(p => p.bullHits | 0)],
       ['Darts', ...ps.map(p => p.dartsThrown | 0)],
-      ['Legs', ...ps.map(p => p.legsWon | 0)],
     ];
-  } else {
-    rows = [
-      ['3-dart avg', ...ps.map(p => fmt(avg3(p), 1))],
-      ['First 9', ...ps.map(p => fmt(avgFirst9(p), 1))],
-      ['Darts', ...ps.map(p => p.dartsThrown | 0)],
-      ['Visits 100–139', ...ps.map(p => p.scores100 | 0)],
-      ['Visits 140–179', ...ps.map(p => p.scores140 | 0)],
-      ['Visits 180', ...ps.map(p => p.scores180 | 0)],
-      ['Checkout %', ...ps.map(p => (checkoutPct(p) === null ? '—'
-        : fmt(checkoutPct(p), 0) + '%') + ' (' + p.checkoutHits + '/' + p.checkoutAttempts + ')')],
-      ['Hi checkout', ...ps.map(p => p.highestCheckout || '—')],
-      ['Hi visit', ...ps.map(p => p.highestVisit || '—')],
-      ['Busts', ...ps.map(p => p.busts | 0)],
-      ['Legs', ...ps.map(p => p.legsWon | 0)],
-    ];
+    if (includeLegs) rows.push(['Legs', ...ps.map(p => p.legsWon | 0)]);
+    return rows;
   }
-  const colStyle = 'grid-template-columns: 1.1fr repeat(' + n + ', 1fr)';
-  let html = '<h2>' + (finished ? 'Match review' : 'Statistics') + '</h2>'
-    + '<div class="grid" style="' + colStyle + '">'
+  const rows = [
+    ['3-dart avg', ...ps.map(p => fmt(p.avg3 != null ? p.avg3 : avg3(p), 1))],
+    ['First 9', ...ps.map(p => fmt(p.avgFirst9 != null ? p.avgFirst9 : avgFirst9(p), 1))],
+    ['Darts', ...ps.map(p => p.dartsThrown | 0)],
+    ['Visits 100–139', ...ps.map(p => p.scores100 | 0)],
+    ['Visits 140–179', ...ps.map(p => p.scores140 | 0)],
+    ['Visits 180', ...ps.map(p => p.scores180 | 0)],
+    ['Checkout %', ...ps.map(p => {
+      const pct = p.checkoutPct != null ? p.checkoutPct : checkoutPct(p);
+      const hits = p.checkoutHits | 0;
+      const att = p.checkoutAttempts | 0;
+      return (pct == null ? '—' : fmt(pct, 0) + '%') + ' (' + hits + '/' + att + ')';
+    })],
+    ['Hi checkout', ...ps.map(p => p.highestCheckout || '—')],
+    ['Hi visit', ...ps.map(p => p.highestVisit || '—')],
+    ['Busts', ...ps.map(p => p.busts | 0)],
+  ];
+  if (includeLegs) rows.push(['Legs', ...ps.map(p => p.legsWon | 0)]);
+  return rows;
+}
+
+function statsGridHtml(ps, rows, colStyle, opts) {
+  opts = opts || {};
+  let classes = opts.resultClasses;
+  if (!classes && opts.winnerIdx != null && opts.winnerIdx >= 0) {
+    classes = [];
+    for (let i = 0; i < ps.length; i++)
+      classes.push(i === opts.winnerIdx ? 'win' : 'lose');
+  }
+  let html = '<div class="grid" style="' + colStyle + '">'
     + '<div class="head"></div>';
-  for (const p of ps) html += '<div class="head">' + p.name + '</div>';
+  for (let i = 0; i < ps.length; i++) {
+    let cls = 'head';
+    if (classes && classes[i]) cls += ' ' + classes[i];
+    html += '<div class="' + cls + '">' + ((ps[i] && ps[i].name) || '—') + '</div>';
+  }
   for (const row of rows) {
     html += '<div class="lbl">' + row[0] + '</div>';
     for (let i = 1; i < row.length; i++) html += '<div>' + row[i] + '</div>';
   }
   html += '</div>';
+  return html;
+}
+
+/** Match-total name colors from legs won: lead=win, behind=lose, tied lead / all equal=tie. */
+function resultClassesFromLegs(ps) {
+  if (!ps || !ps.length) return [];
+  const legs = ps.map(p => (p && p.legsWon) | 0);
+  let mx = legs[0];
+  let mn = legs[0];
+  for (let i = 1; i < legs.length; i++) {
+    if (legs[i] > mx) mx = legs[i];
+    if (legs[i] < mn) mn = legs[i];
+  }
+  if (mx === mn) return legs.map(() => 'tie');
+  let nLead = 0;
+  for (let i = 0; i < legs.length; i++) if (legs[i] === mx) nLead++;
+  return legs.map(l => {
+    if (l === mx) return nLead > 1 ? 'tie' : 'win';
+    return 'lose';
+  });
+}
+
+function renderStats() {
+  const ps = match.players;
+  const n = ps.length;
+  const finished = match.winner !== null && match.matchWinner != null;
+  const legDone = match.winner !== null;
+  const colStyle = 'grid-template-columns: 1.1fr repeat(' + n + ', 1fr)';
+  const sheets = (match.legSheets || []).slice().sort((a, b) => (a.leg | 0) - (b.leg | 0));
+  const curLeg = match.legNumber | 0;
+  const hasSheet = sheets.some(s => (s.leg | 0) === curLeg);
+  // Newest past leg first, leg 1 last.
+  const pastSheets = sheets
+    .filter(s => (s.leg | 0) !== curLeg)
+    .slice()
+    .sort((a, b) => (b.leg | 0) - (a.leg | 0));
+  const showHistory = finished || statsHistoryOpen;
+  let html = '<h2>' + (finished ? 'Match review' : 'Statistics') + '</h2>';
+
+  function sheetBlock(sheet, subtitle) {
+    const wIdx = (sheet.winner != null) ? (sheet.winner | 0) : -1;
+    const sheetPs = sheet.players || [];
+    let h = '<h3>Leg ' + (sheet.leg | 0);
+    if (subtitle) h += ' · ' + subtitle;
+    h += '</h3>';
+    h += statsGridHtml(
+      sheetPs,
+      statsRowsForPlayers(sheetPs, match.game, { includeLegs: false }),
+      colStyle,
+      wIdx >= 0 ? { winnerIdx: wIdx } : null);
+    return h;
+  }
+
+  // Current / in-progress leg always on top.
+  if (!hasSheet) {
+    const live = ps.map((_, i) => playerLegSnapshot(match, i, curLeg));
+    html += '<h3>Leg ' + curLeg
+      + (legDone && !finished ? ' · just finished'
+        : (finished ? '' : ' · in progress')) + '</h3>';
+    html += statsGridHtml(
+      live,
+      statsRowsForPlayers(live, match.game, { includeLegs: false }),
+      colStyle);
+  } else {
+    const curSheet = sheets.find(s => (s.leg | 0) === curLeg);
+    if (curSheet) {
+      html += sheetBlock(curSheet,
+        finished ? null : (legDone ? 'just finished' : 'in progress'));
+    }
+  }
+
+  // Past legs below current: previous, then older, first leg at the bottom.
+  if (showHistory && pastSheets.length) {
+    html += '<div class="stats-history">';
+    for (const sheet of pastSheets) html += sheetBlock(sheet, null);
+    const legBlocks = sheets.length + (hasSheet ? 0 : 1);
+    if (legBlocks > 1 || finished) {
+      html += '<h3>Match total</h3>';
+      html += statsGridHtml(
+        ps,
+        statsRowsForPlayers(ps, match.game, { includeLegs: true }),
+        colStyle,
+        { resultClasses: resultClassesFromLegs(ps) });
+    }
+    html += '</div>';
+  }
+
+  if (!finished && pastSheets.length > 0) {
+    html += '<button type="button" class="stats-more" id="btnStatsHistory">'
+      + (statsHistoryOpen
+        ? 'Hide past legs &amp; match stats'
+        : ('Past legs &amp; match stats (' + pastSheets.length
+          + ' leg' + (pastSheets.length === 1 ? '' : 's') + ')'))
+      + '</button>';
+  }
+
   if (finished) html += renderMatchReviewExtrasHtml();
   if (match.archiveId) {
     html += '<div class="msg" style="margin-top:8px;font-size:11px;color:var(--mute)">'
@@ -6276,24 +7121,31 @@ function renderStats() {
       + ' · tap a name → History to review</div>';
   }
   elStats.innerHTML = html;
+  const more = document.getElementById('btnStatsHistory');
+  if (more) {
+    more.addEventListener('click', () => {
+      statsHistoryOpen = !statsHistoryOpen;
+      renderStats();
+    });
+  }
   if (finished) bindMatchReviewButtons();
 }
 
 function finishRenderBotHooks() {
   syncBotUi();
   if (match && match.lastBotLanding && match.game !== 'cricket'
-      && match.winner === null) {
+      && match.winner === null && aimBoardVisible) {
     drawLandingMark(match.lastBotLanding.x, match.lastBotLanding.y);
   }
   if (isBotTurn()) scheduleBotThrow(700);
 }
 
-/** Aim board only while a leg is in progress (hidden in prematch, cricket, or after finish). */
+/** Aim dartboard while a leg is in progress — hidden until user taps the Aim-row icon. */
 function syncPlayBoardChrome() {
   const wrap = document.getElementById('playBoardWrap');
   if (!wrap) return;
   const show = !!(match && matchUiActive && match.winner === null
-    && match.game !== 'cricket');
+    && match.game !== 'cricket' && aimBoardVisible);
   const wasHidden = wrap.classList.contains('hidden');
   wrap.classList.toggle('hidden', !show);
   if (show && wasHidden) {
@@ -6427,7 +7279,7 @@ function render() {
     return;
   }
 
-  drawBoard();
+  if (aimBoardVisible) drawBoard();
   const shapeForPolicy = playerShape(match.current);
   const resolved = resolvePolicy(m.key, shapeForPolicy);
   const policy = resolved.policy || {};
@@ -6441,6 +7293,8 @@ function render() {
     html += '<div class="row warn">' + policyStatus + '</div>';
 
   if (!entry) {
+    const turnName = match.players[match.current].name || 'Player';
+    html += wrapAimWithBoardToggle(turnName + ' to throw', '');
     if (!resolved.policy && resolved.status !== 'loading')
       html += '<div class="warn">No aim table loaded for this accuracy yet.</div>';
     else if (resolved.status === 'loading')
@@ -6453,11 +7307,11 @@ function render() {
     const aims = formatHitPath(policy, steps);
     const aimClean = aims.length ? aims[0] : displayAim(aim, x, y);
     const why = explainAimWhy(score, darts, entry, steps, aimSource);
-    drawAim(x, y, resolved.snap);
-    html += '<div class="aim-row"><div class="aim">Aim: ' + aimClean;
-    for (let i = 1; i < aims.length; i++)
-      html += '<span class="next"> ' + aims[i] + '</span>';
-    html += '</div><div class="et">Expected turns: ' + et.toFixed(3) + '</div></div>';
+    if (aimBoardVisible) drawAim(x, y, resolved.snap);
+    const aimInner = 'Aim: ' + aimClean
+      + aims.slice(1).map(a => '<span class="next"> ' + a + '</span>').join('');
+    const etHtml = '<div class="et">Expected turns: ' + et.toFixed(3) + '</div>';
+    html += wrapAimWithBoardToggle(aimInner, etHtml);
     if (why) html += '<div class="why">' + why + '</div>';
     match.lastCoachAim = { aim: aimClean, why: why, score: score, darts: darts, et: et };
   }
@@ -6505,44 +7359,163 @@ function runPrescribedDrill(code) {
   else showPage('practice');
 }
 
-let pendingVisitTotalScore = null;
+let pendingVisitMeta = null; // { score, isCheckout, dartsUsed, attempts }
 
-function openCheckoutAttemptsModal(score) {
-  pendingVisitTotalScore = score | 0;
-  const leave = match ? (match.turnStart | 0) : 0;
-  const maxAtt = maxClosingDoubleAttempts(leave, 3);
-  const isCheckout = (score | 0) === leave && leave > 0;
-  const minAtt = isCheckout ? 1 : 0;
-  // No finishing-double dart possible this visit — record 0 and skip the modal.
-  if (maxAtt < 1 && !isCheckout) {
-    const s = pendingVisitTotalScore;
-    pendingVisitTotalScore = null;
-    commitVisitTotal(s, { checkoutAttempts: 0 });
-    return;
-  }
-  const hi = Math.max(maxAtt, minAtt);
-  const hint = document.getElementById('checkoutAttemptsHint');
-  if (hint) {
-    hint.textContent = 'Started on ' + leave
-      + '. How many darts at a finishing double?'
-      + (hi < 3 ? ' (max ' + hi + ')' : '');
-  }
-  const picks = document.getElementById('checkoutAttemptsPicks');
-  if (picks) {
-    let html = '';
-    for (let a = minAtt; a <= hi; a++)
-      html += '<button type="button" data-attempts="' + a + '">' + a + '</button>';
-    picks.innerHTML = html;
-    picks.style.gridTemplateColumns = 'repeat(' + picks.children.length + ', 1fr)';
-  }
-  const modal = document.getElementById('checkoutAttemptsModal');
-  if (modal) modal.classList.remove('hidden');
+/** Remaining after a visit-total score (bust restores leave). */
+function remainingAfterVisitTotal(leave, score) {
+  leave = leave | 0;
+  score = score | 0;
+  if (score < 0 || score > leave || (leave - score) === 1) return leave;
+  if (score === leave) return 0;
+  return leave - score;
+}
+
+/**
+ * Ask checkout attempts only when leave after the visit is below 50 —
+ * otherwise no dart this visit could have been at a finishing double.
+ */
+function shouldAskVisitCheckoutAttempts(leave, score) {
+  return remainingAfterVisitTotal(leave, score) < 50;
 }
 
 function closeCheckoutAttemptsModal() {
-  pendingVisitTotalScore = null;
+  pendingVisitMeta = null;
   const modal = document.getElementById('checkoutAttemptsModal');
   if (modal) modal.classList.add('hidden');
+}
+
+function finishPendingVisitCommit() {
+  if (!pendingVisitMeta) return;
+  const score = pendingVisitMeta.score | 0;
+  const isCheckout = !!pendingVisitMeta.isCheckout;
+  let dartsUsed = (pendingVisitMeta.dartsUsed != null)
+    ? (pendingVisitMeta.dartsUsed | 0) : 3;
+  if (dartsUsed < 1) dartsUsed = 1;
+  if (dartsUsed > 3) dartsUsed = 3;
+  let att = (pendingVisitMeta.attempts != null)
+    ? (pendingVisitMeta.attempts | 0) : (isCheckout ? 1 : 0);
+  if (isCheckout && att < 1) att = 1;
+  if (att > dartsUsed) att = dartsUsed;
+  closeCheckoutAttemptsModal();
+  commitVisitTotal(score, { checkoutAttempts: att, dartCount: dartsUsed });
+}
+
+function tryCommitCheckoutVisit() {
+  if (!pendingVisitMeta) return false;
+  const isCheckout = !!pendingVisitMeta.isCheckout;
+  if (isCheckout) {
+    if (pendingVisitMeta.dartsUsed == null || pendingVisitMeta.attempts == null)
+      return false;
+  } else if (pendingVisitMeta.attempts == null) {
+    return false;
+  }
+  finishPendingVisitCommit();
+  return true;
+}
+
+function renderCheckoutVisitModal() {
+  if (!pendingVisitMeta || !match) return;
+  const leave = match.turnStart | 0;
+  const score = pendingVisitMeta.score | 0;
+  const isCheckout = !!pendingVisitMeta.isCheckout;
+  const title = document.getElementById('checkoutAttemptsTitle');
+  const hint = document.getElementById('checkoutAttemptsHint');
+  const body = document.getElementById('checkoutAttemptsBody');
+  const modal = document.getElementById('checkoutAttemptsModal');
+  if (!body || !modal) return;
+
+  const dartsUsed = (pendingVisitMeta.dartsUsed != null)
+    ? (pendingVisitMeta.dartsUsed | 0) : (isCheckout ? null : 3);
+  const maxAttRaw = maxClosingDoubleAttempts(leave, 3);
+  const minAtt = isCheckout ? 1 : 0;
+  let hi = Math.min(
+    maxAttRaw > 0 ? maxAttRaw : (isCheckout ? 1 : 0),
+    dartsUsed != null ? dartsUsed : 3);
+  if (isCheckout && hi < 1) hi = 1;
+  if (hi < minAtt) hi = minAtt;
+
+  if (!isCheckout && maxAttRaw < 1) {
+    pendingVisitMeta.attempts = 0;
+    pendingVisitMeta.dartsUsed = 3;
+    finishPendingVisitCommit();
+    return;
+  }
+
+  if (title) title.textContent = isCheckout ? 'Checkout' : 'Checkout attempts';
+  if (hint) {
+    hint.textContent = isCheckout
+      ? ('Checked out ' + leave + '. Tap darts used and checkout attempts.')
+      : ('Leave after visit: ' + remainingAfterVisitTotal(leave, score)
+        + '. How many darts at a finishing double?');
+  }
+
+  let html = '';
+  if (isCheckout) {
+    html += '<div class="checkout-stack-block">'
+      + '<div class="checkout-stack-label">Darts used to checkout</div>'
+      + '<div class="checkout-attempts-picks" id="checkoutDartsPicks">';
+    for (let n = 1; n <= 3; n++) {
+      html += '<button type="button" data-darts="' + n + '"'
+        + (dartsUsed === n ? ' class="sel"' : '') + '>' + n + '</button>';
+    }
+    html += '</div></div>';
+  }
+
+  html += '<div class="checkout-stack-block">'
+    + '<div class="checkout-stack-label">Checkout attempts (at a finishing double)</div>'
+    + '<div class="checkout-attempts-picks" id="checkoutAttemptsPicks">';
+  for (let a = minAtt; a <= hi; a++) {
+    html += '<button type="button" data-attempts="' + a + '"'
+      + (pendingVisitMeta.attempts === a ? ' class="sel"' : '') + '>' + a + '</button>';
+  }
+  html += '</div></div>';
+  body.innerHTML = html;
+
+  // If previously chosen attempts now exceed darts used, clear them.
+  if (pendingVisitMeta.attempts != null && pendingVisitMeta.attempts > hi)
+    pendingVisitMeta.attempts = null;
+
+  body.querySelectorAll('button[data-darts]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      let d = parseInt(btn.getAttribute('data-darts'), 10);
+      if (!Number.isFinite(d) || d < 1) d = 1;
+      if (d > 3) d = 3;
+      pendingVisitMeta.dartsUsed = d;
+      if (pendingVisitMeta.attempts != null && pendingVisitMeta.attempts > d)
+        pendingVisitMeta.attempts = null;
+      if (!tryCommitCheckoutVisit()) renderCheckoutVisitModal();
+    });
+  });
+  body.querySelectorAll('button[data-attempts]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingVisitMeta.attempts = parseInt(btn.getAttribute('data-attempts'), 10);
+      if (!tryCommitCheckoutVisit()) renderCheckoutVisitModal();
+    });
+  });
+
+  modal.classList.remove('hidden');
+}
+
+/** Start visit-total follow-up: checkout asks darts+attempts together; else attempts if leave&lt;50. */
+function openCheckoutAttemptsModal(score) {
+  score = score | 0;
+  const leave = match ? (match.turnStart | 0) : 0;
+  if (score === leave && leave > 0 && !isCheckoutChance(leave)) {
+    commitVisitTotal(score, { checkoutAttempts: 0, dartCount: 3 });
+    return;
+  }
+  const isCheckout = score === leave && isCheckoutChance(leave);
+  if (!isCheckout && !shouldAskVisitCheckoutAttempts(leave, score)) {
+    commitVisitTotal(score, { checkoutAttempts: 0, dartCount: 3 });
+    return;
+  }
+  pendingVisitMeta = {
+    score: score,
+    isCheckout: isCheckout,
+    dartsUsed: isCheckout ? null : 3,
+    attempts: null,
+  };
+  renderCheckoutVisitModal();
 }
 
 (function wireVisitOk() {
@@ -6552,31 +7525,24 @@ function closeCheckoutAttemptsModal() {
     if (scoreEntryMode !== 'visit') return;
     if (match && match.game === 'cricket') return;
     const n = visitDigits === '' ? 0 : parseInt(visitDigits, 10);
-    // On a finishable leave, ask how many checkout attempts (0–3).
-    if (match && isCheckoutChance(match.turnStart)) {
+    const leave = match ? (match.turnStart | 0) : 0;
+    const isCheckout = n === leave && isCheckoutChance(leave);
+    if (n === leave && leave > 0 && !isCheckout) {
+      commitVisitTotal(n, { checkoutAttempts: 0, dartCount: 3 });
+      return;
+    }
+    if (isCheckout || shouldAskVisitCheckoutAttempts(leave, n)) {
       openCheckoutAttemptsModal(n);
       return;
     }
-    commitVisitTotal(n, {});
+    commitVisitTotal(n, { checkoutAttempts: 0, dartCount: 3 });
   });
 })();
 (function wireCheckoutAttemptsModal() {
   const modal = document.getElementById('checkoutAttemptsModal');
   if (!modal) return;
   const cancel = document.getElementById('checkoutAttemptsCancel');
-  const picks = document.getElementById('checkoutAttemptsPicks');
   if (cancel) cancel.addEventListener('click', closeCheckoutAttemptsModal);
-  if (picks) {
-    picks.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-attempts]');
-      if (!btn) return;
-      if (pendingVisitTotalScore == null) return;
-      const attempts = parseInt(btn.getAttribute('data-attempts'), 10);
-      const score = pendingVisitTotalScore;
-      closeCheckoutAttemptsModal();
-      commitVisitTotal(score, { checkoutAttempts: attempts });
-    });
-  }
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeCheckoutAttemptsModal();
   });
@@ -6792,7 +7758,7 @@ function startMatchWithBestOf(bestOf) {
   if (isBotSeat(match.current)) {
     botPaused = true;
     match.message = match.players[match.current].name
-      + ' to throw · swap sides to change who starts, then tap Continue next to Bot';
+      + ' to throw · swap sides to change who starts, then tap Start next to Bot';
   } else {
     botPaused = false;
   }
@@ -6965,17 +7931,19 @@ for (const idx of [0, 1, 2]) {
     row.click();
   });
 })();
-(function wirePlayersToggle() {
-  const box = document.getElementById('playersToggle')
-    || document.getElementById('cricketPlayersToggle');
-  if (!box) return;
-  box.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-cp]');
-    if (!btn) return;
-    setLineupPlayerCount(btn.dataset.cp | 0);
+(function wireSeatCountButtons() {
+  const addBtn = document.getElementById('btnSeatCount');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => setLineupPlayerCount(3));
+  }
+  document.querySelectorAll('[data-seat-remove]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeLineupSeat(parseInt(btn.dataset.seatRemove, 10));
+    });
   });
 })();
-document.getElementById('playerCancel').addEventListener('click', closePlayerModal);
+document.getElementById('playerCancel').addEventListener('click', cancelPlayerModal);
 document.getElementById('histClose').addEventListener('click', closePlayerModal);
 document.getElementById('histBack').addEventListener('click', () => {
   histDetailId = null;
@@ -6988,7 +7956,6 @@ document.getElementById('playerTabs').addEventListener('click', (e) => {
   setPlayerModalTab(btn.dataset.tab);
 });
 document.getElementById('playerSave').addEventListener('click', saveCurrentPlayerFromModal);
-document.getElementById('playerDelete').addEventListener('click', deleteSelectedPlayerFromModal);
 const contactSaveBtn = document.getElementById('contactSave');
 const contactDeleteBtn = document.getElementById('contactDelete');
 const contactCancelBtn = document.getElementById('contactCancel');
@@ -7503,16 +8470,16 @@ function shareCoachProfile() {
   const sig = fits[0] ? latestFitSigma(fits[0]) : null;
   const wr = formRows.length ? Math.round(100 * wins / formRows.length) : null;
   const lines = [
-    'Darts Aim · ' + name,
+    'Darts AIm · ' + name,
     sig != null ? ('σ ≈ ' + Number(sig).toFixed(1) + ' mm') : 'σ not fitted yet',
     formRows.length
       ? (wins + 'W–' + (formRows.length - wins) + 'L'
         + (wr != null ? (' · ' + wr + '% win rate') : ''))
       : 'No matches yet',
-    'Know your throw. Get the right aim. See yourself improve.',
+    'Darts + Aim + AI — know your throw. Get the right aim.',
     'Try free: ' + shareAppUrl(),
   ];
-  sharePayload('Darts Aim · ' + name, lines.join('\n'), '#coachPayoffDetail');
+  sharePayload('Darts AIm · ' + name, lines.join('\n'), '#coachPayoffDetail');
 }
 
 function hideCheckoutAimPreview() {
@@ -7650,6 +8617,9 @@ function renderCheckoutTable() {
   const wantD = checkoutDartFilter === 'all' ? null : parseInt(checkoutDartFilter, 10);
   const rows = [];
   for (let s = 170; s >= 2; s--) {
+    // 2 left → ≤110 (max T20+Bull); 1 left → ≤50 (doubles + bull).
+    if (wantD === 2 && s > 110) continue;
+    if (wantD === 1 && s > 50) continue;
     for (const d of [3, 2, 1]) {
       if (wantD != null && d !== wantD) continue;
       const entry = policy[s + ',' + d];
@@ -7660,11 +8630,13 @@ function renderCheckoutTable() {
       const sel = checkoutPreviewSel
         && checkoutPreviewSel.score === s
         && checkoutPreviewSel.darts === d;
+      const possible = canCheckoutWithDarts(s, d);
       rows.push(
         '<tr class="checkout-row' + (sel ? ' selected' : '') + '"'
         + ' data-score="' + s + '" data-darts="' + d + '"'
         + ' role="button" tabindex="0" title="Show board aim for first dart">'
-        + '<td>' + s + '</td><td>' + d + '</td><td class="path">'
+        + '<td class="' + (possible ? '' : 'score-impossible') + '">' + s + '</td>'
+        + '<td>' + d + '</td><td class="path">'
         + path + '</td><td class="et">'
         + (et != null && Number.isFinite(+et) ? Number(et).toFixed(3) : '—')
         + '</td></tr>');
@@ -7675,7 +8647,12 @@ function renderCheckoutTable() {
     : '<tr><td colspan="4" class="et">No checkout leaves in this table.</td></tr>';
   checkoutLoadedKey = key;
   if (status) {
-    status.textContent = 'σ = ' + snap.sigma + ' mm · scores 2–170'
+    let range = 'scores 2–170';
+    if (wantD === 2) range = 'scores 2–110 (2 darts)';
+    else if (wantD === 1) range = 'scores 2–50 (1 dart)';
+    else if (wantD === 3) range = 'scores 2–170 (3 darts)';
+    status.textContent = 'σ = ' + snap.sigma + ' mm · ' + range
+      + ' · red = cannot finish in that many darts'
       + ' · tap a path to show the first-dart aim on the board'
       + (snap.sigma !== sigma ? (' (snapped from ' + sigma + ')') : '')
       + ' · ' + rows.length + ' rows';
@@ -7927,6 +8904,41 @@ const FIT_ANNULI = [
   { key: 'miss', label: 'Miss / off', sub: '> 170 mm', lo: DOUBLE_OUTER, hi: null },
 ];
 const FIT_ANNULUS_BY_KEY = Object.fromEntries(FIT_ANNULI.map(a => [a.key, a]));
+// UI order: belts nearest the aim first (likelihood for that aim), not always bull-outward.
+const FIT_ANNULI_ORDER_BULL = ['red_bull', 'green_bull', 'single_inner', 'triple', 'single_outer', 'double', 'miss'];
+const FIT_ANNULI_ORDER_TRIPLE = ['triple', 'single_outer', 'single_inner', 'double', 'miss', 'green_bull', 'red_bull'];
+const FIT_ANNULI_ORDER_DOUBLE = ['double', 'single_outer', 'miss', 'triple', 'single_inner', 'green_bull', 'red_bull'];
+
+function fitAnnuliForAim(aim) {
+  const a = String(aim || '');
+  const kind = a === 'bull' ? 'bull'
+    : a.charAt(0) === 'D' ? 'double'
+    : a.charAt(0) === 'T' ? 'triple'
+    : (fitZonePad === 'double' ? 'double' : fitZonePad === 'triple' ? 'triple' : 'bull');
+  const order = kind === 'double' ? FIT_ANNULI_ORDER_DOUBLE
+    : kind === 'triple' ? FIT_ANNULI_ORDER_TRIPLE
+    : FIT_ANNULI_ORDER_BULL;
+  return order.map(k => FIT_ANNULUS_BY_KEY[k]);
+}
+
+function fitBeltShort(key) {
+  if (key === 'red_bull') return 'RB';
+  if (key === 'green_bull') return 'GB';
+  if (key === 'single_inner') return 'Si';
+  if (key === 'triple') return 'T';
+  if (key === 'single_outer') return 'So';
+  if (key === 'double') return 'D';
+  if (key === 'miss') return 'X';
+  return (key && key[0]) ? key[0].toUpperCase() : '?';
+}
+
+function fitAimChartTitle(aim) {
+  if (aim === 'bull') return 'Bull';
+  const p = parseFitAimId(aim);
+  if (p.kind === 'triple') return 'T' + p.sector;
+  if (p.kind === 'double') return 'D' + p.sector;
+  return String(aim || 'Aim');
+}
 /** Zone hits: { aim, key: annulus, score?: 'S20'|'T1'|'Bull'|… }. */
 const fitZoneHits = [];
 const fitZoneCounts = Object.create(null); // display helper; rebuilt from hits
@@ -7936,10 +8948,13 @@ let fitAimSector = 20;
 let fitZonePad = 'bull'; // 'bull' | 'triple' | 'double'
 /** Landing score sector when logging T/D belt hits (defaults to aim sector). */
 let fitLandingSector = 20;
-const RING_FIT_MC = 2500;
+/** After + on a T/D belt that needs a score: { aim, key } until sector picked. */
+let fitPendingBelt = null;
+const RING_FIT_MC = 10000;
 const _aimAnnulusProbCache = Object.create(null);
 const _ringBeltScoreProbCache = Object.create(null);
-const RING_SCORE_RELS = ['same', 'adj0', 'adj1', 'other'];
+/** Angular steps from aim sector on the board (0 = same number … 10 = opposite). */
+const RING_SCORE_RELS = ['d0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9', 'd10'];
 const RING_BELTS_NEED_SCORE = ['single_inner', 'triple', 'single_outer', 'double'];
 
 const FIT_HISTORY_KEY = 'dartsFitHistory';
@@ -8033,20 +9048,24 @@ function scoreLabelForBelt(belt, sector) {
   return 'S' + n;
 }
 
-function sectorRelToAim(aim, score) {
-  const p = parseFitAimId(aim);
-  if (p.kind === 'bull') return 'other';
-  const m = /^([TSD])(\d+)$/.exec(String(score || ''));
-  if (!m) return 'other';
-  const n = parseInt(m[2], 10);
-  if (n === p.sector) return 'same';
-  const adj = adjacentSectors(p.sector);
-  if (adj[0] === n) return 'adj0';
-  if (adj[1] === n) return 'adj1';
-  return 'other';
+function sectorBoardDistance(aimSector, landSector) {
+  const i = SECTORS.indexOf(aimSector | 0);
+  const j = SECTORS.indexOf(landSector | 0);
+  if (i < 0 || j < 0) return 10;
+  const cw = (j - i + 20) % 20;
+  const ccw = (i - j + 20) % 20;
+  return Math.min(cw, ccw);
 }
 
-/** Multinomial outcome for T/D aims: belt, or belt:same|adj0|adj1|other. */
+function sectorRelToAim(aim, score) {
+  const p = parseFitAimId(aim);
+  if (p.kind === 'bull' || p.sector == null) return 'd10';
+  const m = /^([TSD])(\d+)$/.exec(String(score || ''));
+  if (!m) return 'd10';
+  return 'd' + sectorBoardDistance(p.sector, parseInt(m[2], 10));
+}
+
+/** Multinomial outcome for T/D aims: belt, or belt:d0…d10 (board steps from aim). */
 function ringBeltScoreOutcomeKey(aim, belt, score) {
   if (belt === 'red_bull' || belt === 'green_bull' || belt === 'miss')
     return belt;
@@ -8224,6 +9243,7 @@ function loadSavedFit(id) {
   }
   showFitError('');
   renderFit();
+  if (elFitList) elFitList.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function deleteSavedFit(id) {
@@ -8261,12 +9281,15 @@ function renderFitSavedList() {
   html += rows.slice(0, 40).map(rec => {
     const q = (rec.quality && rec.quality.label) ? rec.quality.label : '';
     const n = rec.n != null ? ('n=' + rec.n) : '';
+    const preview = fitRecordPreview(rec);
     return '<div class="fit-save-row" data-load="' + encodeURIComponent(rec.id) + '">'
       + '<div><div class="name">' + rec.name + '</div>'
       + '<div class="meta">' + formatHistWhen(rec.ts || rec.id)
       + (n ? (' · ' + n) : '')
       + (q ? (' · ' + q) : '')
-      + '</div></div>'
+      + '</div>'
+      + (preview ? ('<div class="preview">' + preview + '</div>') : '')
+      + '</div>'
       + '<div class="sig">' + fitSummaryLabel(rec) + '</div>'
       + '<button type="button" class="del" title="Delete" data-del-fit="'
       + encodeURIComponent(rec.id) + '">×</button>'
@@ -8304,6 +9327,7 @@ function resetFitZoneCounts() {
 function clearFitZoneData() {
   fitZoneHits.length = 0;
   resetFitZoneCounts();
+  fitPendingBelt = null;
   _zoneFitCache = { sig: null, fit: null };
 }
 
@@ -8376,9 +9400,12 @@ function ringBeltScoreProbs(aim, sigma) {
   }
   let sum = 0;
   for (const k of keys) sum += tallies[k];
+  // Light Dirichlet smoothing — far angular bins are rare at low σ.
+  const alpha = 0.5;
   const out = Object.create(null);
+  const denom = sum + alpha * keys.length;
   for (const k of keys)
-    out[k] = Math.max((tallies[k] / Math.max(sum, 1)), 1e-300);
+    out[k] = Math.max((tallies[k] + alpha) / Math.max(denom, 1), 1e-300);
   _ringBeltScoreProbCache[cacheKey] = out;
   const ck = Object.keys(_ringBeltScoreProbCache);
   if (ck.length > 400) {
@@ -8392,6 +9419,26 @@ function hitOutcomeKey(h) {
   if (aim === 'bull') return h.key;
   const score = h.score || scoreLabelForBelt(h.key, parseFitAimId(aim).sector || fitLandingSector);
   return ringBeltScoreOutcomeKey(aim, h.key, score);
+}
+
+/**
+ * SE on σ from Hessian of NLL(log σ). Discrete/MC zone likelihoods often look
+ * falsely peaked; floor by Rayleigh-like σ/(2√n) so tiny n cannot show ±0%.
+ */
+function sigmaSeFromLogNll(sigma, nllFn, logHat, n) {
+  const nEff = Math.max(n | 0, 1);
+  const s = Math.max(Number(sigma) || 0, 1e-9);
+  const floor = s / (2 * Math.sqrt(nEff));
+  const step = 0.05; // ~5% in σ — coarser than MC cache (0.1 mm)
+  let d2 = NaN;
+  try {
+    const f0 = nllFn(logHat);
+    d2 = (nllFn(logHat + step) - 2 * f0 + nllFn(logHat - step)) / (step * step);
+  } catch (_) { d2 = NaN; }
+  if (!(d2 > 1e-6) || !Number.isFinite(d2)) return floor;
+  const se = s / Math.sqrt(d2);
+  if (!Number.isFinite(se) || se <= 0) return floor;
+  return Math.max(se, floor * 0.5);
 }
 
 /** Joint bull belts + T/D (belt×score) MLE. */
@@ -8432,10 +9479,7 @@ function fitScoreZonesJoint(hits) {
   }
   const logHat = (lo + hi) / 2;
   const sigma = Math.exp(logHat);
-  const h = 1e-3;
-  const f0 = nll(logHat);
-  const d2 = (nll(logHat + h) - 2 * f0 + nll(logHat - h)) / (h * h);
-  const se = d2 > 1e-12 ? sigma / Math.sqrt(d2) : sigma;
+  const se = sigmaSeFromLogNll(sigma, nll, logHat, hits.length);
 
   let nBull = 0, nTrip = 0, nDouble = 0;
   const ringAims = new Set();
@@ -8460,9 +9504,10 @@ function fitScoreZonesJoint(hits) {
     FIT_ANNULI.forEach((a, i) => {
       chartRegions.push({
         key: 'bull:' + a.key,
-        short: a.key === 'red_bull' ? 'RB' : a.key === 'green_bull' ? 'GB'
-          : a.key === 'miss' ? 'X' : a.key[0].toUpperCase(),
-        label: 'Bull ' + a.label,
+        aim: 'bull',
+        belt: a.key,
+        short: fitBeltShort(a.key),
+        label: 'Bull · ' + a.label,
       });
       chartCounts['bull:' + a.key] = cAim[a.key] || 0;
       chartProbs.push(bp[i]);
@@ -8480,12 +9525,12 @@ function fitScoreZonesJoint(hits) {
       } else {
         for (const rel of RING_SCORE_RELS) pBelt += probs[a.key + ':' + rel] || 0;
       }
-      const short = a.key === 'red_bull' ? 'RB' : a.key === 'green_bull' ? 'GB'
-        : a.key === 'miss' ? 'X' : a.key[0].toUpperCase();
       chartRegions.push({
         key: aim + ':' + a.key,
-        short: aim + short,
-        label: aim + ' ' + a.label,
+        aim: aim,
+        belt: a.key,
+        short: fitBeltShort(a.key),
+        label: aim + ' · ' + a.label,
       });
       chartCounts[aim + ':' + a.key] = cAim[a.key] || 0;
       chartProbs.push(pBelt);
@@ -8540,30 +9585,39 @@ function syncFitAimSectorPad(padId) {
     + '<button type="button" class="' + (onTrip ? 'sel' : '') + '" data-aim-target="triple">Triple</button>'
     + '<button type="button" class="' + (onDbl ? 'sel' : '') + '" data-aim-target="double">Double</button>'
     + '</div>';
-  html += SECTORS.map(n => {
-    const sel = (!onBull && n === (fitAimSector | 0)) ? ' sel' : '';
-    return '<button type="button" data-aim-target="sector:' + n + '" class="'
-      + (sel ? 'sel' : '') + '">' + n + '</button>';
-  }).join('');
+  // Sector numbers only when aiming a triple/double — bull has no aim sector.
+  if (!onBull) {
+    html += SECTORS.map(n => {
+      const sel = (n === (fitAimSector | 0)) ? 'sel' : '';
+      return '<button type="button" data-aim-target="sector:' + n + '" class="'
+        + sel + '">' + n + '</button>';
+    }).join('');
+  }
   pad.innerHTML = html;
   pad.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
       const t = btn.dataset.aimTarget;
       if (t === 'bull') {
         fitZonePad = 'bull';
+        fitPendingBelt = null;
       } else if (t === 'triple' || t === 'double') {
         fitZonePad = t;
+        fitPendingBelt = null;
       } else if (t && t.indexOf('sector:') === 0) {
         const n = parseInt(t.slice(7), 10);
         if (!SECTORS.includes(n)) return;
         fitAimSector = n;
         fitLandingSector = n;
         if (fitZonePad === 'bull') fitZonePad = 'triple';
+        fitPendingBelt = null;
       } else {
         return;
       }
-      if (fitMethod === 'zones') renderZoneGrid();
-      else syncMeasureAimChrome();
+      if (fitMethod === 'zones') renderFit();
+      else {
+        syncMeasureAimChrome();
+        renderFit();
+      }
     });
   });
 }
@@ -8613,34 +9667,48 @@ function zoneTotal() {
 }
 
 function commitZoneHit(aim, key) {
-  let score = null;
-  if (aim === 'bull') {
-    score = scoreLabelForBelt(key, 0);
-  } else {
-    if (RING_BELTS_NEED_SCORE.includes(key) && !SECTORS.includes(fitLandingSector | 0)) {
-      showFitError('Pick the landing score sector first');
-      return;
-    }
-    score = scoreLabelForBelt(key, fitLandingSector);
+  if (aim === 'bull' || !RING_BELTS_NEED_SCORE.includes(key)) {
+    const score = scoreLabelForBelt(key, 0);
+    fitZoneHits.push({ aim: aim, key: key, score: score });
+    fitPendingBelt = null;
+    _zoneFitCache = { sig: null, fit: null };
+    showFitError('');
+    renderFit();
+    return;
   }
+  // T/D belts that need a score: open landing-sector pad first.
+  fitPendingBelt = { aim: aim, key: key };
+  showFitError('');
+  renderZoneGrid();
+}
+
+function finishPendingZoneHit(sector) {
+  if (!fitPendingBelt) return;
+  const n = sector | 0;
+  if (!SECTORS.includes(n)) return;
+  const aim = fitPendingBelt.aim;
+  const key = fitPendingBelt.key;
+  fitLandingSector = n;
+  const score = scoreLabelForBelt(key, n);
   fitZoneHits.push({ aim: aim, key: key, score: score });
+  fitPendingBelt = null;
   _zoneFitCache = { sig: null, fit: null };
   showFitError('');
   renderFit();
 }
 
+function cancelPendingZoneHit() {
+  if (!fitPendingBelt) return;
+  fitPendingBelt = null;
+  showFitError('');
+  renderZoneGrid();
+}
+
 function removeZoneHit(aim, key) {
-  const wantScore = (aim !== 'bull' && RING_BELTS_NEED_SCORE.includes(key))
-    ? scoreLabelForBelt(key, fitLandingSector)
-    : null;
-  for (let i = fitZoneHits.length - 1; i >= 0; i--) {
-    if (zoneAimId(fitZoneHits[i]) !== aim || fitZoneHits[i].key !== key) continue;
-    if (wantScore && fitZoneHits[i].score && fitZoneHits[i].score !== wantScore) continue;
-    fitZoneHits.splice(i, 1);
-    _zoneFitCache = { sig: null, fit: null };
+  if (fitPendingBelt && fitPendingBelt.aim === aim && fitPendingBelt.key === key) {
+    cancelPendingZoneHit();
     return true;
   }
-  // Fallback: remove any hit on this aim+belt.
   for (let i = fitZoneHits.length - 1; i >= 0; i--) {
     if (zoneAimId(fitZoneHits[i]) === aim && fitZoneHits[i].key === key) {
       fitZoneHits.splice(i, 1);
@@ -8663,18 +9731,21 @@ function beltScoreBreakdown(aim, belt) {
 
 function renderZoneRows(schema, aim, counts) {
   const onBull = aim === 'bull';
+  const pendingKey = (fitPendingBelt && fitPendingBelt.aim === aim)
+    ? fitPendingBelt.key : null;
   return schema.map(a => {
     let sub = a.sub || '';
     if (!onBull) {
       if (RING_BELTS_NEED_SCORE.includes(a.key)) {
-        const sc = scoreLabelForBelt(a.key, fitLandingSector);
         const br = beltScoreBreakdown(aim, a.key);
-        sub = 'next + → ' + sc + (br ? (' · logged ' + br) : '');
+        if (pendingKey === a.key) sub = 'choose score…';
+        else sub = 'tap + for score' + (br ? (' · ' + br) : '');
       } else {
-        sub = a.label === 'Miss / off' ? 'Miss' : (a.key === 'red_bull' ? '50' : '25');
+        sub = a.key === 'red_bull' ? '50' : (a.key === 'green_bull' ? '25' : 'Miss');
       }
     }
-    return '<div class="zone-row" data-aim="' + aim + '" data-key="' + a.key + '">'
+    const pend = pendingKey === a.key ? ' pending' : '';
+    return '<div class="zone-row' + pend + '" data-aim="' + aim + '" data-key="' + a.key + '">'
       + '<div class="zlab">' + a.label
       + '<span class="zsub">' + sub + '</span>'
       + '</div>'
@@ -8688,20 +9759,30 @@ function renderZoneRows(schema, aim, counts) {
 function syncFitLandingSectorPad() {
   const pad = document.getElementById('fitLandingSectorPad');
   if (!pad) return;
-  let html = SECTORS.map(n => {
-    const sel = (n === (fitLandingSector | 0)) ? 'sel' : '';
-    return '<button type="button" data-landing-sector="' + n + '" class="' + sel + '">'
-      + n + '</button>';
-  }).join('');
-  pad.innerHTML = html;
+  pad.innerHTML = SECTORS.map(n =>
+    '<button type="button" data-landing-sector="' + n + '">' + n + '</button>'
+  ).join('');
   pad.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const n = parseInt(btn.dataset.landingSector, 10);
-      if (!SECTORS.includes(n)) return;
-      fitLandingSector = n;
-      renderZoneGrid();
+      finishPendingZoneHit(n);
     });
   });
+  const cancel = document.getElementById('fitLandingCancel');
+  if (cancel) {
+    cancel.addEventListener('click', (e) => {
+      e.stopPropagation();
+      cancelPendingZoneHit();
+    });
+  }
+  const pop = document.getElementById('fitLandingPop');
+  if (pop) {
+    pop.addEventListener('click', (e) => {
+      // Tap empty chrome cancels; sector/cancel stopPropagation above.
+      if (e.target === pop) cancelPendingZoneHit();
+    });
+  }
 }
 
 function aimHitCount(aim) {
@@ -8717,25 +9798,33 @@ function renderZoneGrid() {
   const onBull = aim === 'bull';
   const counts = countsForAim(aim);
   const nLogged = aimHitCount(aim);
+  if (fitPendingBelt && fitPendingBelt.aim !== aim) fitPendingBelt = null;
+  const pending = !!(fitPendingBelt && fitPendingBelt.aim === aim);
 
   let html = '<div class="fit-zone-section">'
     + '<p class="hint" style="margin:0 0 8px;text-align:center">'
     + 'Aim target · ' + (onBull ? 'red bull' : activeFitAimId())
     + ' · ' + nLogged + ' logged</p>'
-    + '<div class="sector-pad" id="fitAimSectorPad"></div>';
-  if (!onBull) {
-    html += '<p class="hint" style="margin:10px 0 6px;text-align:center">'
-      + 'Landing <b>score sector</b> (highlighted) · belt + logs '
-      + 'T/D/S' + (fitLandingSector | 0) + ' as appropriate</p>'
-      + '<div class="sector-pad" id="fitLandingSectorPad"></div>';
+    + '<div class="sector-pad" id="fitAimSectorPad"></div>'
+    + '<div class="zone-grid-wrap">'
+    + '<div class="zone-grid">'
+    + renderZoneRows(fitAnnuliForAim(aim), aim, counts) + '</div>';
+  if (pending) {
+    const belt = fitPendingBelt.key;
+    const lab = (FIT_ANNULUS_BY_KEY[belt] && FIT_ANNULUS_BY_KEY[belt].label) || belt;
+    const ex = scoreLabelForBelt(belt, fitAimSector);
+    html += '<div class="fit-landing-pop" id="fitLandingPop" role="dialog" aria-label="Landing score">'
+      + '<p class="hint">Score for <b>' + lab + '</b> · tap sector'
+      + ' <span style="color:var(--mute)">(e.g. ' + ex + ')</span></p>'
+      + '<div class="sector-pad" id="fitLandingSectorPad"></div>'
+      + '<button type="button" class="fit-pop-cancel" id="fitLandingCancel">Cancel</button>'
+      + '</div>';
   }
-  html += '<div class="zone-grid" style="margin-top:8px">'
-    + renderZoneRows(FIT_ANNULI, aim, counts) + '</div>'
-    + '</div>';
+  html += '</div></div>';
 
   elZoneGrid.innerHTML = html;
   syncFitAimSectorPad('fitAimSectorPad');
-  if (!onBull) syncFitLandingSectorPad();
+  if (pending) syncFitLandingSectorPad();
   elZoneGrid.querySelectorAll('.zone-row').forEach(row => {
     const rowAim = row.dataset.aim;
     const key = row.dataset.key;
@@ -8812,10 +9901,7 @@ function fitAnnuli(counts) {
   }
   const logHat = (lo + hi) / 2;
   const sigma = Math.exp(logHat);
-  const h = 1e-4;
-  const f0 = nll(logHat);
-  const d2 = (nll(logHat + h) - 2 * f0 + nll(logHat - h)) / (h * h);
-  const se = d2 > 1e-12 ? sigma / Math.sqrt(d2) : sigma;
+  const se = sigmaSeFromLogNll(sigma, nll, logHat, n);
   const probs = annulusProbs(sigma);
   const expected = probs.map(p => p * n);
   return {
@@ -8897,17 +9983,67 @@ function drawFitChart(fit) {
 }
 
 function drawAnnuliChart(fit, cssW, cssH) {
-  const padL = 8, padR = 8, padT = 16, padB = 48;
+  const padL = 8, padR = 8, padT = 22, padB = 48;
   const W = cssW - padL - padR, H = cssH - padT - padB;
-  const regions = fit.regions || FIT_ANNULI;
+  let regions = fit.regions || FIT_ANNULI;
+  let obs, exp, caption, title = '';
+  const useCounts = !!(fit.expectedCounts && fit.expectedCounts.length === regions.length);
+
+  if (fit.mode === 'score_zones_joint') {
+    // Show the active aim only — same belts/order as the +/- list.
+    const aim = (typeof activeFitAimId === 'function') ? activeFitAimId() : 'bull';
+    const byKey = Object.create(null);
+    regions.forEach((r, i) => {
+      byKey[r.key] = {
+        region: r,
+        obs: useCounts ? (fit.counts[r.key] || 0) : ((fit.counts[r.key] || 0) / fit.n),
+        exp: useCounts ? fit.expectedCounts[i] : fit.probs[i],
+      };
+    });
+    const ordered = fitAnnuliForAim(aim);
+    const prefix = aim + ':';
+    const picked = [];
+    for (const a of ordered) {
+      const row = byKey[prefix + a.key];
+      if (!row) continue;
+      picked.push({
+        key: prefix + a.key,
+        short: fitBeltShort(a.key),
+        label: a.label,
+        obs: row.obs,
+        exp: row.exp,
+      });
+    }
+    const nAim = picked.reduce((s, r) => s + (useCounts ? r.obs : 0), 0);
+    if (!picked.length || (useCounts && nAim <= 0)) {
+      fitCtx.fillStyle = '#666';
+      fitCtx.font = '13px sans-serif';
+      fitCtx.textAlign = 'center';
+      fitCtx.fillText(
+        'Log belts for ' + fitAimChartTitle(aim) + ' to see that aim chart',
+        cssW / 2, cssH / 2 - 6);
+      fitCtx.font = '11px sans-serif';
+      fitCtx.fillText('σ still uses all logged aims', cssW / 2, cssH / 2 + 14);
+      return;
+    }
+    regions = picked;
+    obs = picked.map(r => r.obs);
+    exp = picked.map(r => r.exp);
+    title = 'Aim ' + fitAimChartTitle(aim) + ' · landing belt';
+    caption = useCounts
+      ? 'Blue = your counts · gold = model at σ'
+      : 'Blue = observed share · gold = model';
+  } else {
+    const n0 = regions.length;
+    obs = regions.map((a, i) => useCounts
+      ? (fit.counts[a.key] || 0)
+      : ((fit.counts[a.key] || 0) / fit.n));
+    exp = useCounts ? fit.expectedCounts : fit.probs;
+    caption = 'Observed (blue) vs model (gold)';
+    if (!n0) return;
+  }
+
   const n = regions.length;
-  const useCounts = !!(fit.expectedCounts && fit.expectedCounts.length === n);
-  const obs = regions.map((a, i) => useCounts
-    ? (fit.counts[a.key] || 0)
-    : ((fit.counts[a.key] || 0) / fit.n));
-  const exp = useCounts
-    ? fit.expectedCounts
-    : fit.probs;
   let yMax = 0;
   for (let i = 0; i < n; i++) yMax = Math.max(yMax, obs[i], exp[i]);
   yMax = Math.max(yMax * 1.2, useCounts ? 1 : 0.05);
@@ -8922,17 +10058,20 @@ function drawAnnuliChart(fit, cssW, cssH) {
     fitCtx.fillStyle = 'rgba(255,210,63,0.85)';
     fitCtx.fillRect(x0 + groupW * 0.5, padT + H - hE, bw, hE);
   }
+  if (title) {
+    fitCtx.fillStyle = '#bbb';
+    fitCtx.font = '11px sans-serif';
+    fitCtx.textAlign = 'center';
+    fitCtx.fillText(title, padL + W / 2, 14);
+  }
   fitCtx.fillStyle = '#888';
   fitCtx.font = n > 10 ? '8px sans-serif' : '9px sans-serif';
   fitCtx.textAlign = 'center';
   const short = (fit.mode === 'triple_regions' || fit.mode === 'score_zones_joint')
-    ? regions.map(a => a.short || a.key)
-    : ['RB', 'GB', 'S1', 'T', 'S2', 'D', 'X'];
+    ? regions.map(a => a.short || fitBeltShort(a.belt || a.key) || a.key)
+    : ['RB', 'GB', 'Si', 'T', 'So', 'D', 'X'];
   for (let i = 0; i < n; i++)
     fitCtx.fillText(short[i], padL + (i + 0.5) * groupW, cssH - 28);
-  const caption = fit.mode === 'score_zones_joint'
-    ? ('Joint bull+T/D · obs (blue) vs model (gold)')
-    : 'Observed (blue) vs model (gold)';
   fitCtx.fillText(caption, padL + W / 2, cssH - 10);
 }
 
@@ -8978,7 +10117,10 @@ function drawIsoChart(fit, cssW, cssH) {
 function fitQuality(fit) {
   const n = fit.n;
   const sigma = fit.sigmaEq || fit.sigma || 0;
-  const se = fit.se || 0;
+  let se = fit.se || 0;
+  // Never advertise a tighter CI than Rayleigh MLE would allow for this n.
+  const floor = (sigma > 1e-9 && n > 0) ? (sigma / (2 * Math.sqrt(n))) : sigma;
+  if (!(se > 0) || !Number.isFinite(se) || se < floor * 0.5) se = floor;
   const relSe = sigma > 1e-9 ? se / sigma : 1;
   const pct = 100 * 1.96 * relSe;
   let level, label;
@@ -8992,16 +10134,7 @@ function fitQuality(fit) {
   } else {
     level = 'high'; label = 'High confidence';
   }
-  let detail = '±' + pct.toFixed(0) + '% on σ (95% CI) · n=' + n;
-  if (fit.mode === 'annuli') detail += ' · bull belt MLE';
-  else if (fit.mode === 'triple_regions') detail += ' · T' + (fit.aimSector || '') + ' region MLE';
-  else if (fit.mode === 'score_zones_joint') {
-    const parts = [];
-    if (fit.nBull) parts.push('bull ' + fit.nBull);
-    if (fit.nTrip) parts.push('T ' + fit.nTrip);
-    if (fit.nDouble) parts.push('D ' + fit.nDouble);
-    detail += ' · joint (' + (parts.join(' + ') || 'zones') + ')';
-  } else detail += ' · isotropic';
+  let detail = '±' + Math.max(1, Math.round(pct)) + '% on σ (95% CI) · n=' + n;
   return { level, label, detail, pct };
 }
 
@@ -9024,31 +10157,9 @@ function refreshFitSummary() {
     elFitQuality.className = 'quality ' + q.level;
     elFitQuality.textContent = q.label + ' — ' + q.detail;
     const s = nearestPolicySigma(fit.sigma);
-    if (fit.mode === 'annuli') {
-      elFitDetail.textContent =
-        'bull belt MLE · 95% CI ' + fit.ciLo.toFixed(1)
-        + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s;
-    } else if (fit.mode === 'triple_regions') {
-      elFitDetail.textContent =
-        'T' + fit.aimSector + ' region MLE · 95% CI ' + fit.ciLo.toFixed(1)
-        + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s;
-    } else if (fit.mode === 'score_zones_joint') {
-      const bits = [];
-      if (fit.nBull) bits.push(fit.nBull + ' bull');
-      if (fit.nTrip) bits.push(fit.nTrip + ' triple');
-      if (fit.nDouble) bits.push(fit.nDouble + ' double');
-      elFitDetail.textContent =
-        'joint MLE (' + bits.join(' + ') + ') · 95% CI ' + fit.ciLo.toFixed(1)
-        + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s;
-    } else {
-      elFitDetail.textContent =
-        'isotropic · 95% CI ' + fit.ciLo.toFixed(1)
-        + '–' + fit.ciHi.toFixed(1) + ' mm'
-        + ' · policy s' + s;
-    }
+    elFitDetail.textContent =
+      '95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
+      + ' · policy s' + s;
   }
   drawFitChart(fit);
   syncFitSaveButton();
@@ -9062,6 +10173,42 @@ function parseThrowFields(rRaw, aim) {
   return { ok: true, r };
 }
 
+function zoneHitOutcomeLabel(h) {
+  if (!h) return '—';
+  if (h.score) return String(h.score);
+  const belt = (FIT_ANNULUS_BY_KEY[h.key] && FIT_ANNULUS_BY_KEY[h.key].label) || h.key;
+  return belt;
+}
+
+function zoneHitAimLabel(h) {
+  const aim = zoneAimId(h);
+  return aim === 'bull' ? 'Bull' : aim;
+}
+
+/** Short preview for a saved-fit row (aims + outcomes). */
+function fitRecordPreview(rec) {
+  if (!rec) return '';
+  if (rec.method === 'measure') {
+    const throws = rec.throws || [];
+    if (!throws.length) return '';
+    const parts = throws.slice(0, 8).map(t => {
+      const aim = (!t.aim || t.aim === 'bull') ? 'Bull' : t.aim;
+      return aim + ' ' + Number(t.r).toFixed(1) + 'mm';
+    });
+    const more = throws.length > 8 ? (' · +' + (throws.length - 8) + ' more') : '';
+    return parts.join(' · ') + more;
+  }
+  const hits = rec.zoneHits || [];
+  if (!hits.length && rec.zoneCounts) {
+    return FIT_ANNULI.filter(a => (rec.zoneCounts[a.key] | 0) > 0)
+      .map(a => a.label + '×' + (rec.zoneCounts[a.key] | 0)).join(' · ');
+  }
+  if (!hits.length) return '';
+  const parts = hits.slice(0, 10).map(h => zoneHitAimLabel(h) + '→' + zoneHitOutcomeLabel(h));
+  const more = hits.length > 10 ? (' · +' + (hits.length - 10) + ' more') : '';
+  return parts.join(' · ') + more;
+}
+
 function renderFitList() {
   if (fitMethod === 'zones') {
     const n = zoneTotal();
@@ -9069,7 +10216,31 @@ function renderFitList() {
       elFitList.innerHTML = '<div class="empty">No belt counts yet</div>';
       return;
     }
-    elFitList.innerHTML = '<div class="empty">n = ' + n + ' throws across score zones (joint bull + T/D)</div>';
+    let html = '<div class="hdr" style="grid-template-columns:28px 52px 1fr 36px">'
+      + '<span>#</span><span>Aim</span><span>Landing</span><span></span></div>';
+    fitZoneHits.forEach((h, i) => {
+      const belt = (FIT_ANNULUS_BY_KEY[h.key] && FIT_ANNULUS_BY_KEY[h.key].label) || h.key;
+      html += '<div class="fit-hit-row" data-i="' + i + '">'
+        + '<span class="idx">' + (i + 1) + '</span>'
+        + '<span class="aim">' + zoneHitAimLabel(h) + '</span>'
+        + '<span class="out">' + zoneHitOutcomeLabel(h)
+        + ' <span class="belt">(' + belt + ')</span></span>'
+        + '<button type="button" class="del" title="Delete" data-del-zone="' + i + '">×</button>'
+        + '</div>';
+    });
+    html += '<div class="empty" style="padding-top:6px">n = ' + n
+      + ' · chart shows the selected aim belts</div>';
+    elFitList.innerHTML = html;
+    elFitList.querySelectorAll('[data-del-zone]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.dataset.delZone, 10);
+        if (i >= 0 && i < fitZoneHits.length) {
+          fitZoneHits.splice(i, 1);
+          _zoneFitCache = { sig: null, fit: null };
+          renderFit();
+        }
+      });
+    });
     return;
   }
   if (!fitThrows.length) {
@@ -9155,15 +10326,6 @@ function addFitThrow() {
   renderFit();
 }
 
-function applyFitToPlayer(idx) {
-  const fit = fitCurrent();
-  if (!fit) return;
-  const el = document.getElementById('sigma' + idx);
-  if (el) el.value = String(nearestPolicySigma(fit.sigma));
-  showPage('score');
-  render();
-}
-
 document.getElementById('fitAdd').addEventListener('click', addFitThrow);
 elFitRadius.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); addFitThrow(); }
@@ -9173,9 +10335,6 @@ document.getElementById('fitClear').addEventListener('click', () => {
   clearFitZoneData();
   renderFit();
 });
-document.getElementById('fitApply0').addEventListener('click', () => applyFitToPlayer(0));
-document.getElementById('fitApply1').addEventListener('click', () => applyFitToPlayer(1));
-document.getElementById('fitApply2').addEventListener('click', () => applyFitToPlayer(2));
 if (elFitSave) elFitSave.addEventListener('click', saveCurrentFit);
 if (elFitPlayerName) {
   elFitPlayerName.addEventListener('click', (e) => {
