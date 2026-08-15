@@ -889,6 +889,13 @@
     font-weight: 800; letter-spacing: 0.02em;
   }
   .stats h3:first-of-type { margin-top: 4px; }
+  .stats .stats-more {
+    display: block; width: 100%; margin-top: 10px; padding: 8px 10px;
+    border-radius: 10px; border: 1px solid #555; background: #222;
+    color: var(--accent); font-size: 12px; font-weight: 800; cursor: pointer;
+  }
+  .stats .stats-more:active { background: var(--accent); color: #1a1a1a; }
+  .stats .stats-history { margin-top: 4px; }
   .stats .grid {
     display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 4px 8px;
   }
@@ -1705,16 +1712,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.86-beta / 2026-08-14 / 164fb99</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.87-beta / 2026-08-14 / 164fb99</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.86-beta / 2026-08-14 / 164fb99';
+const APP_VERSION = '0.1.87-beta / 2026-08-14 / 164fb99';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.86-beta-2026-08-14-164fb99';
+const POLICY_CACHE_BUST = '0.1.87-beta-2026-08-14-164fb99';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -6086,6 +6093,8 @@ const parkedUiActive = Object.create(null);
 let matchUiActive = false;
 /** Live x01: aim dartboard (canvas) hidden until toggled from the Aim row. */
 let aimBoardVisible = false;
+/** While a match is live: past-leg / match-total stats stay collapsed until opened. */
+let statsHistoryOpen = false;
 
 function setMatchUiActive(on) {
   const was = matchUiActive;
@@ -6095,8 +6104,10 @@ function setMatchUiActive(on) {
   if (!matchUiActive) {
     cancelBotThrow();
     aimBoardVisible = false;
+    statsHistoryOpen = false;
   } else if (!was) {
     aimBoardVisible = false;
+    statsHistoryOpen = false;
   }
   // Board was display:none in prematch — clientWidth was 0, so the canvas
   // bitmap stayed empty. Re-measure after it becomes visible.
@@ -6793,41 +6804,64 @@ function renderStats() {
   const legDone = match.winner !== null;
   const colStyle = 'grid-template-columns: 1.1fr repeat(' + n + ', 1fr)';
   const sheets = (match.legSheets || []).slice().sort((a, b) => (a.leg | 0) - (b.leg | 0));
-  let html = '<h2>' + (finished ? 'Match review' : 'Statistics') + '</h2>';
-
-  for (const sheet of sheets) {
-    const winnerName = (sheet.winner != null && ps[sheet.winner])
-      ? ps[sheet.winner].name : '';
-    html += '<h3>Leg ' + (sheet.leg | 0)
-      + (winnerName ? (' · ' + winnerName) : '') + '</h3>';
-    html += statsGridHtml(
-      sheet.players || [],
-      statsRowsForPlayers(sheet.players || [], match.game, { includeLegs: false }),
-      colStyle);
-  }
-
-  // Current / just-finished leg not yet snapshotted (in progress).
   const curLeg = match.legNumber | 0;
   const hasSheet = sheets.some(s => (s.leg | 0) === curLeg);
+  const pastSheets = sheets.filter(s => (s.leg | 0) !== curLeg);
+  const showHistory = finished || statsHistoryOpen;
+  let html = '<h2>' + (finished ? 'Match review' : 'Statistics') + '</h2>';
+
+  // Live match: only the current leg until the user opens history.
+  // Finished match: show every leg + match total.
+  if (showHistory) {
+    for (const sheet of sheets) {
+      const winnerName = (sheet.winner != null && ps[sheet.winner])
+        ? ps[sheet.winner].name : '';
+      html += '<h3>Leg ' + (sheet.leg | 0)
+        + (winnerName ? (' · ' + winnerName) : '') + '</h3>';
+      html += statsGridHtml(
+        sheet.players || [],
+        statsRowsForPlayers(sheet.players || [], match.game, { includeLegs: false }),
+        colStyle);
+    }
+  }
+
   if (!hasSheet) {
     const live = ps.map((_, i) => playerLegSnapshot(match, i, curLeg));
     html += '<h3>Leg ' + curLeg
-      + (legDone && !finished ? ' · just finished' : ' · in progress') + '</h3>';
+      + (legDone && !finished ? ' · just finished'
+        : (finished ? '' : ' · in progress')) + '</h3>';
     html += statsGridHtml(
       live,
       statsRowsForPlayers(live, match.game, { includeLegs: false }),
       colStyle);
+  } else if (!showHistory) {
+    // Current leg already snapshotted (rare mid-render) — still show it alone.
+    const sheet = sheets.find(s => (s.leg | 0) === curLeg);
+    if (sheet) {
+      const winnerName = (sheet.winner != null && ps[sheet.winner])
+        ? ps[sheet.winner].name : '';
+      html += '<h3>Leg ' + (sheet.leg | 0)
+        + (winnerName ? (' · ' + winnerName) : '') + '</h3>';
+      html += statsGridHtml(
+        sheet.players || [],
+        statsRowsForPlayers(sheet.players || [], match.game, { includeLegs: false }),
+        colStyle);
+    }
   }
 
-  if (sheets.length > 0 || curLeg > 1) {
+  if (showHistory) {
     const legBlocks = sheets.length + (hasSheet ? 0 : 1);
-    if (legBlocks > 1) {
+    if (legBlocks > 1 || finished) {
       html += '<h3>Match total</h3>';
       html += statsGridHtml(
         ps,
         statsRowsForPlayers(ps, match.game, { includeLegs: true }),
         colStyle);
     }
+  } else if (pastSheets.length > 0) {
+    html += '<button type="button" class="stats-more" id="btnStatsHistory">'
+      + 'Past legs &amp; match stats (' + pastSheets.length
+      + ' leg' + (pastSheets.length === 1 ? '' : 's') + ')</button>';
   }
 
   if (finished) html += renderMatchReviewExtrasHtml();
@@ -6837,6 +6871,13 @@ function renderStats() {
       + ' · tap a name → History to review</div>';
   }
   elStats.innerHTML = html;
+  const more = document.getElementById('btnStatsHistory');
+  if (more) {
+    more.addEventListener('click', () => {
+      statsHistoryOpen = true;
+      renderStats();
+    });
+  }
   if (finished) bindMatchReviewButtons();
 }
 
