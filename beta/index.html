@@ -333,11 +333,57 @@
     text-transform: uppercase; letter-spacing: 0.05em;
     margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #2a2a2a;
   }
-  .hist-lifetime .coach-metrics { margin-top: 0; }
-  .hist-lifetime .coach-metrics .cell[data-trend] { cursor: pointer; }
-  .hist-lifetime .coach-metrics .cell[data-trend]:active { background: #3a3520; }
-  .hist-lifetime .coach-metrics .cell .trend-hint {
-    font-size: 9px; color: #ffd23f; margin-top: 1px; opacity: 0.7;
+  .lt-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 0;
+    margin-top: 2px;
+    border: 1px solid #2f2f2f;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .lt-grid .h {
+    background: #1c1c1c;
+    color: var(--mute);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 6px 8px;
+    border-bottom: 1px solid #2f2f2f;
+  }
+  .lt-grid .h.num,
+  .lt-grid .v {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .lt-grid .k,
+  .lt-grid .v {
+    background: #181818;
+    border-bottom: 1px solid #262626;
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+  .lt-grid .k {
+    color: #cfcfcf;
+    font-weight: 600;
+  }
+  .lt-grid .v {
+    color: #fff;
+    font-weight: 700;
+  }
+  .lt-grid .v[data-trend] {
+    cursor: pointer;
+  }
+  .lt-grid .v[data-trend]:active {
+    background: #3a3520;
+  }
+  .lt-grid .v .trend-hint {
+    display: block;
+    margin-top: 1px;
+    font-size: 9px;
+    color: #ffd23f;
+    opacity: 0.7;
   }
   #histTrendModal .player-box { width: min(480px,100%); max-height: min(90vh,560px); }
   #histTrendChart { width: 100%; border-radius: 8px; display: block; background: #141414; margin-top: 8px; }
@@ -1793,16 +1839,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.113-beta / 2026-08-15 / e190a00</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.114-beta / 2026-08-15 / 085a72e</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.113-beta / 2026-08-15 / e190a00';
+const APP_VERSION = '0.1.114-beta / 2026-08-15 / 085a72e';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.113-beta-2026-08-15-e190a00';
+const POLICY_CACHE_BUST = '0.1.114-beta-2026-08-15-085a72e';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -5049,6 +5095,8 @@ function renderPlayerHistory() {
         careerAvg, bestAvg, avgN, f9Sum, f9N,
         coSum, coN, bestCo, bestVisit,
         t180, t140, t100, tDarts, tBusts,
+        rows: rows,
+        playerName: name,
       });
   histTrendRows = rows.slice();
   histTrendName = name;
@@ -5061,7 +5109,13 @@ function renderPlayerHistory() {
   });
   box.querySelectorAll('[data-trend]').forEach(cell => {
     cell.addEventListener('click', () => {
-      const label = cell.querySelector('.l') ? cell.querySelector('.l').textContent : '';
+      let label = '';
+      const oldLbl = cell.querySelector('.l');
+      if (oldLbl) label = oldLbl.textContent;
+      if (!label) {
+        const prev = cell.previousElementSibling;
+        if (prev && prev.classList.contains('k')) label = prev.textContent;
+      }
       showHistTrend(label, cell.dataset.trend);
     });
   });
@@ -5086,41 +5140,97 @@ function deleteAllPlayerHistory() {
 }
 
 function buildLifetimeHtml(lt) {
-  function cell(v, k, trend) {
-    const attr = trend ? ' data-trend="' + trend + '"' : '';
-    const hint = trend ? '<div class="trend-hint">tap to plot</div>' : '';
-    return '<div class="cell"' + attr + '><div class="v">' + v + '</div>'
-      + '<div class="l">' + k + '</div>' + hint + '</div>';
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
-  function section(title, cells) {
-    return '<div class="hist-stat-section"><div class="hist-stat-section-title">'
-      + title + '</div><div class="coach-metrics" style="margin-top:0">'
-      + cells + '</div></div>';
+  function section(title, rows) {
+    let out = '<div class="hist-stat-section"><div class="hist-stat-section-title">'
+      + title + '</div><div class="lt-grid">'
+      + '<div class="h">FOM</div><div class="h num">Avg</div><div class="h num">Exp avg</div>';
+    for (const r of rows) {
+      const trendAttr = r.trend ? ' data-trend="' + r.trend + '"' : '';
+      const hint = r.trend ? '<span class="trend-hint">tap to plot</span>' : '';
+      out += '<div class="k">' + esc(r.k) + '</div>'
+        + '<div class="v"' + trendAttr + '>' + esc(r.avg) + hint + '</div>'
+        + '<div class="v"' + trendAttr + '>' + esc(r.exp) + hint + '</div>';
+    }
+    out += '</div></div>';
+    return out;
+  }
+  function computeEwa(rows, name, key) {
+    if (!Array.isArray(rows) || !rows.length || !name) return null;
+    const sorted = rows.slice().reverse(); // oldest first
+    const alpha = 2 / (Math.min(sorted.length, 10) + 1);
+    let ema = null;
+    for (let i = 0; i < sorted.length; i++) {
+      const rec = sorted[i];
+      const cricket = rec.game === 'cricket' || rec.mode === 'cricket';
+      if (cricket) continue;
+      const side = playerSideInMatch(rec, name);
+      if (!side) continue;
+      const m = side.me;
+      const raw = key === 'avg3' ? m.avg3
+        : key === 'avgFirst9' ? m.avgFirst9
+        : key === 'checkoutPct' ? m.checkoutPct
+        : null;
+      if (raw == null || !Number.isFinite(+raw)) continue;
+      const v = +raw;
+      ema = (ema == null) ? v : (alpha * v + (1 - alpha) * ema);
+    }
+    return ema;
   }
   const winRate = lt.n ? (100 * lt.wins / lt.n).toFixed(0) + '%' : '—';
+  const ewaAvg3 = computeEwa(lt.rows, lt.playerName, 'avg3');
+  const ewaF9 = computeEwa(lt.rows, lt.playerName, 'avgFirst9');
+  const ewaCo = computeEwa(lt.rows, lt.playerName, 'checkoutPct');
   let html = '<div class="hist-lifetime"><div class="hist-lifetime-title">Lifetime · '
     + lt.n + ' match' + (lt.n === 1 ? '' : 'es') + '</div>';
-  html += section('Record',
-    cell(lt.wins + '–' + lt.losses, 'Win–loss')
-    + cell(winRate, 'Win rate')
-    + cell(lt.tLegs, 'Legs won'));
+  html += section('Record', [
+    { k: 'Win-loss', avg: lt.wins + '–' + lt.losses, exp: '—' },
+    { k: 'Win rate', avg: winRate, exp: '—' },
+    { k: 'Legs won', avg: String(lt.tLegs), exp: '—' },
+  ]);
   if (lt.avgN) {
-    html += section('Scoring',
-      cell(lt.careerAvg != null ? lt.careerAvg.toFixed(1) : '—', 'Career avg', 'avg3')
-      + cell(lt.bestAvg != null ? lt.bestAvg.toFixed(1) : '—', 'Best avg')
-      + cell(lt.f9N ? (lt.f9Sum / lt.f9N).toFixed(1) : '—', 'First 9 avg', 'avgFirst9'));
-    html += section('Finishing',
-      cell(lt.coN ? (lt.coSum / lt.coN).toFixed(0) + '%' : '—', 'Checkout %', 'checkoutPct')
-      + cell(lt.bestCo || '—', 'Best checkout')
-      + cell(lt.bestVisit || '—', 'Best visit'));
-    html += section('Big visits',
-      cell(lt.t180, '180s')
-      + cell(lt.t140, '140–179')
-      + cell(lt.t100, '100–139'));
+    html += section('Scoring', [
+      {
+        k: 'Career avg',
+        avg: (lt.careerAvg != null ? lt.careerAvg.toFixed(1) : '—'),
+        exp: (ewaAvg3 != null ? ewaAvg3.toFixed(1) : '—'),
+        trend: 'avg3',
+      },
+      {
+        k: 'First 9 avg',
+        avg: (lt.f9N ? (lt.f9Sum / lt.f9N).toFixed(1) : '—'),
+        exp: (ewaF9 != null ? ewaF9.toFixed(1) : '—'),
+        trend: 'avgFirst9',
+      },
+      {
+        k: 'Best avg',
+        avg: (lt.bestAvg != null ? lt.bestAvg.toFixed(1) : '—'),
+        exp: '—',
+      },
+    ]);
+    html += section('Finishing', [
+      {
+        k: 'Checkout %',
+        avg: (lt.coN ? (lt.coSum / lt.coN).toFixed(0) + '%' : '—'),
+        exp: (ewaCo != null ? ewaCo.toFixed(0) + '%' : '—'),
+        trend: 'checkoutPct',
+      },
+      { k: 'Best checkout', avg: (lt.bestCo || '—'), exp: '—' },
+      { k: 'Best visit', avg: (lt.bestVisit || '—'), exp: '—' },
+    ]);
+    html += section('Big visits', [
+      { k: '180s', avg: String(lt.t180), exp: '—' },
+      { k: '140-179', avg: String(lt.t140), exp: '—' },
+      { k: '100-139', avg: String(lt.t100), exp: '—' },
+    ]);
   }
-  html += section('Other',
-    cell(lt.tDarts, 'Darts thrown')
-    + cell(lt.tBusts, 'Busts'));
+  html += section('Other', [
+    { k: 'Darts thrown', avg: String(lt.tDarts), exp: '—' },
+    { k: 'Busts', avg: String(lt.tBusts), exp: '—' },
+  ]);
   return html + '</div>';
 }
 
