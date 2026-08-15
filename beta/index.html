@@ -1828,16 +1828,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.116-beta / 2026-08-15 / 085a72e</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.117-beta / 2026-08-15 / 085a72e</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.116-beta / 2026-08-15 / 085a72e';
+const APP_VERSION = '0.1.117-beta / 2026-08-15 / 085a72e';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.116-beta-2026-08-15-085a72e';
+const POLICY_CACHE_BUST = '0.1.117-beta-2026-08-15-085a72e';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2168,11 +2168,12 @@ function sigmaDependence(m, key) {
   const pol = DATA.policies[m.key];
   const pts = [];
   for (const s of m.sigmas) {
-    const e = pol[String(s)] && pol[String(s)][key];
+    entryDarts: 0,
     if (e) pts.push([e[1], e[2], e[0]]);
   }
   if (pts.length < 2) return null;
   let drift = 0;
+  let opened = (game === 'cricket');
   for (let i = 0; i < pts.length; i++)
     for (let j = i + 1; j < pts.length; j++) {
       const d = Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]);
@@ -2180,7 +2181,9 @@ function sigmaDependence(m, key) {
     }
   const regions = new Set(pts.map(p => p[2].replace(/\*$/, ''))).size;
   return { drift, regions, nSigmas: pts.length };
-}
+    if (!opened) {
+      if (sc > 0) opened = true;
+      else s.entryDarts += dc;
 function driftColor(drift) {
   if (drift < DRIFT_SMALL_MM) return SEV_GREEN;
   if (drift < DRIFT_LARGE_MM) return SEV_ORANGE;
@@ -2847,6 +2850,7 @@ function makePlayer(name, start, doubleIn, game) {
   const p = {
     name, remaining: start, opened: !doubleIn,
     dartsThrown: 0, pointsScored: 0, visitScores: [],
+    entryDarts: 0, // x01 DI darts thrown before opening (excluded from σ inference avg)
     visitHistory: [],  // per-player copy of finished visits (labels + outcomes)
     first9Points: 0, first9Darts: 0,
     checkoutHits: 0, checkoutAttempts: 0, highestCheckout: 0, highestVisit: 0,
@@ -3444,6 +3448,24 @@ function throwCricketDart(m, label) {
 function avg3(p) {
   return p.dartsThrown ? (p.pointsScored / p.dartsThrown * 3) : null;
 }
+
+/**
+ * DI-aware 3-dart average for sigma inference.
+ * In 301 DI, darts thrown before opening are excluded from the denominator.
+ */
+function avg3ForSigma(p, opts) {
+  opts = opts || {};
+  if (!p) return null;
+  const darts = p.dartsThrown | 0;
+  const pts = Number(p.pointsScored);
+  if (!Number.isFinite(pts) || darts <= 0) return null;
+  if (!opts.doubleIn) return pts / darts * 3;
+  let entry = p.entryDarts | 0;
+  if (entry < 0) entry = 0;
+  const scoringDarts = darts - entry;
+  if (scoringDarts <= 0) return null;
+  return pts / scoringDarts * 3;
+}
 /** 3-dart average over the first 9 darts of the match (null until 9 thrown). */
 function avgFirst9(p) {
   if ((p.first9Darts | 0) < 9) return null;
@@ -3837,6 +3859,7 @@ function throwDart(m, label) {
       afterDart(m);
       return result;
     }
+    p.entryDarts = (p.entryDarts | 0) + 1;
     const result = { label, points: 0, isDouble: isDbl, outcome: 'no_score', remainingAfter: remBefore };
     record(result);
     m.message = p.name + ' needs a double to start';
@@ -3933,6 +3956,7 @@ function throwVisitTotal(m, score, opts) {
   if (m.doubleIn && !p.opened) {
     if (forceBust || score === 0) {
       countVisitDarts(3);
+      p.entryDarts = (p.entryDarts | 0) + 3;
       const result = pushVisitResult({
         label: 'Visit 0', points: 0, isDouble: false,
         outcome: 'no_score', remainingAfter: remBefore,
@@ -4308,15 +4332,22 @@ function recomputePlayerVisitAggregates(p) {
   p.busts = 0;
   p.first9Points = 0;
   p.first9Darts = 0;
+  p.entryDarts = 0;
   p.highestCheckout = 0;
   p.checkoutHits = 0;
   p.checkoutAttempts = 0;
   const hist = p.visitHistory || [];
   const scores = p.visitScores || [];
+  let opened = false;
   for (let i = 0; i < hist.length; i++) {
     const v = hist[i];
     const sc = (v && (v.score | 0)) || (scores[i] | 0) || 0;
     const dartsN = visitRecDartCount(v) || 3;
+    if (!opened) {
+      const openThisVisit = sc > 0;
+      if (openThisVisit) opened = true;
+      else p.entryDarts = (p.entryDarts | 0) + dartsN;
+    }
     p.dartsThrown = (p.dartsThrown | 0) + dartsN;
     p.checkoutAttempts = (p.checkoutAttempts | 0) + ((v && v.checkoutAttempts) | 0);
     if (v && v.busted) p.busts = (p.busts | 0) + 1;
@@ -4648,6 +4679,7 @@ function cloneVisitRec(v) {
 function statsFromVisits(visits, game) {
   const s = {
     dartsThrown: 0, pointsScored: 0,
+    entryDarts: 0,
     first9Points: 0, first9Darts: 0,
     checkoutHits: 0, checkoutAttempts: 0,
     highestCheckout: 0, highestVisit: 0,
@@ -4655,6 +4687,7 @@ function statsFromVisits(visits, game) {
     marksHit: 0, first9Marks: 0, first9MarkDarts: 0,
     marks5: 0, marks6: 0, marks9: 0, whiteHorses: 0, bullHits: 0,
   };
+  let opened = (game === 'cricket');
   for (const v of (visits || [])) {
     if (!v) continue;
     const dc = visitRecDartCount(v);
@@ -4666,6 +4699,10 @@ function statsFromVisits(visits, game) {
       continue;
     }
     const sc = v.score | 0;
+    if (!opened) {
+      if (sc > 0) opened = true;
+      else s.entryDarts += dc;
+    }
     s.pointsScored += sc;
     if (sc > (s.highestVisit | 0)) s.highestVisit = sc;
     if (sc === 180) s.scores180 += 1;
@@ -4797,7 +4834,9 @@ function playerStatsSnapshot(p, game) {
     snap.bullHits = p.bullHits | 0;
   } else {
     snap.pointsScored = p.pointsScored | 0;
+    snap.entryDarts = p.entryDarts | 0;
     snap.avg3 = avg3(p);
+    snap.avg3Sigma = avg3ForSigma(p, { doubleIn: !!match.doubleIn });
     snap.avgFirst9 = avgFirst9(p);
     snap.first9Points = p.first9Points || 0;
     snap.first9Darts = p.first9Darts | 0;
@@ -5409,14 +5448,14 @@ function renderMatchDetailHtml(rec, focusName) {
     body += '<div class="d-leg-title">Leg ' + (sheet.leg | 0) + '</div>';
     body += statsGridHtml(
       sheetPs,
-      statsRowsForPlayers(sheetPs, game, { includeLegs: false }),
+      statsRowsForPlayers(sheetPs, game, { includeLegs: false, doubleIn: !!rec.doubleIn }),
       colStyle,
       wIdx >= 0 ? { winnerIdx: wIdx } : null);
   }
   body += '<div class="d-leg-title">Match total</div>';
   body += statsGridHtml(
     ps,
-    statsRowsForPlayers(ps, game, { includeLegs: true }),
+    statsRowsForPlayers(ps, game, { includeLegs: true, doubleIn: !!rec.doubleIn }),
     colStyle,
     { resultClasses: resultClassesFromLegs(ps) });
   return '<div class="hist-detail">'
@@ -7420,6 +7459,7 @@ function statusMessageHtml(msg) {
 function statsRowsForPlayers(ps, game, opts) {
   opts = opts || {};
   const includeLegs = !!opts.includeLegs;
+  const useDoubleIn = !!opts.doubleIn;
   const legSheets = opts.legSheets || null;
   const closed = (p) => {
     if (p.closed != null) return (p.closed | 0) + '/7';
@@ -7448,7 +7488,7 @@ function statsRowsForPlayers(ps, game, opts) {
     ['First 9', ...ps.map((p, i) => fmt(
       legSheets ? matchFirst9Avg(p, legSheets, i) : (p.avgFirst9 != null ? p.avgFirst9 : avgFirst9(p)), 1))],
     ['Inferred σ', ...ps.map(p => {
-      const a = p.avg3 != null ? p.avg3 : avg3(p);
+      const a = avg3ForSigma(p, { doubleIn: useDoubleIn });
       const s = inferSigmaFromAvg(a);
       return s != null ? s + ' mm' : '—';
     })],
@@ -7537,7 +7577,7 @@ function renderStats() {
     h += '</h3>';
     h += statsGridHtml(
       sheetPs,
-      statsRowsForPlayers(sheetPs, match.game, { includeLegs: false }),
+      statsRowsForPlayers(sheetPs, match.game, { includeLegs: false, doubleIn: !!match.doubleIn }),
       colStyle,
       wIdx >= 0 ? { winnerIdx: wIdx } : null);
     return h;
@@ -7551,7 +7591,7 @@ function renderStats() {
         : (finished ? '' : ' · in progress')) + '</h3>';
     html += statsGridHtml(
       live,
-      statsRowsForPlayers(live, match.game, { includeLegs: false }),
+      statsRowsForPlayers(live, match.game, { includeLegs: false, doubleIn: !!match.doubleIn }),
       colStyle);
   } else {
     const curSheet = sheets.find(s => (s.leg | 0) === curLeg);
@@ -7570,7 +7610,11 @@ function renderStats() {
       html += '<h3>Match total</h3>';
       html += statsGridHtml(
         ps,
-        statsRowsForPlayers(ps, match.game, { includeLegs: true, legSheets: sheets }),
+        statsRowsForPlayers(ps, match.game, {
+          includeLegs: true,
+          legSheets: sheets,
+          doubleIn: !!match.doubleIn,
+        }),
         colStyle,
         { resultClasses: resultClassesFromLegs(ps) });
     }
@@ -7782,7 +7826,7 @@ function render() {
 
     let inferredRow = null;
     const curPlayer = match.players[match.current];
-    const inferredSig = inferSigmaFromAvg(avg3(curPlayer));
+    const inferredSig = inferSigmaFromAvg(avg3ForSigma(curPlayer, { doubleIn: !!match.doubleIn }));
     if (inferredSig != null && curPlayer.dartsThrown >= 3
         && Math.round(inferredSig) !== resolved.snap.sigma) {
       const infResolved = resolvePolicy(m.key, { sigma: inferredSig });
