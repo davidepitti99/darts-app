@@ -324,10 +324,23 @@
     border: 1px solid #333; border-radius: 12px;
   }
   .hist-lifetime-title {
-    font-size: 10px; font-weight: 800; color: var(--accent);
-    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    font-size: 11px; font-weight: 800; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
   }
-  .hist-lifetime .hist-summary { margin-bottom: 6px; }
+  .hist-stat-section { margin-top: 10px; }
+  .hist-stat-section-title {
+    font-size: 10px; font-weight: 700; color: var(--mute);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #2a2a2a;
+  }
+  .hist-lifetime .coach-metrics { margin-top: 0; }
+  .hist-lifetime .coach-metrics .cell[data-trend] { cursor: pointer; }
+  .hist-lifetime .coach-metrics .cell[data-trend]:active { background: #3a3520; }
+  .hist-lifetime .coach-metrics .cell .trend-hint {
+    font-size: 9px; color: #ffd23f; margin-top: 1px; opacity: 0.7;
+  }
+  #histTrendModal .player-box { width: min(480px,100%); max-height: min(90vh,560px); }
+  #histTrendChart { width: 100%; border-radius: 8px; display: block; background: #141414; margin-top: 8px; }
   .player-box input[type=text],
   .player-box input[type=number] {
     width: 100%; background: var(--field); color: #fff; border: 1px solid #555;
@@ -1351,6 +1364,15 @@
     </div>
   </div>
 </div>
+<div class="player-modal hidden" id="histTrendModal" role="dialog" aria-modal="true">
+  <div class="player-box">
+    <h2 id="histTrendTitle">Trend</h2>
+    <canvas id="histTrendChart" width="900" height="400"></canvas>
+    <div class="player-actions" style="margin-top:8px;grid-template-columns:1fr">
+      <button type="button" id="histTrendClose" class="primary">Close</button>
+    </div>
+  </div>
+</div>
 <div class="player-modal hidden" id="bestOfModal" role="dialog" aria-modal="true" aria-label="New match">
   <div class="player-box">
     <h2>New match</h2>
@@ -1751,16 +1773,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.106-beta / 2026-08-15 / 6154c90</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.107-beta / 2026-08-15 / 6154c90</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.106-beta / 2026-08-15 / 6154c90';
+const APP_VERSION = '0.1.107-beta / 2026-08-15 / 6154c90';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.106-beta-2026-08-15-6154c90';
+const POLICY_CACHE_BUST = '0.1.107-beta-2026-08-15-6154c90';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -4865,6 +4887,8 @@ function histMetric(side, rec) {
 
 let playerModalTab = 'roster';
 let histDetailId = null;
+let histTrendRows = [];
+let histTrendName = '';
 
 function setPlayerModalTab(tab) {
   playerModalTab = 'roster';
@@ -4998,47 +5022,25 @@ function renderPlayerHistory() {
     + '</div>'
     + '<div class="hist-form" title="Recent form (newest left)">' + form + '</div>'
     + '<div class="hist-list">' + list + '</div>'
-    + (function() {
-        function lcell(v, k) {
-          return '<div class="cell"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
-        }
-        let lt = '<div class="hist-lifetime">'
-          + '<div class="hist-lifetime-title">Lifetime \u00b7 ' + rows.length
-          + ' match' + (rows.length === 1 ? '' : 'es') + '</div>';
-        lt += '<div class="hist-summary">'
-          + lcell(wins + '\u2013' + losses, 'Win\u2013loss')
-          + lcell(rows.length ? (100 * wins / rows.length).toFixed(0) + '%' : '\u2014', 'Win rate')
-          + lcell(tLegs, 'Legs won')
-          + '</div>';
-        if (avgN) {
-          lt += '<div class="hist-summary">'
-            + lcell(careerAvg != null ? careerAvg.toFixed(1) : '\u2014', 'Career avg')
-            + lcell(bestAvg != null ? bestAvg.toFixed(1) : '\u2014', 'Best avg')
-            + lcell(f9N ? (f9Sum / f9N).toFixed(1) : '\u2014', 'First 9 avg')
-            + '</div>'
-            + '<div class="hist-summary">'
-            + lcell(coN ? (coSum / coN).toFixed(0) + '%' : '\u2014', 'Checkout %')
-            + lcell(bestCo || '\u2014', 'Best checkout')
-            + lcell(bestVisit || '\u2014', 'Best visit')
-            + '</div>'
-            + '<div class="hist-summary">'
-            + lcell(t180, '180s')
-            + lcell(t140, '140\u2013179')
-            + lcell(t100, '100\u2013139')
-            + '</div>';
-        }
-        lt += '<div class="hist-summary">'
-          + lcell(tDarts, 'Darts thrown')
-          + lcell(tBusts, 'Busts')
-          + '</div>';
-        lt += '</div>';
-        return lt;
-      }());
+    + buildLifetimeHtml({
+        n: rows.length, wins, losses, tLegs,
+        careerAvg, bestAvg, avgN, f9Sum, f9N,
+        coSum, coN, bestCo, bestVisit,
+        t180, t140, t100, tDarts, tBusts,
+      });
+  histTrendRows = rows.slice();
+  histTrendName = name;
 
   box.querySelectorAll('.hist-list button').forEach(btn => {
     btn.addEventListener('click', () => {
       histDetailId = decodeURIComponent(btn.dataset.id);
       renderPlayerHistory();
+    });
+  });
+  box.querySelectorAll('[data-trend]').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const label = cell.querySelector('.l') ? cell.querySelector('.l').textContent : '';
+      showHistTrend(label, cell.dataset.trend);
     });
   });
   if (delAllBtn) delAllBtn.classList.remove('hidden');
@@ -5059,6 +5061,176 @@ function deleteAllPlayerHistory() {
     !r.players.some(p => normPlayerName(p.name) === key)));
   histDetailId = null;
   renderHistPage();
+}
+
+function buildLifetimeHtml(lt) {
+  function cell(v, k, trend) {
+    const attr = trend ? ' data-trend="' + trend + '"' : '';
+    const hint = trend ? '<div class="trend-hint">▲ tap to plot</div>' : '';
+    return '<div class="cell"' + attr + '><div class="v">' + v + '</div>'
+      + '<div class="l">' + k + '</div>' + hint + '</div>';
+  }
+  function section(title, cells) {
+    return '<div class="hist-stat-section"><div class="hist-stat-section-title">'
+      + title + '</div><div class="coach-metrics" style="margin-top:0">'
+      + cells + '</div></div>';
+  }
+  const winRate = lt.n ? (100 * lt.wins / lt.n).toFixed(0) + '%' : '—';
+  let html = '<div class="hist-lifetime"><div class="hist-lifetime-title">Lifetime · '
+    + lt.n + ' match' + (lt.n === 1 ? '' : 'es') + '</div>';
+  html += section('Record',
+    cell(lt.wins + '–' + lt.losses, 'Win–loss')
+    + cell(winRate, 'Win rate')
+    + cell(lt.tLegs, 'Legs won'));
+  if (lt.avgN) {
+    html += section('Scoring',
+      cell(lt.careerAvg != null ? lt.careerAvg.toFixed(1) : '—', 'Career avg', 'avg3')
+      + cell(lt.bestAvg != null ? lt.bestAvg.toFixed(1) : '—', 'Best avg')
+      + cell(lt.f9N ? (lt.f9Sum / lt.f9N).toFixed(1) : '—', 'First 9 avg', 'avgFirst9'));
+    html += section('Finishing',
+      cell(lt.coN ? (lt.coSum / lt.coN).toFixed(0) + '%' : '—', 'Checkout %', 'checkoutPct')
+      + cell(lt.bestCo || '—', 'Best checkout')
+      + cell(lt.bestVisit || '—', 'Best visit'));
+    html += section('Big visits',
+      cell(lt.t180, '180s')
+      + cell(lt.t140, '140–179')
+      + cell(lt.t100, '100–139'));
+  }
+  html += section('Other',
+    cell(lt.tDarts, 'Darts thrown')
+    + cell(lt.tBusts, 'Busts'));
+  return html + '</div>';
+}
+
+function showHistTrend(label, key) {
+  const rows = histTrendRows;
+  const name = histTrendName;
+  const pts = [];
+  const sorted = rows.slice().reverse(); // oldest first
+  for (let i = 0; i < sorted.length; i++) {
+    const rec = sorted[i];
+    const cricket = rec.game === 'cricket' || rec.mode === 'cricket';
+    if (cricket) continue;
+    const side = playerSideInMatch(rec, name);
+    if (!side) continue;
+    const m = side.me;
+    const val = key === 'avg3' ? m.avg3
+      : key === 'avgFirst9' ? m.avgFirst9
+      : key === 'checkoutPct' ? m.checkoutPct
+      : null;
+    if (val == null || !Number.isFinite(+val)) continue;
+    pts.push({ idx: pts.length + 1, y: +val, when: formatHistWhen(rec.ts || rec.id) });
+  }
+  const el = document.getElementById('histTrendTitle');
+  if (el) el.textContent = label + ' per match';
+  drawHistTrendChart(pts, label);
+  document.getElementById('histTrendModal').classList.remove('hidden');
+}
+
+function drawHistTrendChart(pts, label) {
+  const cv = document.getElementById('histTrendChart');
+  if (!cv) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cssW = cv.parentElement ? cv.parentElement.clientWidth - 28 : 400;
+  const cssH = Math.round(Math.min(260, Math.max(180, cssW * 0.45)));
+  cv.width = Math.round((cssW || 400) * dpr);
+  cv.height = Math.round(cssH * dpr);
+  cv.style.height = cssH + 'px';
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.fillStyle = '#141414';
+  ctx.fillRect(0, 0, W, H);
+  if (!pts.length) {
+    ctx.fillStyle = '#888';
+    ctx.font = Math.round(13 * dpr) + 'px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No data', W / 2, H / 2);
+    return;
+  }
+  const vals = pts.map(p => p.y);
+  const rawMin = Math.min(...vals), rawMax = Math.max(...vals);
+  const pad = { l: Math.round(40 * dpr), r: Math.round(16 * dpr),
+                t: Math.round(18 * dpr), b: Math.round(32 * dpr) };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+  const margin = (rawMax - rawMin) * 0.15 || 1;
+  const yMin = rawMin - margin, yMax = rawMax + margin;
+  const span = Math.max(1e-6, yMax - yMin);
+  const isPercent = label.toLowerCase().includes('%');
+  const fmt = v => isPercent ? v.toFixed(0) + '%' : v.toFixed(1);
+  const toX = i => pad.l + (pts.length > 1 ? i / (pts.length - 1) : 0.5) * pw;
+  const toY = v => pad.t + (1 - (v - yMin) / span) * ph;
+  // Grid
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.lineWidth = dpr;
+  const nGrid = 4;
+  for (let g = 0; g <= nGrid; g++) {
+    const y = pad.t + (g / nGrid) * ph;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    const gv = yMax - (g / nGrid) * (yMax - yMin);
+    ctx.fillStyle = '#666';
+    ctx.font = Math.round(9 * dpr) + 'px -apple-system,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(fmt(gv), pad.l - 4 * dpr, y + 3.5 * dpr);
+  }
+  // Fill under line
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const x = toX(i), y = toY(p.y);
+    if (i === 0) { ctx.moveTo(x, H - pad.b); ctx.lineTo(x, y); }
+    else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(toX(pts.length - 1), H - pad.b);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,210,63,0.08)';
+  ctx.fill();
+  // Line
+  ctx.beginPath();
+  pts.forEach((p, i) => { const x = toX(i), y = toY(p.y); if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+  ctx.strokeStyle = '#ffd23f';
+  ctx.lineWidth = 2.5 * dpr;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  // Dots + values
+  const step = Math.max(1, Math.ceil(pts.length / 12));
+  pts.forEach((p, i) => {
+    const x = toX(i), y = toY(p.y);
+    ctx.fillStyle = '#ffd23f';
+    ctx.beginPath(); ctx.arc(x, y, 3.5 * dpr, 0, Math.PI * 2); ctx.fill();
+    // Value label above dot (skip crowded)
+    if (pts.length <= 8 || i % step === 0 || i === pts.length - 1) {
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold ' + Math.round(9 * dpr) + 'px -apple-system,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(fmt(p.y), x, y - 6 * dpr);
+    }
+    // X-axis index
+    if (i % step === 0 || i === pts.length - 1) {
+      ctx.fillStyle = '#666';
+      ctx.font = Math.round(9 * dpr) + 'px -apple-system,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(p.idx), x, H - 8 * dpr);
+    }
+  });
+  // Average line
+  if (vals.length >= 2) {
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const ay = toY(avg);
+    ctx.beginPath(); ctx.moveTo(pad.l, ay); ctx.lineTo(W - pad.r, ay);
+    ctx.strokeStyle = 'rgba(255,210,63,0.35)';
+    ctx.lineWidth = dpr;
+    ctx.setLineDash([4 * dpr, 4 * dpr]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,210,63,0.6)';
+    ctx.font = Math.round(9 * dpr) + 'px -apple-system,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('avg ' + fmt(avg), pad.l + 4 * dpr, ay - 3 * dpr);
+  }
+}
+
+function closeHistTrend() {
+  const m = document.getElementById('histTrendModal');
+  if (m) m.classList.add('hidden');
 }
 
 function renderMatchDetailHtml(rec, focusName) {
@@ -8090,6 +8262,10 @@ document.getElementById('histBack').addEventListener('click', () => {
   renderPlayerHistory();
 });
 document.getElementById('histDelete').addEventListener('click', deleteHistDetail);
+const histTrendCloseBtn = document.getElementById('histTrendClose');
+if (histTrendCloseBtn) histTrendCloseBtn.addEventListener('click', closeHistTrend);
+const histTrendModal = document.getElementById('histTrendModal');
+if (histTrendModal) histTrendModal.addEventListener('click', e => { if (e.target === histTrendModal) closeHistTrend(); });
 document.getElementById('playerSave').addEventListener('click', saveCurrentPlayerFromModal);
 const contactSaveBtn = document.getElementById('contactSave');
 const contactDeleteBtn = document.getElementById('contactDelete');
