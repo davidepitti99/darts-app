@@ -1712,16 +1712,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.88-beta / 2026-08-14 / 164fb99</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.89-beta / 2026-08-14 / 164fb99</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.88-beta / 2026-08-14 / 164fb99';
+const APP_VERSION = '0.1.89-beta / 2026-08-14 / 164fb99';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.88-beta-2026-08-14-164fb99';
+const POLICY_CACHE_BUST = '0.1.89-beta-2026-08-14-164fb99';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -6806,25 +6806,29 @@ function renderStats() {
   const sheets = (match.legSheets || []).slice().sort((a, b) => (a.leg | 0) - (b.leg | 0));
   const curLeg = match.legNumber | 0;
   const hasSheet = sheets.some(s => (s.leg | 0) === curLeg);
-  const pastSheets = sheets.filter(s => (s.leg | 0) !== curLeg);
+  // Newest past leg first, leg 1 last.
+  const pastSheets = sheets
+    .filter(s => (s.leg | 0) !== curLeg)
+    .slice()
+    .sort((a, b) => (b.leg | 0) - (a.leg | 0));
   const showHistory = finished || statsHistoryOpen;
   let html = '<h2>' + (finished ? 'Match review' : 'Statistics') + '</h2>';
 
-  // Live match: only the current leg until the user opens history.
-  // Finished match: show every leg + match total.
-  if (showHistory) {
-    for (const sheet of sheets) {
-      const winnerName = (sheet.winner != null && ps[sheet.winner])
-        ? ps[sheet.winner].name : '';
-      html += '<h3>Leg ' + (sheet.leg | 0)
-        + (winnerName ? (' · ' + winnerName) : '') + '</h3>';
-      html += statsGridHtml(
-        sheet.players || [],
-        statsRowsForPlayers(sheet.players || [], match.game, { includeLegs: false }),
-        colStyle);
-    }
+  function sheetBlock(sheet, subtitle) {
+    const winnerName = (sheet.winner != null && ps[sheet.winner])
+      ? ps[sheet.winner].name : '';
+    let h = '<h3>Leg ' + (sheet.leg | 0);
+    if (subtitle) h += ' · ' + subtitle;
+    else if (winnerName) h += ' · ' + winnerName;
+    h += '</h3>';
+    h += statsGridHtml(
+      sheet.players || [],
+      statsRowsForPlayers(sheet.players || [], match.game, { includeLegs: false }),
+      colStyle);
+    return h;
   }
 
+  // Current / in-progress leg always on top.
   if (!hasSheet) {
     const live = ps.map((_, i) => playerLegSnapshot(match, i, curLeg));
     html += '<h3>Leg ' + curLeg
@@ -6834,32 +6838,27 @@ function renderStats() {
       live,
       statsRowsForPlayers(live, match.game, { includeLegs: false }),
       colStyle);
-  } else if (!showHistory) {
-    // Current leg already snapshotted (rare mid-render) — still show it alone.
-    const sheet = sheets.find(s => (s.leg | 0) === curLeg);
-    if (sheet) {
-      const winnerName = (sheet.winner != null && ps[sheet.winner])
-        ? ps[sheet.winner].name : '';
-      html += '<h3>Leg ' + (sheet.leg | 0)
-        + (winnerName ? (' · ' + winnerName) : '') + '</h3>';
-      html += statsGridHtml(
-        sheet.players || [],
-        statsRowsForPlayers(sheet.players || [], match.game, { includeLegs: false }),
-        colStyle);
+  } else {
+    const curSheet = sheets.find(s => (s.leg | 0) === curLeg);
+    if (curSheet) {
+      html += sheetBlock(curSheet,
+        finished ? null : (legDone ? 'just finished' : 'in progress'));
     }
   }
 
-  if (showHistory) {
+  // Past legs below current: previous, then older, first leg at the bottom.
+  if (showHistory && pastSheets.length) {
+    html += '<div class="stats-history">';
+    for (const sheet of pastSheets) html += sheetBlock(sheet, null);
     const legBlocks = sheets.length + (hasSheet ? 0 : 1);
     if (legBlocks > 1 || finished) {
-      html += '<div class="stats-history">';
       html += '<h3>Match total</h3>';
       html += statsGridHtml(
         ps,
         statsRowsForPlayers(ps, match.game, { includeLegs: true }),
         colStyle);
-      html += '</div>';
     }
+    html += '</div>';
   }
 
   if (!finished && pastSheets.length > 0) {
