@@ -242,24 +242,13 @@
   }
   .hist-summary .v { font-size: 16px; font-weight: 800; color: #fff; }
   .hist-summary .k { font-size: 10px; color: var(--mute); margin-top: 2px; }
-  .hist-form {
-    display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
-  }
-  .hist-form span {
-    width: 22px; height: 22px; border-radius: 6px; font-size: 11px; font-weight: 800;
-    display: grid; place-items: center;
-  }
-  .hist-form .W { background: #1e3a1e; color: #7dcc7d; }
-  .hist-form .L { background: #3a1e1e; color: #ff8a8a; }
   .hist-list {
-    flex: 1; overflow-y: auto; border: 1px solid #333; border-radius: 10px;
-    min-height: 100px; max-height: 220px; background: #141414;
+    display: grid; gap: 6px; margin-top: 8px;
   }
-  .hist-list .empty { color: var(--mute); padding: 16px; text-align: center; font-size: 13px; }
   .hist-list button {
-    display: grid; width: 100%; grid-template-columns: auto 1fr auto;
-    gap: 8px; align-items: center; background: transparent; border: none;
-    border-bottom: 1px solid #2a2a2a; color: #eee; padding: 10px 12px;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center;
+    border: 1px solid #2a2a2a; background: #141414; color: #ddd;
+    border-radius: 8px; padding: 8px 10px;
     font-size: 13px; font-weight: 600; cursor: pointer; text-align: left;
   }
   .hist-list button:last-child { border-bottom: none; }
@@ -1839,16 +1828,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.114-beta / 2026-08-15 / 085a72e</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.116-beta / 2026-08-15 / 085a72e</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.114-beta / 2026-08-15 / 085a72e';
+const APP_VERSION = '0.1.116-beta / 2026-08-15 / 085a72e';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.114-beta-2026-08-15-085a72e';
+const POLICY_CACHE_BUST = '0.1.116-beta-2026-08-15-085a72e';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -5062,12 +5051,6 @@ function renderPlayerHistory() {
   const losses = rows.length - wins;
   const careerAvg = avgN ? (avgSum / avgN) : null;
 
-  const form = rows.slice(0, 12).map(rec => {
-    const side = playerSideInMatch(rec, name);
-    const wl = side && side.won ? 'W' : 'L';
-    return '<span class="' + wl + '" title="' + modeLabel(rec) + '">' + wl + '</span>';
-  }).join('');
-
   let list = rows.slice(0, 40).map(rec => {
     const side = playerSideInMatch(rec, name);
     if (!side) return '';
@@ -5088,7 +5071,6 @@ function renderPlayerHistory() {
     + (careerAvg == null ? '—' : careerAvg.toFixed(1))
     + '</div><div class="k">Avg 3-dart</div></div>'
     + '</div>'
-    + '<div class="hist-form" title="Recent form (newest left)">' + form + '</div>'
     + '<div class="hist-list">' + list + '</div>'
     + buildLifetimeHtml({
         n: rows.length, wins, losses, tLegs,
