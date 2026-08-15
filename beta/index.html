@@ -319,6 +319,15 @@
   .hist-detail .d-throws .th-score { font-weight: 700; color: #fff; white-space: nowrap; }
   .hist-detail .d-throws .th-score.bust { color: var(--bad); }
   .hist-detail .d-throws .th-score.out { color: var(--ok); }
+  .hist-lifetime {
+    margin-top: 12px; padding: 12px; background: #141414;
+    border: 1px solid #333; border-radius: 12px;
+  }
+  .hist-lifetime-title {
+    font-size: 10px; font-weight: 800; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+  }
+  .hist-lifetime .hist-summary { margin-bottom: 6px; }
   .player-box input[type=text],
   .player-box input[type=number] {
     width: 100%; background: var(--field); color: #fff; border: 1px solid #555;
@@ -1742,16 +1751,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.105-beta / 2026-08-15 / 6154c90</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.106-beta / 2026-08-15 / 6154c90</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.105-beta / 2026-08-15 / 6154c90';
+const APP_VERSION = '0.1.106-beta / 2026-08-15 / 6154c90';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.105-beta-2026-08-15-6154c90';
+const POLICY_CACHE_BUST = '0.1.106-beta-2026-08-15-6154c90';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -4935,14 +4944,28 @@ function renderPlayerHistory() {
   }
 
   let wins = 0, avgSum = 0, avgN = 0;
+  let bestAvg = null, f9Sum = 0, f9N = 0;
+  let coSum = 0, coN = 0, bestCo = 0, bestVisit = 0;
+  let t180 = 0, t140 = 0, t100 = 0, tDarts = 0, tBusts = 0, tLegs = 0;
   for (const rec of rows) {
     const side = playerSideInMatch(rec, name);
     if (!side) continue;
+    const m = side.me;
+    const cricket = rec.game === 'cricket' || rec.mode === 'cricket';
     if (side.won) wins += 1;
-    if (rec.game !== 'cricket' && rec.mode !== 'cricket' && side.me.avg3 != null) {
-      avgSum += Number(side.me.avg3);
-      avgN += 1;
+    if (!cricket) {
+      if (m.avg3 != null) { avgSum += +m.avg3; avgN++; if (bestAvg == null || +m.avg3 > bestAvg) bestAvg = +m.avg3; }
+      if (m.avgFirst9 != null) { f9Sum += +m.avgFirst9; f9N++; }
+      if (m.checkoutPct != null) { coSum += +m.checkoutPct; coN++; }
+      if ((m.highestCheckout | 0) > bestCo) bestCo = m.highestCheckout | 0;
+      t180 += m.scores180 | 0;
+      t140 += m.scores140 | 0;
+      t100 += m.scores100 | 0;
+      tBusts += m.busts | 0;
     }
+    if ((m.highestVisit | 0) > bestVisit) bestVisit = m.highestVisit | 0;
+    tDarts += m.dartsThrown | 0;
+    tLegs += m.legsWon | 0;
   }
   const losses = rows.length - wins;
   const careerAvg = avgN ? (avgSum / avgN) : null;
@@ -4974,7 +4997,43 @@ function renderPlayerHistory() {
     + '</div><div class="k">Avg 3-dart</div></div>'
     + '</div>'
     + '<div class="hist-form" title="Recent form (newest left)">' + form + '</div>'
-    + '<div class="hist-list">' + list + '</div>';
+    + '<div class="hist-list">' + list + '</div>'
+    + (function() {
+        function lcell(v, k) {
+          return '<div class="cell"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
+        }
+        let lt = '<div class="hist-lifetime">'
+          + '<div class="hist-lifetime-title">Lifetime \u00b7 ' + rows.length
+          + ' match' + (rows.length === 1 ? '' : 'es') + '</div>';
+        lt += '<div class="hist-summary">'
+          + lcell(wins + '\u2013' + losses, 'Win\u2013loss')
+          + lcell(rows.length ? (100 * wins / rows.length).toFixed(0) + '%' : '\u2014', 'Win rate')
+          + lcell(tLegs, 'Legs won')
+          + '</div>';
+        if (avgN) {
+          lt += '<div class="hist-summary">'
+            + lcell(careerAvg != null ? careerAvg.toFixed(1) : '\u2014', 'Career avg')
+            + lcell(bestAvg != null ? bestAvg.toFixed(1) : '\u2014', 'Best avg')
+            + lcell(f9N ? (f9Sum / f9N).toFixed(1) : '\u2014', 'First 9 avg')
+            + '</div>'
+            + '<div class="hist-summary">'
+            + lcell(coN ? (coSum / coN).toFixed(0) + '%' : '\u2014', 'Checkout %')
+            + lcell(bestCo || '\u2014', 'Best checkout')
+            + lcell(bestVisit || '\u2014', 'Best visit')
+            + '</div>'
+            + '<div class="hist-summary">'
+            + lcell(t180, '180s')
+            + lcell(t140, '140\u2013179')
+            + lcell(t100, '100\u2013139')
+            + '</div>';
+        }
+        lt += '<div class="hist-summary">'
+          + lcell(tDarts, 'Darts thrown')
+          + lcell(tBusts, 'Busts')
+          + '</div>';
+        lt += '</div>';
+        return lt;
+      }());
 
   box.querySelectorAll('.hist-list button').forEach(btn => {
     btn.addEventListener('click', () => {
