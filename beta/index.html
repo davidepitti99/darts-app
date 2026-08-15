@@ -1205,20 +1205,12 @@
   .checkout-filters {
     display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px;
   }
-  .checkout-extended {
-    margin: -4px 0 10px;
-  }
-  .checkout-extended button {
-    background: var(--field); color: var(--mute); border: 1px solid #444;
-    border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700;
-    cursor: pointer;
-  }
-  .checkout-extended button.active { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
   .checkout-filters button {
     background: var(--field); color: var(--mute); border: 1px solid #444;
     border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700;
     cursor: pointer;
   }
+  .checkout-filters .checkout-extended-btn { margin-left: auto; }
   .checkout-filters button.active { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
   .checkout-wrap {
     max-height: min(62vh, 520px); overflow: auto; border: 1px solid #333;
@@ -1661,14 +1653,12 @@
         </label>
         <button type="button" id="checkoutLoad">Show</button>
       </div>
-      <div class="checkout-extended">
-        <button type="button" id="checkoutExtended">Extended (≤200)</button>
-      </div>
       <div class="checkout-filters" id="checkoutDartFilter">
         <button type="button" class="active" data-darts="all">All darts</button>
         <button type="button" data-darts="3">3 left</button>
         <button type="button" data-darts="2">2 left</button>
         <button type="button" data-darts="1">1 left</button>
+        <button type="button" id="checkoutExtended" class="checkout-extended-btn">Extended (≤200)</button>
       </div>
       <div class="checkout-wrap">
         <table class="checkout-table">
@@ -1743,16 +1733,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.101-beta / 2026-08-15 / 3dfa001</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.102-beta / 2026-08-15 / 3dfa001</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.101-beta / 2026-08-15 / 3dfa001';
+const APP_VERSION = '0.1.102-beta / 2026-08-15 / 3dfa001';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.101-beta-2026-08-15-3dfa001';
+const POLICY_CACHE_BUST = '0.1.102-beta-2026-08-15-3dfa001';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
