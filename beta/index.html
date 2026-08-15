@@ -652,6 +652,12 @@
     background: #2a1818; border: 1px solid #5a2f2f; border-radius: 8px;
     padding: 8px 10px;
   }
+  .stats .head.win, .hist-detail .grid .head.win, .leg-win {
+    color: #6dce6d; font-weight: 800;
+  }
+  .stats .head.lose, .hist-detail .grid .head.lose, .leg-lose {
+    color: #ff8a8a; font-weight: 800;
+  }
   .stats .review {
     margin-top: 12px; padding-top: 10px; border-top: 1px solid #333;
   }
@@ -1712,16 +1718,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.91-beta / 2026-08-14 / 164fb99</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.92-beta / 2026-08-14 / 164fb99</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.91-beta / 2026-08-14 / 164fb99';
+const APP_VERSION = '0.1.92-beta / 2026-08-14 / 164fb99';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.91-beta-2026-08-14-164fb99';
+const POLICY_CACHE_BUST = '0.1.92-beta-2026-08-14-164fb99';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -3658,7 +3664,7 @@ function throwVisitTotal(m, score, opts) {
   // Validate before mutating / undo so OK can refuse cleanly.
   if (m.doubleIn && !pCheck.opened && !forceBust && score > 0
       && !isValidOpeningVisitScore(score))
-    throw new Error('301 DI: opening visit needs a double first (e.g. Bull+9=59)');
+    throw new Error('301 DI: open on a double — more darts OK (e.g. 37=D18+1)');
   if (!forceBust && score === remCheck && !isCheckoutChance(remCheck))
     throw new Error('Cannot check out ' + remCheck + ' with a visit total');
 
@@ -4160,7 +4166,7 @@ function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
   const remBefore = before.remBefore | 0;
   if (match.doubleIn && !before.opened && !bust && sc > 0
       && !isValidOpeningVisitScore(sc))
-    return '301 DI: opening visit needs a double first (e.g. Bull+9=59)';
+    return '301 DI: open on a double — more darts OK (e.g. 37=D18+1)';
   if (!bust && sc > remBefore) return 'Score cannot exceed leave (' + remBefore + ')';
   if (!bust && sc > 0 && (remBefore - sc) === 1) return 'Cannot leave 1';
   // Bust button or impossible leave (incl. bogeys like 169) → refuse checkout.
@@ -4802,14 +4808,16 @@ function renderMatchDetailHtml(rec, focusName) {
     }
   }
   for (const sheet of legs) {
-    const winnerName = (sheet.winner != null && ps[sheet.winner])
-      ? ps[sheet.winner].name : '';
+    const wIdx = (sheet.winner != null) ? (sheet.winner | 0) : -1;
+    const sheetPs = sheet.players || [];
+    const namesHtml = wIdx >= 0 ? legResultNamesHtml(sheetPs, wIdx) : '';
     body += '<div class="d-leg-title">Leg ' + (sheet.leg | 0)
-      + (winnerName ? (' · ' + winnerName) : '') + '</div>';
+      + (namesHtml ? (' · ' + namesHtml) : '') + '</div>';
     body += statsGridHtml(
-      sheet.players || [],
-      statsRowsForPlayers(sheet.players || [], game, { includeLegs: false }),
-      colStyle);
+      sheetPs,
+      statsRowsForPlayers(sheetPs, game, { includeLegs: false }),
+      colStyle,
+      wIdx >= 0 ? { winnerIdx: wIdx } : null);
   }
   body += '<div class="d-leg-title">Match total</div>';
   body += statsGridHtml(
@@ -6788,6 +6796,8 @@ function statusMessageHtml(msg) {
   if (!msg || isThrowOnlyMessage(msg)) return '';
   // Bot throws already show on the board / remaining — don't echo "Bot: …" under Aim.
   if (/^Bot\b/i.test(String(msg).trim())) return '';
+  // Visit-total errors show on the pad (#visitReject) — don't duplicate under Aim.
+  if (match && match.messageIsError && scoreEntryMode === 'visit') return '';
   const err = !!(match && match.messageIsError);
   return '<div class="msg' + (err ? ' err' : '') + '">' + msg + '</div>';
 }
@@ -6829,16 +6839,32 @@ function statsRowsForPlayers(ps, game, opts) {
   return rows;
 }
 
-function statsGridHtml(ps, rows, colStyle) {
+function statsGridHtml(ps, rows, colStyle, opts) {
+  opts = opts || {};
+  const winnerIdx = opts.winnerIdx;
+  const markResult = winnerIdx != null && winnerIdx >= 0;
   let html = '<div class="grid" style="' + colStyle + '">'
     + '<div class="head"></div>';
-  for (const p of ps) html += '<div class="head">' + (p.name || '—') + '</div>';
+  for (let i = 0; i < ps.length; i++) {
+    let cls = 'head';
+    if (markResult) cls += (i === winnerIdx) ? ' win' : ' lose';
+    html += '<div class="' + cls + '">' + ((ps[i] && ps[i].name) || '—') + '</div>';
+  }
   for (const row of rows) {
     html += '<div class="lbl">' + row[0] + '</div>';
     for (let i = 1; i < row.length; i++) html += '<div>' + row[i] + '</div>';
   }
   html += '</div>';
   return html;
+}
+
+/** Colored winner / loser names for a finished leg title. */
+function legResultNamesHtml(players, winnerIdx) {
+  if (winnerIdx == null || winnerIdx < 0 || !players || !players.length) return '';
+  return players.map((p, i) => {
+    const cls = (i === winnerIdx) ? 'leg-win' : 'leg-lose';
+    return '<span class="' + cls + '">' + ((p && p.name) || '—') + '</span>';
+  }).join(' · ');
 }
 
 function renderStats() {
@@ -6859,16 +6885,20 @@ function renderStats() {
   let html = '<h2>' + (finished ? 'Match review' : 'Statistics') + '</h2>';
 
   function sheetBlock(sheet, subtitle) {
-    const winnerName = (sheet.winner != null && ps[sheet.winner])
-      ? ps[sheet.winner].name : '';
+    const wIdx = (sheet.winner != null) ? (sheet.winner | 0) : -1;
+    const sheetPs = sheet.players || [];
     let h = '<h3>Leg ' + (sheet.leg | 0);
     if (subtitle) h += ' · ' + subtitle;
-    else if (winnerName) h += ' · ' + winnerName;
+    else if (wIdx >= 0) {
+      const namesHtml = legResultNamesHtml(sheetPs, wIdx);
+      if (namesHtml) h += ' · ' + namesHtml;
+    }
     h += '</h3>';
     h += statsGridHtml(
-      sheet.players || [],
-      statsRowsForPlayers(sheet.players || [], match.game, { includeLegs: false }),
-      colStyle);
+      sheetPs,
+      statsRowsForPlayers(sheetPs, match.game, { includeLegs: false }),
+      colStyle,
+      wIdx >= 0 ? { winnerIdx: wIdx } : null);
     return h;
   }
 
