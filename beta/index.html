@@ -438,7 +438,7 @@
   }
   .checkout-attempts-picks {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
-    gap: 8px; margin: 12px 0 4px;
+    gap: 8px; margin: 8px 0 4px;
   }
   .checkout-attempts-picks button {
     padding: 14px 8px; font-size: 20px; font-weight: 800;
@@ -449,6 +449,32 @@
   .checkout-attempts-picks button.sel {
     background: var(--accent); color: #1a1a1a; border-color: var(--accent);
   }
+  .checkout-stack-block { margin-top: 12px; }
+  .checkout-stack-block:first-child { margin-top: 0; }
+  .checkout-stack-label {
+    font-size: 12px; font-weight: 700; color: var(--mute); margin: 0 0 4px;
+  }
+  .mini-board {
+    flex: 0 0 auto; display: inline-flex; flex-direction: column; align-items: stretch;
+    gap: 2px; min-width: 52px; max-width: 78px; padding: 5px 6px;
+    border-radius: 8px; border: 1px solid #555; background: #1a1a1a;
+    color: #eee; cursor: pointer; line-height: 1.15; text-align: center;
+  }
+  .mini-board:active, .mini-board.open {
+    border-color: var(--accent); background: #242018;
+  }
+  .mini-board .mb-line {
+    display: flex; justify-content: space-between; gap: 4px;
+    font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
+  }
+  .mini-board .mb-line.on { color: var(--accent); }
+  .mini-board .mb-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 2.8em; font-weight: 600; color: var(--mute); font-size: 9px;
+  }
+  .mini-board .mb-line.on .mb-name { color: var(--accent); }
+  .mini-board .mb-val { font-weight: 800; }
+  .scores.play-collapsed { display: none !important; }
   .card .rem {
     font-size: 42px; font-weight: 800; line-height: 1.05; margin: 4px 0;
     user-select: none;
@@ -588,7 +614,10 @@
   }
   .info .turn { color: #cfcfcf; font-size: 13px; margin-bottom: 4px; }
   .info .aim-row {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .info .aim-row .aim-main {
+    display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;
   }
   .info .aim { font-size: 24px; font-weight: 800; color: var(--accent); line-height: 1.2; min-width: 0; }
   .info .aim .next { color: #fff; font-size: 16px; font-weight: 700; margin-left: 0.3em; }
@@ -1316,10 +1345,11 @@
      aria-label="Checkout visit details">
   <div class="player-box">
     <h2 id="checkoutAttemptsTitle">Checkout</h2>
-    <p class="hint" id="checkoutAttemptsHint">How many darts?</p>
-    <div class="checkout-attempts-picks" id="checkoutAttemptsPicks"></div>
-    <div class="player-actions" style="grid-template-columns:1fr">
+    <p class="hint" id="checkoutAttemptsHint">Confirm darts for this visit</p>
+    <div id="checkoutAttemptsBody"></div>
+    <div class="player-actions" style="grid-template-columns:1fr 1fr">
       <button type="button" id="checkoutAttemptsCancel">Cancel</button>
+      <button type="button" class="primary" id="checkoutAttemptsOk">OK</button>
     </div>
   </div>
 </div>
@@ -1668,16 +1698,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.82-beta / 2026-08-14 / 164fb99</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.83-beta / 2026-08-14 / 164fb99</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.82-beta / 2026-08-14 / 164fb99';
+const APP_VERSION = '0.1.83-beta / 2026-08-14 / 164fb99';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.82-beta-2026-08-14-164fb99';
+const POLICY_CACHE_BUST = '0.1.83-beta-2026-08-14-164fb99';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -6047,13 +6077,21 @@ const parkedMatches = Object.create(null);
 const parkedUiActive = Object.create(null);
 /** False until the user starts a match via New match (best-of dialog). */
 let matchUiActive = false;
+/** Live play: full score cards hidden until mini-board next to Aim is tapped. */
+let scoreboardExpanded = false;
 
 function setMatchUiActive(on) {
   const was = matchUiActive;
   matchUiActive = !!on;
   const page = document.getElementById('pageScore');
   if (page) page.classList.toggle('prematch', !matchUiActive);
-  if (!matchUiActive) cancelBotThrow();
+  if (!matchUiActive) {
+    cancelBotThrow();
+    scoreboardExpanded = false;
+  } else if (!was) {
+    scoreboardExpanded = false;
+  }
+  syncScoreboardChrome();
   // Board was display:none in prematch — clientWidth was 0, so the canvas
   // bitmap stayed empty. Re-measure after it becomes visible.
   if (matchUiActive && !was) {
@@ -6646,6 +6684,64 @@ function statusMessageHtml(msg) {
   return '<div class="msg' + (err ? ' err' : '') + '">' + msg + '</div>';
 }
 
+function miniScoreboardButtonHtml() {
+  if (!match || !match.players) return '';
+  const cricket = match.game === 'cricket';
+  let lines = '';
+  for (let i = 0; i < match.players.length; i++) {
+    const p = match.players[i];
+    const on = match.winner === null && match.current === i && !playerOutOfLeg(match, i);
+    let val;
+    if (cricket) val = String(p.points | 0);
+    else if (playerOutOfLeg(match, i) || (p.remaining | 0) === 0)
+      val = '✓';
+    else val = String(p.remaining | 0);
+    const nm = String(p.name || ('P' + (i + 1))).slice(0, 3);
+    lines += '<span class="mb-line' + (on ? ' on' : '') + '">'
+      + '<span class="mb-name">' + nm + '</span>'
+      + '<span class="mb-val">' + val + '</span></span>';
+  }
+  return '<button type="button" class="mini-board'
+    + (scoreboardExpanded ? ' open' : '')
+    + '" id="btnMiniBoard" title="Show scoreboard" aria-label="Show scoreboard">'
+    + lines + '</button>';
+}
+
+function wrapAimWithMiniBoard(aimInnerHtml, etHtml) {
+  // During live play, mini board sits left of Aim; full cards toggle on tap.
+  const showMini = !!(match && matchUiActive);
+  let html = '<div class="aim-row"><div class="aim-main">';
+  if (showMini) html += miniScoreboardButtonHtml();
+  html += '<div class="aim">' + aimInnerHtml + '</div></div>';
+  if (etHtml) html += etHtml;
+  html += '</div>';
+  return html;
+}
+
+function syncScoreboardChrome() {
+  const cards = document.getElementById('scoreCards');
+  if (!cards) return;
+  // Prematch / finished: always show full cards. Live: collapsed unless expanded
+  // (or bot needs the Start button on its card).
+  const needBotStart = !!(botPaused && match && matchUiActive
+    && match.winner === null && isBotSeat(match.current));
+  const collapse = !!(matchUiActive && match && match.winner === null
+    && !scoreboardExpanded && !needBotStart);
+  cards.classList.toggle('play-collapsed', collapse);
+}
+
+function bindMiniBoardButton() {
+  const btn = document.getElementById('btnMiniBoard');
+  if (!btn) return;
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    scoreboardExpanded = !scoreboardExpanded;
+    syncScoreboardChrome();
+    btn.classList.toggle('open', scoreboardExpanded);
+  });
+}
+
 function statsRowsForPlayers(ps, game, opts) {
   opts = opts || {};
   const includeLegs = !!opts.includeLegs;
@@ -6836,13 +6932,14 @@ function render() {
       const overLabel = match.matchWinner != null ? 'Match over' : 'Game over';
       elInfo.innerHTML = '<div class="turn">' + overLabel + '</div>'
         + '<div class="aim">' + match.message + '</div>';
+      scoreboardExpanded = true;
     } else {
       const me = match.players[match.current];
       const sigma = activeSigma();
       let html = '';
       if (isCutThroat(match)) {
-        html += '<div class="aim">Score: ' + cricketScoreline(match)
-          + ' (lowest wins)</div>';
+        html += wrapAimWithMiniBoard(
+          'Score: ' + cricketScoreline(match) + ' (lowest wins)', '');
         html += '<div class="why">Extra hits after closing add points to opponents still open on that number.</div>';
       } else {
         const opp = match.players[1 - match.current];
@@ -6875,14 +6972,16 @@ function render() {
         }
         const why = explainCricketWhy(aimLab, pWin, heur.why);
         match.lastCoachAim = { aim: aimLab, why: why, score: null, darts: match.dartsLeft };
-        html += '<div class="aim">Aim: ' + aimLab + '</div>';
+        html += wrapAimWithMiniBoard('Aim: ' + aimLab, '');
         html += '<div class="why">' + why + '</div>';
         if (resolved.status === 'loading')
           html += '<div class="row warn">Loading Cricket aim table…</div>';
       }
       html += statusMessageHtml(match.message);
       elInfo.innerHTML = html;
+      bindMiniBoardButton();
     }
+    syncScoreboardChrome();
     renderStats();
     finishRenderBotHooks();
     return;
@@ -6892,6 +6991,8 @@ function render() {
     const overLabel = match.matchWinner != null ? 'Match over' : 'Leg over';
     elInfo.innerHTML = '<div class="turn">' + overLabel + '</div>'
       + '<div class="aim">' + match.message + '</div>';
+    scoreboardExpanded = true;
+    syncScoreboardChrome();
     renderStats();
     finishRenderBotHooks();
     return;
@@ -6911,6 +7012,8 @@ function render() {
     html += '<div class="row warn">' + policyStatus + '</div>';
 
   if (!entry) {
+    const turnName = match.players[match.current].name || 'Player';
+    html += wrapAimWithMiniBoard(turnName + ' to throw', '');
     if (!resolved.policy && resolved.status !== 'loading')
       html += '<div class="warn">No aim table loaded for this accuracy yet.</div>';
     else if (resolved.status === 'loading')
@@ -6924,15 +7027,17 @@ function render() {
     const aimClean = aims.length ? aims[0] : displayAim(aim, x, y);
     const why = explainAimWhy(score, darts, entry, steps, aimSource);
     drawAim(x, y, resolved.snap);
-    html += '<div class="aim-row"><div class="aim">Aim: ' + aimClean;
-    for (let i = 1; i < aims.length; i++)
-      html += '<span class="next"> ' + aims[i] + '</span>';
-    html += '</div><div class="et">Expected turns: ' + et.toFixed(3) + '</div></div>';
+    const aimInner = 'Aim: ' + aimClean
+      + aims.slice(1).map(a => '<span class="next"> ' + a + '</span>').join('');
+    const etHtml = '<div class="et">Expected turns: ' + et.toFixed(3) + '</div>';
+    html += wrapAimWithMiniBoard(aimInner, etHtml);
     if (why) html += '<div class="why">' + why + '</div>';
     match.lastCoachAim = { aim: aimClean, why: why, score: score, darts: darts, et: et };
   }
   html += statusMessageHtml(match.message);
   elInfo.innerHTML = html;
+  bindMiniBoardButton();
+  syncScoreboardChrome();
   renderStats();
   finishRenderBotHooks();
 }
@@ -6975,7 +7080,7 @@ function runPrescribedDrill(code) {
   else showPage('practice');
 }
 
-let pendingVisitMeta = null; // { score, isCheckout, dartsUsed }
+let pendingVisitMeta = null; // { score, isCheckout, dartsUsed, attempts }
 
 /** Remaining after a visit-total score (bust restores leave). */
 function remainingAfterVisitTotal(leave, score) {
@@ -7000,7 +7105,7 @@ function closeCheckoutAttemptsModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-function finishPendingVisitCommit(attempts) {
+function finishPendingVisitCommit() {
   if (!pendingVisitMeta) return;
   const score = pendingVisitMeta.score | 0;
   const isCheckout = !!pendingVisitMeta.isCheckout;
@@ -7008,65 +7113,108 @@ function finishPendingVisitCommit(attempts) {
     ? (pendingVisitMeta.dartsUsed | 0) : 3;
   if (dartsUsed < 1) dartsUsed = 1;
   if (dartsUsed > 3) dartsUsed = 3;
-  let att = attempts | 0;
+  let att = (pendingVisitMeta.attempts != null)
+    ? (pendingVisitMeta.attempts | 0) : (isCheckout ? 1 : 0);
   if (isCheckout && att < 1) att = 1;
   if (att > dartsUsed) att = dartsUsed;
   closeCheckoutAttemptsModal();
   commitVisitTotal(score, { checkoutAttempts: att, dartCount: dartsUsed });
 }
 
-function showCheckoutVisitStep(step) {
+function syncCheckoutOkEnabled() {
+  const ok = document.getElementById('checkoutAttemptsOk');
+  if (!ok || !pendingVisitMeta) return;
+  const isCheckout = !!pendingVisitMeta.isCheckout;
+  const hasDarts = !isCheckout || pendingVisitMeta.dartsUsed != null;
+  const hasAtt = pendingVisitMeta.attempts != null;
+  ok.disabled = !(hasDarts && hasAtt);
+}
+
+function renderCheckoutVisitModal() {
   if (!pendingVisitMeta || !match) return;
   const leave = match.turnStart | 0;
   const score = pendingVisitMeta.score | 0;
+  const isCheckout = !!pendingVisitMeta.isCheckout;
   const title = document.getElementById('checkoutAttemptsTitle');
   const hint = document.getElementById('checkoutAttemptsHint');
-  const picks = document.getElementById('checkoutAttemptsPicks');
+  const body = document.getElementById('checkoutAttemptsBody');
   const modal = document.getElementById('checkoutAttemptsModal');
-  if (!picks || !modal) return;
+  if (!body || !modal) return;
 
-  if (step === 'darts') {
-    if (title) title.textContent = 'Darts to checkout';
-    if (hint) {
-      hint.textContent = 'Checked out ' + leave
-        + '. How many darts did you use to finish?';
-    }
-    picks.innerHTML = [1, 2, 3].map(n =>
-      '<button type="button" data-darts="' + n + '">' + n + '</button>').join('');
-    picks.style.gridTemplateColumns = 'repeat(3, 1fr)';
-  } else {
-    const dartsUsed = (pendingVisitMeta.dartsUsed != null)
-      ? (pendingVisitMeta.dartsUsed | 0) : 3;
-    const maxAttRaw = maxClosingDoubleAttempts(leave, 3);
-    const isCheckout = !!pendingVisitMeta.isCheckout;
-    const minAtt = isCheckout ? 1 : 0;
-    let hi = Math.min(maxAttRaw > 0 ? maxAttRaw : (isCheckout ? 1 : 0), dartsUsed);
-    if (isCheckout && hi < 1) hi = 1;
-    if (hi < minAtt) hi = minAtt;
-    // No finishing-double dart possible (non-checkout) — record 0.
-    if (!isCheckout && maxAttRaw < 1) {
-      finishPendingVisitCommit(0);
-      return;
-    }
-    if (title) title.textContent = 'Checkout attempts';
-    if (hint) {
-      const after = remainingAfterVisitTotal(leave, score);
-      hint.textContent = (isCheckout
-        ? ('Finished in ' + dartsUsed + ' dart' + (dartsUsed === 1 ? '' : 's') + '. ')
-        : ('Leave after visit: ' + after + '. '))
-        + 'How many darts at a finishing double?'
-        + (hi < dartsUsed ? ' (max ' + hi + ')' : '');
-    }
-    let html = '';
-    for (let a = minAtt; a <= hi; a++)
-      html += '<button type="button" data-attempts="' + a + '">' + a + '</button>';
-    picks.innerHTML = html;
-    picks.style.gridTemplateColumns = 'repeat(' + picks.children.length + ', 1fr)';
+  const dartsUsed = (pendingVisitMeta.dartsUsed != null)
+    ? (pendingVisitMeta.dartsUsed | 0) : (isCheckout ? null : 3);
+  const maxAttRaw = maxClosingDoubleAttempts(leave, 3);
+  const minAtt = isCheckout ? 1 : 0;
+  let hi = Math.min(
+    maxAttRaw > 0 ? maxAttRaw : (isCheckout ? 1 : 0),
+    dartsUsed != null ? dartsUsed : 3);
+  if (isCheckout && hi < 1) hi = 1;
+  if (hi < minAtt) hi = minAtt;
+
+  if (!isCheckout && maxAttRaw < 1) {
+    pendingVisitMeta.attempts = 0;
+    pendingVisitMeta.dartsUsed = 3;
+    finishPendingVisitCommit();
+    return;
   }
+
+  if (title) title.textContent = isCheckout ? 'Checkout' : 'Checkout attempts';
+  if (hint) {
+    hint.textContent = isCheckout
+      ? ('Checked out ' + leave + '. Pick both below, then OK.')
+      : ('Leave after visit: ' + remainingAfterVisitTotal(leave, score)
+        + '. How many darts at a finishing double?');
+  }
+
+  let html = '';
+  if (isCheckout) {
+    html += '<div class="checkout-stack-block">'
+      + '<div class="checkout-stack-label">Darts used to checkout</div>'
+      + '<div class="checkout-attempts-picks" id="checkoutDartsPicks">';
+    for (let n = 1; n <= 3; n++) {
+      html += '<button type="button" data-darts="' + n + '"'
+        + (dartsUsed === n ? ' class="sel"' : '') + '>' + n + '</button>';
+    }
+    html += '</div></div>';
+  }
+
+  html += '<div class="checkout-stack-block">'
+    + '<div class="checkout-stack-label">Checkout attempts (at a finishing double)</div>'
+    + '<div class="checkout-attempts-picks" id="checkoutAttemptsPicks">';
+  for (let a = minAtt; a <= hi; a++) {
+    html += '<button type="button" data-attempts="' + a + '"'
+      + (pendingVisitMeta.attempts === a ? ' class="sel"' : '') + '>' + a + '</button>';
+  }
+  html += '</div></div>';
+  body.innerHTML = html;
+
+  // If previously chosen attempts now exceed darts used, clear them.
+  if (pendingVisitMeta.attempts != null && pendingVisitMeta.attempts > hi)
+    pendingVisitMeta.attempts = null;
+
+  body.querySelectorAll('button[data-darts]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      let d = parseInt(btn.getAttribute('data-darts'), 10);
+      if (!Number.isFinite(d) || d < 1) d = 1;
+      if (d > 3) d = 3;
+      pendingVisitMeta.dartsUsed = d;
+      if (pendingVisitMeta.attempts != null && pendingVisitMeta.attempts > d)
+        pendingVisitMeta.attempts = null;
+      renderCheckoutVisitModal();
+    });
+  });
+  body.querySelectorAll('button[data-attempts]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingVisitMeta.attempts = parseInt(btn.getAttribute('data-attempts'), 10);
+      renderCheckoutVisitModal();
+    });
+  });
+
+  syncCheckoutOkEnabled();
   modal.classList.remove('hidden');
 }
 
-/** Start visit-total follow-up: on checkout ask darts used, then attempts; else attempts only if leave&lt;50. */
+/** Start visit-total follow-up: checkout asks darts+attempts together; else attempts if leave&lt;50. */
 function openCheckoutAttemptsModal(score) {
   score = score | 0;
   const leave = match ? (match.turnStart | 0) : 0;
@@ -7079,9 +7227,9 @@ function openCheckoutAttemptsModal(score) {
     score: score,
     isCheckout: isCheckout,
     dartsUsed: isCheckout ? null : 3,
+    attempts: null,
   };
-  if (isCheckout) showCheckoutVisitStep('darts');
-  else showCheckoutVisitStep('attempts');
+  renderCheckoutVisitModal();
 }
 
 (function wireVisitOk() {
@@ -7104,27 +7252,12 @@ function openCheckoutAttemptsModal(score) {
   const modal = document.getElementById('checkoutAttemptsModal');
   if (!modal) return;
   const cancel = document.getElementById('checkoutAttemptsCancel');
-  const picks = document.getElementById('checkoutAttemptsPicks');
+  const ok = document.getElementById('checkoutAttemptsOk');
   if (cancel) cancel.addEventListener('click', closeCheckoutAttemptsModal);
-  if (picks) {
-    picks.addEventListener('click', (e) => {
-      const dartsBtn = e.target.closest('button[data-darts]');
-      if (dartsBtn) {
-        if (!pendingVisitMeta) return;
-        let d = parseInt(dartsBtn.getAttribute('data-darts'), 10);
-        if (!Number.isFinite(d) || d < 1) d = 1;
-        if (d > 3) d = 3;
-        pendingVisitMeta.dartsUsed = d;
-        showCheckoutVisitStep('attempts');
-        return;
-      }
-      const attBtn = e.target.closest('button[data-attempts]');
-      if (!attBtn) return;
-      if (!pendingVisitMeta) return;
-      const attempts = parseInt(attBtn.getAttribute('data-attempts'), 10);
-      finishPendingVisitCommit(attempts);
-    });
-  }
+  if (ok) ok.addEventListener('click', () => {
+    if (ok.disabled) return;
+    finishPendingVisitCommit();
+  });
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeCheckoutAttemptsModal();
   });
