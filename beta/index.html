@@ -1712,16 +1712,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.90-beta / 2026-08-14 / 164fb99</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.91-beta / 2026-08-14 / 164fb99</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.90-beta / 2026-08-14 / 164fb99';
+const APP_VERSION = '0.1.91-beta / 2026-08-14 / 164fb99';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.90-beta-2026-08-14-164fb99';
+const POLICY_CACHE_BUST = '0.1.91-beta-2026-08-14-164fb99';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -3301,7 +3301,7 @@ function isCheckoutChance(rem) {
   return isFinite(minDartsToOneDartFinish(rem, 2));
 }
 
-/** True if n is a legal double score (D1–D20 or bull) — required to open on 301 DI. */
+/** True if n is a legal double score (D1–D20 or bull). */
 function isValidOpeningDoubleScore(n) {
   n = n | 0;
   if (n === 50) return true;
@@ -3320,6 +3320,41 @@ const ONE_DART_SCORES = (function () {
   for (let i = 1; i <= 20; i++) s.push(i, 2 * i, 3 * i);
   return s;
 })();
+const ONE_DART_SCORE_SET = (function () {
+  const set = {};
+  for (let i = 0; i < ONE_DART_SCORES.length; i++) set[ONE_DART_SCORES[i]] = true;
+  return set;
+})();
+/** Sums of two legal single-dart scores (incl. miss). */
+const TWO_DART_SCORE_SET = (function () {
+  const set = {};
+  for (let i = 0; i < ONE_DART_SCORES.length; i++) {
+    for (let j = 0; j < ONE_DART_SCORES.length; j++)
+      set[ONE_DART_SCORES[i] + ONE_DART_SCORES[j]] = true;
+  }
+  return set;
+})();
+
+/**
+ * 301 DI visit-total: positive score is legal if it can be
+ * (opening double) + up to two more darts after opening.
+ * e.g. Bull + 9 = 59; max Bull + T20 + T20 = 170.
+ */
+function isValidOpeningVisitScore(n) {
+  n = n | 0;
+  if (n <= 0 || n > 170) return false;
+  if (isValidOpeningDoubleScore(n)) return true;
+  for (let d = 2; d <= 40; d += 2) {
+    const rest = n - d;
+    if (rest < 0) continue;
+    if (ONE_DART_SCORE_SET[rest] || TWO_DART_SCORE_SET[rest]) return true;
+  }
+  const restBull = n - 50;
+  if (restBull >= 0
+      && (ONE_DART_SCORE_SET[restBull] || TWO_DART_SCORE_SET[restBull]))
+    return true;
+  return false;
+}
 
 /**
  * Fewest darts needed to leave a one-dart finish (0 if already there).
@@ -3622,8 +3657,8 @@ function throwVisitTotal(m, score, opts) {
   const remCheck = pCheck.remaining;
   // Validate before mutating / undo so OK can refuse cleanly.
   if (m.doubleIn && !pCheck.opened && !forceBust && score > 0
-      && !isValidOpeningDoubleScore(score))
-    throw new Error('301 DI: first score must be a double (2, 4, … 40, or 50)');
+      && !isValidOpeningVisitScore(score))
+    throw new Error('301 DI: opening visit needs a double first (e.g. Bull+9=59)');
   if (!forceBust && score === remCheck && !isCheckoutChance(remCheck))
     throw new Error('Cannot check out ' + remCheck + ' with a visit total');
 
@@ -4007,7 +4042,7 @@ function remBeforePlayerVisit(m, playerIdx, histIdx) {
     const sc = v.score | 0;
     if (m.doubleIn && !opened) {
       if (sc <= 0) continue;
-      if (!isValidOpeningDoubleScore(sc)) continue;
+      if (!isValidOpeningVisitScore(sc)) continue;
       opened = true;
     }
     if (sc > rem || (rem - sc) === 1) continue;
@@ -4077,7 +4112,7 @@ function syncPlayerRemainingFromHistory(m, playerIdx) {
     const sc = v.score | 0;
     if (m.doubleIn && !opened) {
       if (sc <= 0) continue;
-      if (!isValidOpeningDoubleScore(sc)) continue;
+      if (!isValidOpeningVisitScore(sc)) continue;
       opened = true;
     }
     if (sc > rem || (rem - sc) === 1) continue;
@@ -4124,8 +4159,8 @@ function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
   const before = remBeforePlayerVisit(match, playerIdx, histIdx);
   const remBefore = before.remBefore | 0;
   if (match.doubleIn && !before.opened && !bust && sc > 0
-      && !isValidOpeningDoubleScore(sc))
-    return '301 DI: opening score must be a double (2…40 or 50)';
+      && !isValidOpeningVisitScore(sc))
+    return '301 DI: opening visit needs a double first (e.g. Bull+9=59)';
   if (!bust && sc > remBefore) return 'Score cannot exceed leave (' + remBefore + ')';
   if (!bust && sc > 0 && (remBefore - sc) === 1) return 'Cannot leave 1';
   // Bust button or impossible leave (incl. bogeys like 169) → refuse checkout.
