@@ -1726,6 +1726,12 @@
         <button type="button" id="histBack" class="primary hidden">Back to list</button>
         <button type="button" id="histDelete" class="danger hidden">Delete</button>
       </div>
+      <div style="margin-top:6px">
+        <button type="button" id="histDeleteAll" class="danger hidden"
+                style="width:100%;border-radius:10px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;background:#3a1e1e;color:#ff8a8a;border:1px solid #552222">
+          Delete all history for this player
+        </button>
+      </div>
     </div>
   </div><!-- /pageHistory -->
 
@@ -1736,16 +1742,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.104-beta / 2026-08-15 / 6154c90</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.105-beta / 2026-08-15 / 6154c90</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.104-beta / 2026-08-15 / 6154c90';
+const APP_VERSION = '0.1.105-beta / 2026-08-15 / 6154c90';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.104-beta-2026-08-15-6154c90';
+const POLICY_CACHE_BUST = '0.1.105-beta-2026-08-15-6154c90';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -4904,6 +4910,7 @@ function renderPlayerHistory() {
       + (rows.length === 1 ? '' : 'es') + ' on this device')
     : 'Type a player name to see history.';
 
+  const delAllBtn = document.getElementById('histDeleteAll');
   if (histDetailId) {
     const rec = loadMatchHistory().find(r => r && r.id === histDetailId);
     if (!rec) {
@@ -4912,6 +4919,7 @@ function renderPlayerHistory() {
     } else {
       syncHistActionButtons(true);
       box.innerHTML = renderMatchDetailHtml(rec, name);
+      if (delAllBtn) delAllBtn.classList.add('hidden');
       return;
     }
   }
@@ -4922,6 +4930,7 @@ function renderPlayerHistory() {
       + (name ? 'No finished matches saved for this name yet.'
               : 'Enter a name to view history.')
       + '</div></div>';
+    if (delAllBtn) delAllBtn.classList.add('hidden');
     return;
   }
 
@@ -4973,6 +4982,24 @@ function renderPlayerHistory() {
       renderPlayerHistory();
     });
   });
+  if (delAllBtn) delAllBtn.classList.remove('hidden');
+}
+
+function deleteAllPlayerHistory() {
+  const name = coachPlayerName();
+  if (!name) return;
+  const rows = matchesForPlayer(name);
+  if (!rows.length) return;
+  const ok = window.confirm(
+    'Delete all ' + rows.length + ' saved match'
+    + (rows.length === 1 ? '' : 'es') + ' for ' + name + '?\n\nThis cannot be undone.');
+  if (!ok) return;
+  const key = normPlayerName(name);
+  storeMatchHistory(loadMatchHistory().filter(r =>
+    !r || !Array.isArray(r.players) ||
+    !r.players.some(p => normPlayerName(p.name) === key)));
+  histDetailId = null;
+  renderHistPage();
 }
 
 function renderMatchDetailHtml(rec, focusName) {
@@ -7997,6 +8024,8 @@ for (const idx of [0, 1, 2]) {
 document.getElementById('playerCancel').addEventListener('click', cancelPlayerModal);
 const histRefreshBtn = document.getElementById('histRefresh');
 if (histRefreshBtn) histRefreshBtn.addEventListener('click', () => { histDetailId = null; renderHistPage(); });
+const histDeleteAllBtn = document.getElementById('histDeleteAll');
+if (histDeleteAllBtn) histDeleteAllBtn.addEventListener('click', deleteAllPlayerHistory);
 document.getElementById('histBack').addEventListener('click', () => {
   histDetailId = null;
   renderPlayerHistory();
