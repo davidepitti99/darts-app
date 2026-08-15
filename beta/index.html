@@ -1728,16 +1728,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.95-beta / 2026-08-14 / afcf8fd</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.97-beta / 2026-08-14 / afcf8fd</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.95-beta / 2026-08-14 / afcf8fd';
+const APP_VERSION = '0.1.97-beta / 2026-08-14 / afcf8fd';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.95-beta-2026-08-14-afcf8fd';
+const POLICY_CACHE_BUST = '0.1.97-beta-2026-08-14-afcf8fd';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2645,8 +2645,16 @@ function buildMatchShareText(m) {
   lines.push(shareStatRow('', ps.map(p => p.name)));
   if (m.game === 'cricket') {
     const closed = (p) => CRICKET_KEYS.filter(k => ((p.marks || {})[k] || 0) >= 3).length;
+    lines.push(shareStatRow('MPR', ps.map(p => fmtShareStat(cricketMpr(p), 2))));
+    lines.push(shareStatRow('Marks', ps.map(p => p.marksHit | 0)));
+    lines.push(shareStatRow('First 9 MPR', ps.map(p => fmtShareStat(cricketFirst9Mpr(p), 2))));
     lines.push(shareStatRow('Points', ps.map(p => p.points | 0)));
     lines.push(shareStatRow('Closed', ps.map(p => closed(p) + '/7')));
+    lines.push(shareStatRow('5-mark', ps.map(p => p.marks5 | 0)));
+    lines.push(shareStatRow('6-mark', ps.map(p => p.marks6 | 0)));
+    lines.push(shareStatRow('9-mark', ps.map(p => p.marks9 | 0)));
+    lines.push(shareStatRow('White horses', ps.map(p => p.whiteHorses | 0)));
+    lines.push(shareStatRow('Bulls', ps.map(p => p.bullHits | 0)));
     lines.push(shareStatRow('Darts', ps.map(p => p.dartsThrown | 0)));
   } else {
     lines.push(shareStatRow('3-dart avg', ps.map(p => fmtShareStat(avg3(p), 1))));
@@ -2748,6 +2756,14 @@ function makePlayer(name, start, doubleIn, game) {
     p.remaining = 0; // cricket points shown in rem
     p.marks = emptyCricketMarks();
     p.points = 0;
+    p.marksHit = 0;
+    p.first9Marks = 0;
+    p.first9MarkDarts = 0;
+    p.marks5 = 0;
+    p.marks6 = 0;
+    p.marks9 = 0;
+    p.whiteHorses = 0;
+    p.bullHits = 0;
   }
   return p;
 }
@@ -3202,6 +3218,8 @@ function throwCricketDart(m, label) {
   const t = cricketTarget(label);
   let scored = 0;
   let note = label;
+  let marksThisDart = 0;
+  let whiteHorse = false;
   if (t) {
     let left = t.marks;
     const before = p.marks[t.key] || 0;
@@ -3209,6 +3227,7 @@ function throwCricketDart(m, label) {
     const used = Math.min(left, room);
     p.marks[t.key] = before + used;
     left -= used;
+    marksThisDart = used;
     if (left > 0) {
       const face = left * t.value;
       if (cutThroat) {
@@ -3226,15 +3245,17 @@ function throwCricketDart(m, label) {
           }
         }
         scored = dealt;
-        if (hitOpen)
+        if (hitOpen) {
+          marksThisDart += left;
           note = label + ' +' + face + ' → ' + hitOpen + ' open';
-        else
+        } else
           note = label + ' (dead)';
       } else {
         const opp = m.players[1 - m.current];
         if ((opp.marks[t.key] || 0) < 3) {
           // Classic: points only after you own the number, while opponent is open.
           scored = face;
+          marksThisDart += left;
           p.points += scored;
           p.remaining = p.points;
           p.pointsScored += scored;
@@ -3247,8 +3268,31 @@ function throwCricketDart(m, label) {
     if (!note.includes('dead') && !note.includes('+')
         && t && (p.marks[t.key] || 0) >= 3)
       note = label + (before < 3 ? ' closed' : '');
+    // White horse: close a number while every opponent still has 0 on it.
+    if (before < 3 && (p.marks[t.key] || 0) >= 3) {
+      let oppClean = true;
+      for (let i = 0; i < m.players.length; i++) {
+        if (i === m.current) continue;
+        if ((m.players[i].marks[t.key] || 0) > 0) { oppClean = false; break; }
+      }
+      if (oppClean) {
+        whiteHorse = true;
+        p.whiteHorses = (p.whiteHorses | 0) + 1;
+      }
+    }
   } else if (label !== 'Miss' && label !== 'Bounce') {
     note = label + ' (inactive)';
+  }
+  if (marksThisDart > 0) {
+    p.marksHit = (p.marksHit | 0) + marksThisDart;
+    if ((p.first9MarkDarts | 0) < 9) {
+      p.first9Marks = (p.first9Marks || 0) + marksThisDart;
+      p.first9MarkDarts = (p.first9MarkDarts | 0) + 1;
+    }
+    if (t && t.key === 'Bull')
+      p.bullHits = (p.bullHits | 0) + 1;
+  } else if ((p.first9MarkDarts | 0) < 9) {
+    p.first9MarkDarts = (p.first9MarkDarts | 0) + 1;
   }
   if (cutThroat && scored)
     p.pointsScored += scored; // damage dealt this visit
@@ -3256,6 +3300,8 @@ function throwCricketDart(m, label) {
     label, points: scored, isDouble: false,
     outcome: scored ? 'ok' : (t ? 'mark' : 'no_score'),
     remainingAfter: p.points,
+    marks: marksThisDart,
+    whiteHorse: whiteHorse,
   }, suggested);
   m.visitDarts.push(result);
   m.visitPoints += scored;
@@ -3302,6 +3348,17 @@ function avg3(p) {
 function avgFirst9(p) {
   if ((p.first9Darts | 0) < 9) return null;
   return p.first9Points / p.first9Darts * 3;
+}
+/** Cricket marks per round (3-dart visit equivalent). */
+function cricketMpr(p) {
+  const d = p.dartsThrown | 0;
+  if (!d) return null;
+  return ((p.marksHit | 0) * 3) / d;
+}
+/** Cricket MPR over the first 9 darts (null until 9 thrown). */
+function cricketFirst9Mpr(p) {
+  if ((p.first9MarkDarts | 0) < 9) return null;
+  return ((p.first9Marks || 0) * 3) / (p.first9MarkDarts | 0);
 }
 function checkoutPct(p) {
   return p.checkoutAttempts ? (100 * p.checkoutHits / p.checkoutAttempts) : null;
@@ -3521,13 +3578,16 @@ function finishVisit(m, busted) {
   const dartCount = (m.visitForcedDartCount != null)
     ? (m.visitForcedDartCount | 0)
     : visitDartCount(m);
-  creditFirst9Visit(p, score, dartCount);
+  if (m.game !== 'cricket')
+    creditFirst9Visit(p, score, dartCount);
   p.visitScores.push(score);
   let checkoutFrom = 0;
   for (const d of (m.visitDarts || [])) {
     if (d && d.outcome === 'checkout')
       checkoutFrom = (d.remainingAfter | 0) + (d.points | 0);
   }
+  const visitMarks = (m.visitDarts || []).reduce(
+    (a, d) => a + ((d && d.marks) | 0), 0);
   const visitRec = {
     player: m.current,
     name: p.name,
@@ -3539,6 +3599,14 @@ function finishVisit(m, busted) {
     darts: (m.visitDarts || []).map(cloneDartRec),
   };
   if (checkoutFrom > 0) visitRec.checkoutFrom = checkoutFrom;
+  if (m.game === 'cricket') {
+    visitRec.marks = visitMarks;
+    if (!busted) {
+      if (visitMarks === 5) p.marks5 = (p.marks5 | 0) + 1;
+      else if (visitMarks === 6) p.marks6 = (p.marks6 | 0) + 1;
+      else if (visitMarks === 9) p.marks9 = (p.marks9 | 0) + 1;
+    }
+  }
   if (!p.visitHistory) p.visitHistory = [];
   if (!m.visitLog) m.visitLog = [];
   p.visitHistory.push(visitRec);
@@ -3676,7 +3744,7 @@ function throwVisitTotal(m, score, opts) {
       && !isValidOpeningVisitScore(score))
     throw new Error('301 DI: open score between 2 and 170');
   if (!forceBust && score === remCheck && !isCheckoutChance(remCheck))
-    throw new Error('Cannot check out ' + remCheck + ' with a visit total');
+    throw new Error('Cannot check out ' + remCheck);
 
   pushUndo(m);
   const p = m.players[m.current];
@@ -4181,7 +4249,7 @@ function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
   if (!bust && sc > 0 && (remBefore - sc) === 1) return 'Cannot leave 1';
   // Bust button or impossible leave (incl. bogeys like 169) → refuse checkout.
   if (!bust && sc > 0 && sc === remBefore && !isCheckoutChance(remBefore))
-    return 'Cannot check out ' + remBefore + ' with a visit total';
+    return 'Cannot check out ' + remBefore;
 
   pushUndo(match);
   const wasCheckout = !!(v.darts && v.darts.some(d => d && d.outcome === 'checkout'));
@@ -4398,6 +4466,8 @@ function cloneDartRec(d) {
   };
   if (Number.isFinite(d.suggestedX)) out.suggestedX = +d.suggestedX;
   if (Number.isFinite(d.suggestedY)) out.suggestedY = +d.suggestedY;
+  if (d.marks != null) out.marks = d.marks | 0;
+  if (d.whiteHorse) out.whiteHorse = true;
   return out;
 }
 
@@ -4414,6 +4484,7 @@ function cloneVisitRec(v) {
     darts: (v.darts || []).map(cloneDartRec),
   };
   if (v.checkoutFrom != null) out.checkoutFrom = v.checkoutFrom | 0;
+  if (v.marks != null) out.marks = v.marks | 0;
   return out;
 }
 
@@ -4425,6 +4496,8 @@ function statsFromVisits(visits, game) {
     checkoutHits: 0, checkoutAttempts: 0,
     highestCheckout: 0, highestVisit: 0,
     scores100: 0, scores140: 0, scores180: 0, busts: 0,
+    marksHit: 0, first9Marks: 0, first9MarkDarts: 0,
+    marks5: 0, marks6: 0, marks9: 0, whiteHorses: 0, bullHits: 0,
   };
   for (const v of (visits || [])) {
     if (!v) continue;
@@ -4433,7 +4506,7 @@ function statsFromVisits(visits, game) {
     s.checkoutAttempts += (v.checkoutAttempts | 0);
     if (v.busted) {
       s.busts += 1;
-      creditFirst9Visit(s, 0, dc);
+      if (game !== 'cricket') creditFirst9Visit(s, 0, dc);
       continue;
     }
     const sc = v.score | 0;
@@ -4448,9 +4521,41 @@ function statsFromVisits(visits, game) {
       const leave = (v.checkoutFrom != null) ? (v.checkoutFrom | 0) : sc;
       if (leave > (s.highestCheckout | 0)) s.highestCheckout = leave;
     }
-    creditFirst9Visit(s, sc, dc);
+    if (game === 'cricket') {
+      let vm = (v.marks != null) ? (v.marks | 0) : 0;
+      if (v.marks == null && v.darts) {
+        vm = v.darts.reduce((a, d) => a + ((d && d.marks) | 0), 0);
+      }
+      s.marksHit += vm;
+      if (vm === 5) s.marks5 += 1;
+      else if (vm === 6) s.marks6 += 1;
+      else if (vm === 9) s.marks9 += 1;
+      for (const d of (v.darts || [])) {
+        if (!d) continue;
+        if (d.whiteHorse) s.whiteHorses += 1;
+        const mk = d.marks | 0;
+        if (mk > 0 && (d.label === 'Bull' || d.label === '25'))
+          s.bullHits += 1;
+        if ((s.first9MarkDarts | 0) < 9) {
+          s.first9Marks = (s.first9Marks || 0) + mk;
+          s.first9MarkDarts = (s.first9MarkDarts | 0) + 1;
+        }
+      }
+      // Visits shorter than dart list (shouldn't happen) — pad first-9 dart count.
+      const dartN = (v.darts && v.darts.length) ? v.darts.length : dc;
+      if (dartN < dc && (s.first9MarkDarts | 0) < 9) {
+        const pad = Math.min(dc - dartN, 9 - (s.first9MarkDarts | 0));
+        s.first9MarkDarts = (s.first9MarkDarts | 0) + pad;
+      }
+    } else {
+      creditFirst9Visit(s, sc, dc);
+    }
   }
-  if (game !== 'cricket') {
+  if (game === 'cricket') {
+    s.mpr = s.dartsThrown ? (s.marksHit * 3 / s.dartsThrown) : null;
+    s.mprFirst9 = (s.first9MarkDarts | 0) >= 9
+      ? (s.first9Marks * 3 / s.first9MarkDarts) : null;
+  } else {
     s.avg3 = s.dartsThrown ? (s.pointsScored / s.dartsThrown * 3) : null;
     s.avgFirst9 = (s.first9Darts | 0) >= 9
       ? (s.first9Points / s.first9Darts * 3) : null;
@@ -4476,11 +4581,24 @@ function playerLegSnapshot(m, playerIdx, leg) {
       && (m.current | 0) === (playerIdx | 0)
       && (m.visitDarts || []).length) {
     s.dartsThrown += visitDartCount(m);
+    if (m.game === 'cricket') {
+      for (const d of m.visitDarts) {
+        const mk = (d && d.marks) | 0;
+        s.marksHit = (s.marksHit | 0) + mk;
+        if (d && d.whiteHorse) s.whiteHorses = (s.whiteHorses | 0) + 1;
+        if (mk > 0 && d && (d.label === 'Bull' || d.label === '25'))
+          s.bullHits = (s.bullHits | 0) + 1;
+      }
+      s.mpr = s.dartsThrown ? (s.marksHit * 3 / s.dartsThrown) : null;
+    }
   }
   s.name = p.name;
   if (m.game === 'cricket') {
     s.points = p.points | 0;
     s.closed = CRICKET_KEYS.filter(k => ((p.marks || {})[k] || 0) >= 3).length;
+    if (s.mpr == null && (p.dartsThrown | 0))
+      s.mpr = cricketMpr(p);
+    if (s.mprFirst9 == null) s.mprFirst9 = cricketFirst9Mpr(p);
   }
   return s;
 }
@@ -4511,6 +4629,16 @@ function playerStatsSnapshot(p, game) {
     snap.points = p.points | 0;
     snap.marks = Object.assign({}, p.marks || emptyCricketMarks());
     snap.closed = CRICKET_KEYS.filter(k => (snap.marks[k] || 0) >= 3).length;
+    snap.marksHit = p.marksHit | 0;
+    snap.mpr = cricketMpr(p);
+    snap.mprFirst9 = cricketFirst9Mpr(p);
+    snap.first9Marks = p.first9Marks || 0;
+    snap.first9MarkDarts = p.first9MarkDarts | 0;
+    snap.marks5 = p.marks5 | 0;
+    snap.marks6 = p.marks6 | 0;
+    snap.marks9 = p.marks9 | 0;
+    snap.whiteHorses = p.whiteHorses | 0;
+    snap.bullHits = p.bullHits | 0;
   } else {
     snap.pointsScored = p.pointsScored | 0;
     snap.avg3 = avg3(p);
@@ -6821,8 +6949,17 @@ function statsRowsForPlayers(ps, game, opts) {
   };
   if (game === 'cricket') {
     const rows = [
+      ['MPR', ...ps.map(p => fmt(p.mpr != null ? p.mpr : cricketMpr(p), 2))],
+      ['Marks', ...ps.map(p => p.marksHit | 0)],
+      ['First 9 MPR', ...ps.map(p => fmt(
+        p.mprFirst9 != null ? p.mprFirst9 : cricketFirst9Mpr(p), 2))],
       ['Points', ...ps.map(p => (p.points != null ? p.points : 0) | 0)],
       ['Numbers closed', ...ps.map(p => closed(p))],
+      ['5-mark visits', ...ps.map(p => p.marks5 | 0)],
+      ['6-mark visits', ...ps.map(p => p.marks6 | 0)],
+      ['9-mark visits', ...ps.map(p => p.marks9 | 0)],
+      ['White horses', ...ps.map(p => p.whiteHorses | 0)],
+      ['Bulls', ...ps.map(p => p.bullHits | 0)],
       ['Darts', ...ps.map(p => p.dartsThrown | 0)],
     ];
     if (includeLegs) rows.push(['Legs', ...ps.map(p => p.legsWon | 0)]);
