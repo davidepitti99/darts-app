@@ -1239,7 +1239,7 @@
     </div>
     <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
     <div class="player-panel" id="playerRosterPanel">
-      <p class="hint">Shared roster for both sides. Tap a name to pick them. Edit <b>Switch ≤</b> on the row, or tap <b>×</b> to delete. Type a new name and <b>Save</b> to add. <b>Bot</b> is the CPU opponent.</p>
+      <p class="hint">Shared roster for both sides. Tap a name to pick them. Edit <b>Switch ≤</b> on the row (use <b>2</b> to disable the auto switch), or tap <b>×</b> to delete. Type a new name and <b>Save</b> to add. <b>Bot</b> is the CPU opponent.</p>
       <div class="player-list" id="playerList"></div>
       <div class="player-actions" style="grid-template-columns:1fr 1fr">
         <button type="button" id="playerCancel">Cancel</button>
@@ -1668,16 +1668,16 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.81-beta / 2026-08-14 / 164fb99</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.82-beta / 2026-08-14 / 164fb99</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.81-beta / 2026-08-14 / 164fb99';
+const APP_VERSION = '0.1.82-beta / 2026-08-14 / 164fb99';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.81-beta-2026-08-14-164fb99';
+const POLICY_CACHE_BUST = '0.1.82-beta-2026-08-14-164fb99';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -1840,7 +1840,7 @@ function clampEntryDartThreshold(v) {
   let n = Math.round(Number(v));
   if (!Number.isFinite(n)) n = ENTRY_DART_AT_OR_BELOW_DEFAULT;
   if (n < 0) n = 0;
-  // 1 is never a valid leave (bust) — skip to the lowest checkout leave.
+  // 1 is never a valid leave (bust) — treat like 2 (auto-switch off).
   if (n === 1) n = 2;
   if (n > 501) n = 501;
   return n;
@@ -5638,7 +5638,7 @@ function renderPlayerList(filterName) {
     const sub = taken ? '<span class="sub">in use</span>' : '';
     let dart = '';
     if (showDart && !bot && thr != null) {
-      dart = '<label class="dart-inline" title="Switch to by-dart when remaining is at or below this">'
+      dart = '<label class="dart-inline" title="Switch to by-dart at or below this leave (2 = never auto-switch)">'
         + 'Switch ≤'
         + '<input type="number" inputmode="numeric" min="0" max="501" step="1"'
         + ' data-dart-name="' + encodeURIComponent(p.name) + '"'
@@ -5761,7 +5761,8 @@ function openPlayerModal(idx) {
         + 'Type a new name and <b>Save</b> to add them. '
         + '<b>Bot</b> is unavailable in Cricket for now.';
     } else {
-      hint.innerHTML = 'Tap a name to pick them. Edit <b>Switch ≤</b> on the row, or tap <b>×</b> to delete. '
+      hint.innerHTML = 'Tap a name to pick them. Edit <b>Switch ≤</b> on the row '
+        + '(use <b>2</b> to disable the auto switch), or tap <b>×</b> to delete. '
         + 'Type a new name and <b>Save</b> to add. <b>Bot</b> is the CPU opponent.';
     }
   }
@@ -6386,11 +6387,13 @@ function setScoreEntryMode(mode, opts) {
   if (opts && opts.render !== false) render();
 }
 
-/** Visit total while remaining > this seat's Dart≤; By dart at or below it. */
+/** Visit total while remaining > this seat's Switch≤; By dart at or below it.
+ *  Switch≤ of 2 (or less) disables auto-switch — stay on visit total. */
 function autoScoreEntryMode() {
   if (!match || match.game === 'cricket' || match.winner !== null) return null;
   const rem = match.players[match.current].remaining | 0;
   const thr = entryDartThresholdForSeat(match.current);
+  if (thr <= 2) return 'visit';
   return rem <= thr ? 'dart' : 'visit';
 }
 
