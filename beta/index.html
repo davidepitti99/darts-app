@@ -1135,7 +1135,7 @@
   .app.locked { visibility: hidden; }
   .account-bar {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    margin: 0 0 10px; padding: 8px 10px; background: var(--panel); border-radius: 10px;
+    margin: 16px 0 8px; padding: 8px 10px; background: var(--panel); border-radius: 10px;
     font-size: 12px;
   }
   .account-bar .who { color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1355,9 +1355,8 @@
     <h2 id="checkoutAttemptsTitle">Checkout</h2>
     <p class="hint" id="checkoutAttemptsHint">Confirm darts for this visit</p>
     <div id="checkoutAttemptsBody"></div>
-    <div class="player-actions" style="grid-template-columns:1fr 1fr">
+    <div class="player-actions" style="grid-template-columns:1fr">
       <button type="button" id="checkoutAttemptsCancel">Cancel</button>
-      <button type="button" class="primary" id="checkoutAttemptsOk">OK</button>
     </div>
   </div>
 </div>
@@ -1383,13 +1382,6 @@
 </div>
 <div class="app locked" id="mainApp">
   <div class="beta-banner" id="betaBanner">BETA — builds from the <b>dev</b> branch. <a href="../">Open stable app</a></div>
-  <div class="account-bar" id="accountBar">
-    <div class="who" id="accountWho"><span class="badge free">FREE</span> Guest</div>
-    <div>
-      <button type="button" class="upgrade hidden" id="btnUpgrade">Upgrade</button>
-      <button type="button" id="btnAccount">Sign in</button>
-    </div>
-  </div>
   <div class="pro-banner" id="proBanner">
     Pro — personal coach: profile, aim-with-why, practice, groups &amp; progress.
     <button type="button" id="proBannerUpgrade">Upgrade</button>
@@ -1706,16 +1698,23 @@
     </div>
   </div><!-- /pageFit -->
 
-  <div class="app-version" id="appVersion">v<span>0.1.84-beta / 2026-08-14 / 164fb99</span></div>
+  <div class="account-bar" id="accountBar">
+    <div class="who" id="accountWho"><span class="badge free">FREE</span> Guest</div>
+    <div>
+      <button type="button" class="upgrade hidden" id="btnUpgrade">Upgrade</button>
+      <button type="button" id="btnAccount">Sign in</button>
+    </div>
+  </div>
+  <div class="app-version" id="appVersion">v<span>0.1.86-beta / 2026-08-14 / 164fb99</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.84-beta / 2026-08-14 / 164fb99';
+const APP_VERSION = '0.1.86-beta / 2026-08-14 / 164fb99';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.84-beta-2026-08-14-164fb99';
+const POLICY_CACHE_BUST = '0.1.86-beta-2026-08-14-164fb99';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -7110,13 +7109,17 @@ function finishPendingVisitCommit() {
   commitVisitTotal(score, { checkoutAttempts: att, dartCount: dartsUsed });
 }
 
-function syncCheckoutOkEnabled() {
-  const ok = document.getElementById('checkoutAttemptsOk');
-  if (!ok || !pendingVisitMeta) return;
+function tryCommitCheckoutVisit() {
+  if (!pendingVisitMeta) return false;
   const isCheckout = !!pendingVisitMeta.isCheckout;
-  const hasDarts = !isCheckout || pendingVisitMeta.dartsUsed != null;
-  const hasAtt = pendingVisitMeta.attempts != null;
-  ok.disabled = !(hasDarts && hasAtt);
+  if (isCheckout) {
+    if (pendingVisitMeta.dartsUsed == null || pendingVisitMeta.attempts == null)
+      return false;
+  } else if (pendingVisitMeta.attempts == null) {
+    return false;
+  }
+  finishPendingVisitCommit();
+  return true;
 }
 
 function renderCheckoutVisitModal() {
@@ -7150,7 +7153,7 @@ function renderCheckoutVisitModal() {
   if (title) title.textContent = isCheckout ? 'Checkout' : 'Checkout attempts';
   if (hint) {
     hint.textContent = isCheckout
-      ? ('Checked out ' + leave + '. Pick both below, then OK.')
+      ? ('Checked out ' + leave + '. Tap darts used and checkout attempts.')
       : ('Leave after visit: ' + remainingAfterVisitTotal(leave, score)
         + '. How many darts at a finishing double?');
   }
@@ -7189,17 +7192,16 @@ function renderCheckoutVisitModal() {
       pendingVisitMeta.dartsUsed = d;
       if (pendingVisitMeta.attempts != null && pendingVisitMeta.attempts > d)
         pendingVisitMeta.attempts = null;
-      renderCheckoutVisitModal();
+      if (!tryCommitCheckoutVisit()) renderCheckoutVisitModal();
     });
   });
   body.querySelectorAll('button[data-attempts]').forEach(btn => {
     btn.addEventListener('click', () => {
       pendingVisitMeta.attempts = parseInt(btn.getAttribute('data-attempts'), 10);
-      renderCheckoutVisitModal();
+      if (!tryCommitCheckoutVisit()) renderCheckoutVisitModal();
     });
   });
 
-  syncCheckoutOkEnabled();
   modal.classList.remove('hidden');
 }
 
@@ -7241,12 +7243,7 @@ function openCheckoutAttemptsModal(score) {
   const modal = document.getElementById('checkoutAttemptsModal');
   if (!modal) return;
   const cancel = document.getElementById('checkoutAttemptsCancel');
-  const ok = document.getElementById('checkoutAttemptsOk');
   if (cancel) cancel.addEventListener('click', closeCheckoutAttemptsModal);
-  if (ok) ok.addEventListener('click', () => {
-    if (ok.disabled) return;
-    finishPendingVisitCommit();
-  });
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeCheckoutAttemptsModal();
   });
