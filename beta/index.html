@@ -1052,10 +1052,16 @@
   }
   .fit-result .quality .fit-ks-info:active { opacity: 1; background: rgba(255,255,255,0.08); }
   .fit-aim-sigmas.hidden { display: none; }
-  .fit-result .quality.low { color: #ff8a8a; }
-  .fit-result .quality.fair { color: #ffb84d; }
-  .fit-result .quality.good { color: #8fdf8f; }
-  .fit-result .quality.high { color: #44bb44; }
+  .fit-result .quality.low { color: #ff6b6b; }
+  .fit-result .quality.fair { color: #ffb020; }
+  .fit-result .quality.good { color: #5b9fff; }
+  .fit-result .quality.high { color: #3dd68c; }
+  .fit-ks-legend { display: grid; gap: 6px; margin: 10px 0 4px; font-size: 13px; }
+  .fit-ks-legend span { font-weight: 800; }
+  .fit-ks-legend .low { color: #ff6b6b; }
+  .fit-ks-legend .fair { color: #ffb020; }
+  .fit-ks-legend .good { color: #5b9fff; }
+  .fit-ks-legend .high { color: #3dd68c; }
   .fit-save-bar {
     display: block; margin-bottom: 10px;
     position: sticky; top: 0; z-index: 5;
@@ -1347,7 +1353,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.155-beta / 2026-08-16 / 46ad67c</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.156-beta / 2026-08-16 / 46ad67c</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1392,6 +1398,12 @@
   <div class="player-box">
     <h2>Fit confidence</h2>
     <p>The colored line is the <b>worse</b> of two scores:</p>
+    <div class="fit-ks-legend">
+      <div><span class="low">Low</span> — weak precision or model mismatch</div>
+      <div><span class="fair">Fair</span> — usable, still wide ±% or soft KS</div>
+      <div><span class="good">Good</span> — solid n / CI and acceptable model fit</div>
+      <div><span class="high">High</span> — large n, tight CI, strong model fit</div>
+    </div>
     <p><b>1. σ precision</b> — how tightly σ is known from sample size n<br>
       Low: n &lt; 8<br>
       Fair: n &lt; 40 or ±% wider than ~16%<br>
@@ -1829,16 +1841,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.155-beta / 2026-08-16 / 46ad67c</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.156-beta / 2026-08-16 / 46ad67c</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.155-beta / 2026-08-16 / 46ad67c';
+const APP_VERSION = '0.1.156-beta / 2026-08-16 / 46ad67c';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.155-beta-2026-08-16-46ad67c';
+const POLICY_CACHE_BUST = '0.1.156-beta-2026-08-16-46ad67c';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
