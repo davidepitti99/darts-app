@@ -1048,7 +1048,7 @@
   .fit-result .quality.good { color: #8fdf8f; }
   .fit-result .quality.high { color: #44bb44; }
   .fit-save-bar {
-    display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 10px;
+    display: block; margin-bottom: 10px;
     position: sticky; top: 0; z-index: 5;
     background: var(--bg); padding: 4px 0 8px;
   }
@@ -1057,12 +1057,12 @@
     border-radius: 10px; padding: 12px 10px; font-size: 17px; width: 100%;
     cursor: pointer;
   }
-  .fit-save-bar button, #fitSaveBottom {
+  #fitSaveBottom {
     background: var(--accent); color: #1a1a1a; border: 1px solid var(--accent);
     border-radius: 10px; padding: 12px 16px; font-size: 15px; font-weight: 700;
     cursor: pointer; white-space: nowrap;
   }
-  .fit-save-bar button:disabled, #fitSaveBottom:disabled {
+  #fitSaveBottom:disabled {
     opacity: 0.45; cursor: not-allowed;
   }
   .fit-aim-sigmas {
@@ -1077,10 +1077,6 @@
   }
   .fit-aim-sigmas .aim { font-weight: 800; color: #fff; }
   .fit-aim-sigmas .val { color: var(--mute); font-variant-numeric: tabular-nums; }
-  .fit-save-hint {
-    margin-top: 8px; font-size: 12px; color: var(--mute); line-height: 1.35;
-  }
-  .fit-save-hint.ready { color: #8fdf8f; font-weight: 700; }
   .fit-saved {
     max-height: 240px; overflow-y: auto; background: var(--panel);
     border-radius: 12px; padding: 8px; font-size: 13px; color: #cfcfcf;
@@ -1341,7 +1337,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.140-beta / 2026-08-16 / 46ad67c</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.145-beta / 2026-08-16 / 46ad67c</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1730,12 +1726,11 @@
     <div class="fit-save-bar">
       <input id="fitPlayerName" type="text" maxlength="16" placeholder="Select player" autocomplete="off"
              readonly inputmode="none" aria-haspopup="dialog" title="Choose from saved players">
-      <button type="button" id="fitSave" disabled title="Estimate σ first, then save">Save</button>
     </div>
     <div class="fit-panel" id="fitPanelMeasure">
     <div class="fit-help" id="fitMeasureHelp">
       Tap <b>Aim</b>, then tap Bull / a triple / a double on the board. After the aim is set,
-      tap each <b>landing</b> — distance fills in (editable), then Add.
+      tap each <b>landing</b> on the board (required), then Add. Distance autofills and can be tweaked.
     </div>
     <div class="fit-measure-aim-row">
       <button type="button" id="fitMeasureAimBtn" aria-pressed="false">
@@ -1750,7 +1745,7 @@
     </div>
     <div class="fit-entry" style="grid-template-columns:1fr auto">
       <input id="fitRadius" type="number" inputmode="decimal" min="0" max="340" step="0.1"
-             placeholder="Distance from aim (mm)">
+             placeholder="Tap board first" readonly>
       <button type="button" class="primary" id="fitAdd">Add</button>
     </div>
     </div><!-- /fitPanelMeasure -->
@@ -1761,7 +1756,6 @@
       <div class="quality" id="fitQuality"></div>
       <div class="sub" id="fitDetail">Add throws to estimate σ</div>
       <div class="fit-aim-sigmas" id="fitAimSigmas"></div>
-      <div class="fit-save-hint" id="fitSaveHint"></div>
     </div>
     <canvas id="fitChart" width="800" height="400"></canvas>
     <div class="fit-list" id="fitList"><div class="empty">No throws yet</div></div>
@@ -1805,16 +1799,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.140-beta / 2026-08-16 / 46ad67c</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.145-beta / 2026-08-16 / 46ad67c</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.140-beta / 2026-08-16 / 46ad67c';
+const APP_VERSION = '0.1.145-beta / 2026-08-16 / 46ad67c';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.140-beta-2026-08-16-46ad67c';
+const POLICY_CACHE_BUST = '0.1.145-beta-2026-08-16-46ad67c';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -9670,10 +9664,8 @@ const elFitDetail = document.getElementById('fitDetail');
 const elFitList = document.getElementById('fitList');
 const elFitError = document.getElementById('fitError');
 const elFitPlayerName = document.getElementById('fitPlayerName');
-const elFitSave = document.getElementById('fitSave');
 const elFitSaveBottom = document.getElementById('fitSaveBottom');
 const elFitAimSigmas = document.getElementById('fitAimSigmas');
-const elFitSaveHint = document.getElementById('fitSaveHint');
 const elFitSavedList = document.getElementById('fitSavedList');
 const fitCv = document.getElementById('fitChart');
 const fitCtx = fitCv.getContext('2d');
@@ -9763,7 +9755,18 @@ function buildFitSaveRecord(name, fit) {
     se: fit.se,
     ciLo: fit.ciLo,
     ciHi: fit.ciHi,
-    quality: { level: q.level, label: q.label, pct: q.pct },
+    quality: {
+      level: q.level,
+      label: q.label,
+      pct: q.pct,
+      precLabel: q.precLabel,
+      gof: q.gof ? {
+        level: q.gof.level,
+        label: q.gof.label,
+        p: q.gof.p,
+        D: q.gof.D,
+      } : null,
+    },
     throws: fitThrows.map(t => ({ r: t.r, aim: t.aim || 'bull' })),
   };
   rec.sigma = fit.sigmaEq != null ? fit.sigmaEq : fit.sigma;
@@ -9779,12 +9782,9 @@ function buildFitSaveRecord(name, fit) {
 }
 
 function markFitSavedButtons() {
-  const buttons = [elFitSave, elFitSaveBottom].filter(Boolean);
-  for (const btn of buttons) {
-    const label = btn === elFitSaveBottom ? 'Save fit' : 'Save';
-    btn.textContent = 'Saved';
-    setTimeout(() => { btn.textContent = label; }, 1200);
-  }
+  if (!elFitSaveBottom) return;
+  elFitSaveBottom.textContent = 'Saved';
+  setTimeout(() => { elFitSaveBottom.textContent = 'Save fit'; }, 1200);
 }
 
 function saveCurrentFit() {
@@ -9898,18 +9898,7 @@ function renderFitSavedList() {
 function syncFitSaveButton() {
   const name = (elFitPlayerName && elFitPlayerName.value || '').trim();
   const ready = !!(name && fitCurrent());
-  if (elFitSave) elFitSave.disabled = !ready;
   if (elFitSaveBottom) elFitSaveBottom.disabled = !ready;
-  if (elFitSaveHint) {
-    elFitSaveHint.classList.toggle('ready', ready);
-    if (ready) {
-      elFitSaveHint.textContent = 'Ready to save — use Save at the top, or Save fit below the list';
-    } else if (!name) {
-      elFitSaveHint.textContent = 'To save: pick a player at the top, add throws, then tap Save';
-    } else {
-      elFitSaveHint.textContent = 'Add throws to estimate σ, then tap Save (top or below)';
-    }
-  }
 }
 
 function renderFitAimSigmas() {
@@ -10116,7 +10105,10 @@ function onFitMeasureBoardPointer(e) {
     }
     applyFitAimId(aimId);
     fitMeasurePending = null;
-    if (elFitRadius) elFitRadius.value = '';
+    if (elFitRadius) {
+      elFitRadius.value = '';
+      elFitRadius.readOnly = true;
+    }
     showFitError('');
     setFitMeasurePickAim(false);
     return;
@@ -10129,6 +10121,7 @@ function onFitMeasureBoardPointer(e) {
   if (r > maxR) r = maxR;
   fitMeasurePending = { x: x, y: y, r: r };
   if (elFitRadius) {
+    elFitRadius.readOnly = false;
     elFitRadius.value = (Math.round(r * 10) / 10).toFixed(1);
     elFitRadius.classList.remove('bad');
   }
@@ -10168,7 +10161,7 @@ function syncMeasureAimChrome() {
   const help = document.getElementById('fitMeasureHelp');
   if (help) {
     help.innerHTML = 'Tap <b>Aim</b> and pick Bull / T / D on the board (colored beds). '
-      + 'Singles stay grey. Then tap each <b>landing</b> — distance autofills; edit if needed, then Add.';
+      + 'Then tap each <b>landing</b> on the board (required) — distance autofills; tweak mm if needed, then Add.';
   }
   if (fitMeasureBoardAim != null && fitMeasureBoardAim !== aim)
     fitMeasurePending = null;
@@ -10177,15 +10170,17 @@ function syncMeasureAimChrome() {
 }
 
 function fitIsotropic(radii) {
-  const n = radii.length;
+  const cleaned = (radii || []).map(Number).filter(r => Number.isFinite(r) && r >= 0);
+  const n = cleaned.length;
   if (n < 1) return null;
   let sumSq = 0;
-  for (const r of radii) sumSq += r * r;
+  for (const r of cleaned) sumSq += r * r;
   const sigma = Math.sqrt(sumSq / (2 * n));
   const se = sigma / (2 * Math.sqrt(n));
   return {
     mode: 'isotropic', n, sigma,
     sigmaEq: sigma, se,
+    radii: cleaned,
     ciLo: Math.max(0, sigma - 1.96 * se), ciHi: sigma + 1.96 * se,
     r50: sigma * Math.sqrt(-2 * Math.log(0.5)),
     r95: sigma * Math.sqrt(-2 * Math.log(0.05)),
@@ -10327,6 +10322,71 @@ function drawIsoChart(fit, cssW, cssH) {
   fitCtx.fillText('Distance from aim (mm) — isotropic', padL + W / 2, cssH - 6);
 }
 
+function rayleighCdf(r, sigma) {
+  if (!(sigma > 0) || !Number.isFinite(r) || r <= 0) return 0;
+  return 1 - Math.exp(-(r * r) / (2 * sigma * sigma));
+}
+
+/**
+ * One-sample KS test of radii vs Rayleigh(σ).
+ * Returns D, approx p-value, and a qualitative model-fit level.
+ */
+function fitRayleighGof(radii, sigma) {
+  const rs = (radii || [])
+    .map(Number)
+    .filter(r => Number.isFinite(r) && r >= 0)
+    .sort((a, b) => a - b);
+  const n = rs.length;
+  if (n < 3 || !(sigma > 0)) {
+    return {
+      n: n,
+      D: null,
+      p: null,
+      level: 'unknown',
+      label: 'Model fit n/a',
+      detail: 'Need ≥3 darts for goodness of fit',
+    };
+  }
+  let dPlus = 0, dMinus = 0;
+  for (let i = 0; i < n; i++) {
+    const F = rayleighCdf(rs[i], sigma);
+    dPlus = Math.max(dPlus, (i + 1) / n - F);
+    dMinus = Math.max(dMinus, F - i / n);
+  }
+  const D = Math.max(dPlus, dMinus);
+  // Stephens / asymptotic KS p-value: λ = (√n + 0.12 + 0.11/√n) D
+  const lam = (Math.sqrt(n) + 0.12 + 0.11 / Math.sqrt(n)) * D;
+  let p = 0;
+  for (let k = 1; k <= 200; k++) {
+    const term = Math.exp(-2 * k * k * lam * lam);
+    p += ((k & 1) ? 2 : -2) * term;
+    if (term < 1e-14) break;
+  }
+  if (!(p >= 0) || !Number.isFinite(p)) p = 0;
+  if (p > 1) p = 1;
+
+  let level, label;
+  // p = Prob(data at least this far from Rayleigh | σ true).
+  if (p < 0.01) {
+    level = 'poor'; label = 'Model mismatch';
+  } else if (p < 0.05) {
+    level = 'weak'; label = 'Weak model fit';
+  } else if (p < 0.20) {
+    level = 'ok'; label = 'Acceptable model fit';
+  } else {
+    level = 'good'; label = 'Good model fit';
+  }
+  return {
+    n: n,
+    D: D,
+    p: p,
+    level: level,
+    label: label,
+    detail: 'KS p=' + (p < 0.001 ? p.toExponential(1) : p.toFixed(2))
+      + ' · D=' + D.toFixed(2),
+  };
+}
+
 function fitQuality(fit) {
   const n = fit.n;
   const sigma = fit.sigmaEq || fit.sigma || 0;
@@ -10336,19 +10396,47 @@ function fitQuality(fit) {
   if (!(se > 0) || !Number.isFinite(se) || se < floor * 0.5) se = floor;
   const relSe = sigma > 1e-9 ? se / sigma : 1;
   const pct = 100 * 1.96 * relSe;
-  let level, label;
-  // Rel-SE cutoffs ≈ ±% on σ (95% CI): 0.08 → ±16%, 0.04 → ±8%.
+
+  // Precision of σ (sample size / CI width only).
+  let precRank, precLabel;
   if (n < 8) {
-    level = 'low'; label = 'Low confidence';
+    precRank = 0; precLabel = 'Low';
   } else if (n < 40 || relSe > 0.08) {
-    level = 'fair'; label = 'Fair confidence';
+    precRank = 1; precLabel = 'Fair';
   } else if (n < 100 || relSe > 0.04) {
-    level = 'good'; label = 'Good confidence';
+    precRank = 2; precLabel = 'Good';
   } else {
-    level = 'high'; label = 'High confidence';
+    precRank = 3; precLabel = 'High';
   }
-  let detail = '±' + Math.max(1, Math.round(pct)) + '% on σ (95% CI) · n=' + n;
-  return { level, label, detail, pct };
+
+  const radii = (fit.radii && fit.radii.length)
+    ? fit.radii
+    : fitThrows.map(t => t.r);
+  const gof = fitRayleighGof(radii, sigma);
+  // Map model fit → same 0–3 scale so a bad model cannot look “good”.
+  let gofRank = 3;
+  if (gof.level === 'poor') gofRank = 0;
+  else if (gof.level === 'weak') gofRank = 1;
+  else if (gof.level === 'ok') gofRank = 2;
+  else if (gof.level === 'unknown') gofRank = Math.min(precRank, 1);
+
+  const rank = Math.min(precRank, gofRank);
+  const levels = ['low', 'fair', 'good', 'high'];
+  const names = ['Low confidence', 'Fair confidence', 'Good confidence', 'High confidence'];
+  const level = levels[rank];
+  const label = names[rank];
+
+  let detail = '±' + Math.max(1, Math.round(pct)) + '% on σ · n=' + n
+    + ' · ' + gof.label;
+  return {
+    level: level,
+    label: label,
+    detail: detail,
+    pct: pct,
+    precRank: precRank,
+    precLabel: precLabel,
+    gof: gof,
+  };
 }
 
 function refreshFitSummary() {
@@ -10366,8 +10454,11 @@ function refreshFitSummary() {
     elFitQuality.className = 'quality ' + q.level;
     elFitQuality.textContent = q.label + ' — ' + q.detail;
     const s = nearestPolicySigma(fit.sigma);
+    const gof = q.gof || {};
     elFitDetail.textContent =
       '95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
+      + ' · σ precision ' + (q.precLabel || '—').toLowerCase()
+      + (gof.detail ? (' · ' + gof.detail) : '')
       + ' · policy s' + s
       + ' · all aims pooled';
   }
@@ -10471,39 +10562,63 @@ function showFitError(msg) {
 
 function addFitThrow() {
   const aim = activeFitAimId();
+  if (!fitMeasurePending
+      || !Number.isFinite(fitMeasurePending.x)
+      || !Number.isFinite(fitMeasurePending.y)) {
+    showFitError('Tap the board where the dart landed, then Add');
+    return;
+  }
   const parsed = parseThrowFields(elFitRadius.value, aim);
   if (!parsed.ok) {
     showFitError(parsed.err);
     return;
   }
   showFitError('');
-  const rec = { r: parsed.r, aim: aim };
-  if (fitMeasurePending
-      && Math.abs((fitMeasurePending.r || 0) - parsed.r) < 0.05) {
-    rec.x = fitMeasurePending.x;
-    rec.y = fitMeasurePending.y;
+  const [ax, ay] = fitAimXY(aim);
+  let x = fitMeasurePending.x;
+  let y = fitMeasurePending.y;
+  const pr = Math.hypot(x - ax, y - ay);
+  // If the mm box was edited after the tap, keep the tap direction and set length.
+  if (pr > 1e-6 && Math.abs(pr - parsed.r) > 0.05) {
+    const s = parsed.r / pr;
+    x = ax + (x - ax) * s;
+    y = ay + (y - ay) * s;
+  } else if (pr <= 1e-6) {
+    x = ax;
+    y = ay;
   }
-  fitThrows.push(rec);
+  fitThrows.push({ r: parsed.r, aim: aim, x: x, y: y });
   fitMeasurePending = null;
   elFitRadius.value = '';
+  elFitRadius.readOnly = true;
   elFitRadius.focus();
   renderFit();
 }
 
 document.getElementById('fitAdd').addEventListener('click', addFitThrow);
 if (elFitRadius) {
+  elFitRadius.readOnly = true;
   elFitRadius.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); addFitThrow(); }
   });
   elFitRadius.addEventListener('input', () => {
-    // Manual edit — keep pending spot only if distance still matches the tap.
-    if (!fitMeasurePending) return;
-    const r = parseFloat(elFitRadius.value);
-    if (!Number.isFinite(r)
-        || Math.abs(r - (fitMeasurePending.r || 0)) > 0.05) {
-      fitMeasurePending = null;
-      drawFitMeasureBoard();
+    if (!fitMeasurePending
+        || !Number.isFinite(fitMeasurePending.x)
+        || !Number.isFinite(fitMeasurePending.y)) {
+      return;
     }
+    const r = parseFloat(elFitRadius.value);
+    if (!Number.isFinite(r) || r < 0) return;
+    const aim = activeFitAimId();
+    const [ax, ay] = fitAimXY(aim);
+    const pr = Math.hypot(fitMeasurePending.x - ax, fitMeasurePending.y - ay);
+    if (pr > 1e-6) {
+      const s = r / pr;
+      fitMeasurePending.x = ax + (fitMeasurePending.x - ax) * s;
+      fitMeasurePending.y = ay + (fitMeasurePending.y - ay) * s;
+    }
+    fitMeasurePending.r = r;
+    drawFitMeasureBoard();
   });
 }
 window.addEventListener('resize', () => {
@@ -10541,11 +10656,22 @@ window.addEventListener('orientationchange', () => {
   });
 })();
 document.getElementById('fitClear').addEventListener('click', () => {
+  if (!fitThrows.length && !fitMeasurePending) return;
+  const n = fitThrows.length;
+  const ok = window.confirm(
+    n
+      ? ('Clear all landing spots?\n\n' + n + ' throw' + (n === 1 ? '' : 's') + ' will be removed.')
+      : 'Clear the pending landing mark?');
+  if (!ok) return;
   fitThrows.length = 0;
   fitMeasurePending = null;
+  if (elFitRadius) {
+    elFitRadius.value = '';
+    elFitRadius.readOnly = true;
+  }
+  showFitError('');
   renderFit();
 });
-if (elFitSave) elFitSave.addEventListener('click', saveCurrentFit);
 if (elFitSaveBottom) elFitSaveBottom.addEventListener('click', saveCurrentFit);
 if (elFitPlayerName) {
   elFitPlayerName.addEventListener('click', (e) => {
