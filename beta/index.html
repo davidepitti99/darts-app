@@ -1041,7 +1041,7 @@
   }
   .fit-result .sub { color: #b9b9b9; font-size: 13px; margin-top: 6px; }
   .fit-result .quality {
-    font-size: 14px; font-weight: 700; margin-top: 8px;
+    font-size: 13px; font-weight: 700; margin-top: 8px; line-height: 1.35;
   }
   .fit-result .quality.low { color: #ff8a8a; }
   .fit-result .quality.fair { color: #ffb84d; }
@@ -1337,7 +1337,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.145-beta / 2026-08-16 / 46ad67c</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.151-beta / 2026-08-16 / 46ad67c</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1799,16 +1799,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.145-beta / 2026-08-16 / 46ad67c</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.151-beta / 2026-08-16 / 46ad67c</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.145-beta / 2026-08-16 / 46ad67c';
+const APP_VERSION = '0.1.151-beta / 2026-08-16 / 46ad67c';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.145-beta-2026-08-16-46ad67c';
+const POLICY_CACHE_BUST = '0.1.151-beta-2026-08-16-46ad67c';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -9767,7 +9767,14 @@ function buildFitSaveRecord(name, fit) {
         D: q.gof.D,
       } : null,
     },
-    throws: fitThrows.map(t => ({ r: t.r, aim: t.aim || 'bull' })),
+    throws: fitThrows.map(t => ({
+      r: t.r,
+      aim: t.aim || 'bull',
+      x: Number.isFinite(t.x) ? +t.x : undefined,
+      y: Number.isFinite(t.y) ? +t.y : undefined,
+      ux: Number.isFinite(t.ux) ? +t.ux : undefined,
+      uy: Number.isFinite(t.uy) ? +t.uy : undefined,
+    })),
   };
   rec.sigma = fit.sigmaEq != null ? fit.sigmaEq : fit.sigma;
   rec.sigmaEq = rec.sigma;
@@ -9823,7 +9830,20 @@ function loadSavedFit(id) {
     const r = Number(t.r);
     if (!Number.isFinite(r) || r < 0 || r > FIT_AIM_R_MAX) continue;
     const aim = (t.aim && String(t.aim)) || 'bull';
-    fitThrows.push({ r, aim });
+    const row = { r, aim };
+    if (Number.isFinite(t.x) && Number.isFinite(t.y)) {
+      row.x = +t.x;
+      row.y = +t.y;
+      if (Number.isFinite(t.ux) && Number.isFinite(t.uy)) {
+        row.ux = +t.ux;
+        row.uy = +t.uy;
+      } else {
+        const u = fitLandingUnit(aim, row.x, row.y);
+        row.ux = u[0];
+        row.uy = u[1];
+      }
+    }
+    fitThrows.push(row);
     applyFitAimId(aim);
   }
   showFitError('');
@@ -10119,7 +10139,8 @@ function onFitMeasureBoardPointer(e) {
   let r = Math.hypot(x - ax, y - ay);
   const maxR = aim === 'bull' ? FIT_R_MAX : FIT_AIM_R_MAX;
   if (r > maxR) r = maxR;
-  fitMeasurePending = { x: x, y: y, r: r };
+  const [ux, uy] = fitLandingUnit(aim, x, y);
+  fitMeasurePending = { x: x, y: y, r: r, ux: ux, uy: uy };
   if (elFitRadius) {
     elFitRadius.readOnly = false;
     elFitRadius.value = (Math.round(r * 10) / 10).toFixed(1);
@@ -10284,7 +10305,7 @@ function drawFitChart(fit) {
 }
 
 function drawIsoChart(fit, cssW, cssH) {
-  const padL = 36, padR = 12, padT = 16, padB = 32;
+  const padL = 42, padR = 14, padT = 16, padB = 44;
   const W = cssW - padL - padR, H = cssH - padT - padB;
   const radii = fitThrows.map(t => t.r);
   const rMax = Math.max(fit.r95 * 1.15, Math.max.apply(null, radii) * 1.1, 10);
@@ -10292,17 +10313,19 @@ function drawIsoChart(fit, cssW, cssH) {
   const binW = rMax / nBins;
   const counts = new Array(nBins).fill(0);
   for (const r of radii) counts[Math.min(nBins - 1, Math.floor(r / binW))]++;
-  const dens = counts.map(c => c / (fit.n * binW));
-  let yMax = Math.max.apply(null, dens);
+  // Model curve in count units: pdf × n × bin width.
+  const modelCount = (r) => rayleighPdf(r, fit.sigma) * fit.n * binW;
+  let yMax = Math.max.apply(null, counts);
   for (let i = 0; i <= 40; i++)
-    yMax = Math.max(yMax, rayleighPdf((i / 40) * rMax, fit.sigma));
-  yMax *= 1.15;
+    yMax = Math.max(yMax, modelCount((i / 40) * rMax));
+  yMax = Math.max(yMax * 1.15, 1);
+
   fitCtx.strokeStyle = '#555';
   fitCtx.beginPath();
   fitCtx.moveTo(padL, padT); fitCtx.lineTo(padL, padT + H); fitCtx.lineTo(padL + W, padT + H);
   fitCtx.stroke();
   for (let i = 0; i < nBins; i++) {
-    const h = (dens[i] / yMax) * H;
+    const h = (counts[i] / yMax) * H;
     fitCtx.fillStyle = 'rgba(90,155,212,0.85)';
     fitCtx.fillRect(padL + (i / nBins) * W, padT + H - h, W / nBins - 1, h);
   }
@@ -10312,14 +10335,63 @@ function drawIsoChart(fit, cssW, cssH) {
   for (let i = 0; i <= 80; i++) {
     const r = (i / 80) * rMax;
     const x = padL + (r / rMax) * W;
-    const y = padT + H - (rayleighPdf(r, fit.sigma) / yMax) * H;
+    const y = padT + H - (modelCount(r) / yMax) * H;
     if (i === 0) fitCtx.moveTo(x, y); else fitCtx.lineTo(x, y);
   }
   fitCtx.stroke();
+
+  // Y-axis tick labels (throw counts).
+  const yTarget = Math.max(3, Math.min(6, Math.floor(H / 36)));
+  const yNice = [1, 2, 5, 10, 20, 50, 100, 200, 500];
+  let yStep = yNice[yNice.length - 1];
+  for (let i = 0; i < yNice.length; i++) {
+    const n = Math.ceil(yMax / yNice[i]);
+    if (n >= 2 && n <= yTarget + 1) { yStep = yNice[i]; break; }
+    if (n < 2) { yStep = yNice[Math.max(0, i - 1)] || 1; break; }
+  }
+  fitCtx.fillStyle = '#999';
+  fitCtx.font = '10px sans-serif';
+  fitCtx.textAlign = 'right';
+  fitCtx.textBaseline = 'middle';
+  fitCtx.strokeStyle = '#333';
+  fitCtx.lineWidth = 1;
+  for (let c = 0; c <= yMax + 1e-6; c += yStep) {
+    const y = padT + H - (c / yMax) * H;
+    fitCtx.beginPath();
+    fitCtx.moveTo(padL - 4, y);
+    fitCtx.lineTo(padL, y);
+    fitCtx.stroke();
+    fitCtx.fillText(String(Math.round(c)), padL - 6, y);
+  }
+
+  // X-axis tick labels (mm) at nice steps.
+  const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 200];
+  let step = niceSteps[niceSteps.length - 1];
+  const targetTicks = Math.max(4, Math.min(7, Math.floor(W / 52)));
+  for (let i = 0; i < niceSteps.length; i++) {
+    const n = Math.ceil(rMax / niceSteps[i]);
+    if (n >= 3 && n <= targetTicks + 1) { step = niceSteps[i]; break; }
+    if (n < 3) { step = niceSteps[Math.max(0, i - 1)] || niceSteps[0]; break; }
+  }
+  fitCtx.fillStyle = '#999';
+  fitCtx.textAlign = 'center';
+  fitCtx.textBaseline = 'top';
+  fitCtx.strokeStyle = '#444';
+  for (let r = 0; r <= rMax + 1e-6; r += step) {
+    const x = padL + (r / rMax) * W;
+    fitCtx.beginPath();
+    fitCtx.moveTo(x, padT + H);
+    fitCtx.lineTo(x, padT + H + 4);
+    fitCtx.stroke();
+    const lab = (Math.abs(r - Math.round(r)) < 1e-6)
+      ? String(Math.round(r))
+      : r.toFixed(1);
+    fitCtx.fillText(lab, x, padT + H + 6);
+  }
   fitCtx.fillStyle = '#888';
   fitCtx.font = '11px sans-serif';
-  fitCtx.textAlign = 'center';
-  fitCtx.fillText('Distance from aim (mm) — isotropic', padL + W / 2, cssH - 6);
+  fitCtx.textBaseline = 'alphabetic';
+  fitCtx.fillText('Distance from aim (mm)', padL + W / 2, cssH - 6);
 }
 
 function rayleighCdf(r, sigma) {
@@ -10422,16 +10494,14 @@ function fitQuality(fit) {
 
   const rank = Math.min(precRank, gofRank);
   const levels = ['low', 'fair', 'good', 'high'];
-  const names = ['Low confidence', 'Fair confidence', 'Good confidence', 'High confidence'];
+  const names = ['Low', 'Fair', 'Good', 'High'];
   const level = levels[rank];
   const label = names[rank];
 
-  let detail = '±' + Math.max(1, Math.round(pct)) + '% on σ · n=' + n
-    + ' · ' + gof.label;
   return {
     level: level,
     label: label,
-    detail: detail,
+    detail: '',
     pct: pct,
     precRank: precRank,
     precLabel: precLabel,
@@ -10445,22 +10515,26 @@ function refreshFitSummary() {
     elFitSigma.textContent = '—';
     elFitQuality.textContent = '';
     elFitQuality.className = 'quality';
+    elFitDetail.style.display = '';
     elFitDetail.textContent = fitThrows.length
       ? 'Fix invalid rows to estimate σ'
-      : 'Pick aim, tap the board (or type mm), then Add';
+      : 'Pick aim, tap the board, then Add';
   } else {
     const q = fitQuality(fit);
-    elFitSigma.textContent = 'Global σ ' + fit.sigma.toFixed(1) + ' mm';
-    elFitQuality.className = 'quality ' + q.level;
-    elFitQuality.textContent = q.label + ' — ' + q.detail;
-    const s = nearestPolicySigma(fit.sigma);
     const gof = q.gof || {};
-    elFitDetail.textContent =
-      '95% CI ' + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm'
-      + ' · σ precision ' + (q.precLabel || '—').toLowerCase()
-      + (gof.detail ? (' · ' + gof.detail) : '')
-      + ' · policy s' + s
-      + ' · all aims pooled';
+    const pct = Math.max(1, Math.round(q.pct || 0));
+    let ks = '';
+    if (gof.p != null && Number.isFinite(gof.p)) {
+      ks = ' · KS p=' + (gof.p < 0.001 ? gof.p.toExponential(1) : gof.p.toFixed(2));
+    }
+    elFitSigma.textContent = 'σ = ' + fit.sigma.toFixed(1) + ' mm';
+    elFitQuality.className = 'quality ' + q.level;
+    elFitQuality.textContent = q.label
+      + ' · ±' + pct + '% ('
+      + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm)'
+      + ks;
+    elFitDetail.textContent = '';
+    elFitDetail.style.display = 'none';
   }
   renderFitAimSigmas();
   drawFitChart(fit);
@@ -10514,22 +10588,40 @@ function renderFitList() {
   elFitList.querySelectorAll('.fit-row').forEach(row => {
     const i = parseInt(row.dataset.i, 10);
     const rIn = row.querySelector('.fit-r');
-    const commit = () => {
-      const aim = fitThrows[i].aim || 'bull';
+    const applyDistance = (live) => {
+      const prev = fitThrows[i];
+      if (!prev) return;
+      const aim = prev.aim || 'bull';
       const parsed = parseThrowFields(rIn.value, aim);
       if (!parsed.ok) {
-        rIn.classList.toggle('bad', true);
-        showFitError(parsed.err + ' (throw #' + (i + 1) + ')');
+        if (!live) {
+          rIn.classList.toggle('bad', true);
+          showFitError(parsed.err + ' (throw #' + (i + 1) + ')');
+        }
         return;
       }
       rIn.classList.remove('bad');
-      showFitError('');
-      fitThrows[i] = { r: parsed.r, aim: aim };
-      refreshFitSummary();
+      if (!live) showFitError('');
+      let ux = prev.ux, uy = prev.uy;
+      if (!Number.isFinite(ux) || !Number.isFinite(uy)) {
+        if (Number.isFinite(prev.x) && Number.isFinite(prev.y))
+          [ux, uy] = fitLandingUnit(aim, prev.x, prev.y);
+        else
+          [ux, uy] = [0, 1];
+      }
+      const [x, y] = fitLandingAtDistance(aim, ux, uy, parsed.r);
+      fitThrows[i] = { r: parsed.r, aim: aim, x: x, y: y, ux: ux, uy: uy };
+      if (live) {
+        drawFitMeasureBoard();
+        refreshFitSummary();
+      } else {
+        renderFit();
+      }
     };
-    rIn.addEventListener('change', commit);
+    rIn.addEventListener('input', () => applyDistance(true));
+    rIn.addEventListener('change', () => applyDistance(false));
     rIn.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); commit(); rIn.blur(); }
+      if (e.key === 'Enter') { e.preventDefault(); applyDistance(false); rIn.blur(); }
     });
   });
 
@@ -10560,6 +10652,26 @@ function showFitError(msg) {
   elFitError.textContent = msg;
 }
 
+/** Unit direction from aim → landing (defaults “up” if on the aim). */
+function fitLandingUnit(aim, x, y) {
+  const [ax, ay] = fitAimXY(aim);
+  const dx = (Number(x) || 0) - ax;
+  const dy = (Number(y) || 0) - ay;
+  const pr = Math.hypot(dx, dy);
+  if (pr > 1e-6) return [dx / pr, dy / pr];
+  return [0, 1];
+}
+
+/** Place a landing at distance r from aim along unit direction (ux, uy). */
+function fitLandingAtDistance(aim, ux, uy, r) {
+  const [ax, ay] = fitAimXY(aim);
+  const n = Math.hypot(Number(ux) || 0, Number(uy) || 0);
+  const uxn = n > 1e-9 ? ux / n : 0;
+  const uyn = n > 1e-9 ? uy / n : 1;
+  const len = Math.max(0, Number(r) || 0);
+  return [ax + uxn * len, ay + uyn * len];
+}
+
 function addFitThrow() {
   const aim = activeFitAimId();
   if (!fitMeasurePending
@@ -10574,20 +10686,13 @@ function addFitThrow() {
     return;
   }
   showFitError('');
-  const [ax, ay] = fitAimXY(aim);
-  let x = fitMeasurePending.x;
-  let y = fitMeasurePending.y;
-  const pr = Math.hypot(x - ax, y - ay);
-  // If the mm box was edited after the tap, keep the tap direction and set length.
-  if (pr > 1e-6 && Math.abs(pr - parsed.r) > 0.05) {
-    const s = parsed.r / pr;
-    x = ax + (x - ax) * s;
-    y = ay + (y - ay) * s;
-  } else if (pr <= 1e-6) {
-    x = ax;
-    y = ay;
+  let ux = fitMeasurePending.ux;
+  let uy = fitMeasurePending.uy;
+  if (!Number.isFinite(ux) || !Number.isFinite(uy)) {
+    [ux, uy] = fitLandingUnit(aim, fitMeasurePending.x, fitMeasurePending.y);
   }
-  fitThrows.push({ r: parsed.r, aim: aim, x: x, y: y });
+  const [x, y] = fitLandingAtDistance(aim, ux, uy, parsed.r);
+  fitThrows.push({ r: parsed.r, aim: aim, x: x, y: y, ux: ux, uy: uy });
   fitMeasurePending = null;
   elFitRadius.value = '';
   elFitRadius.readOnly = true;
@@ -10610,13 +10715,16 @@ if (elFitRadius) {
     const r = parseFloat(elFitRadius.value);
     if (!Number.isFinite(r) || r < 0) return;
     const aim = activeFitAimId();
-    const [ax, ay] = fitAimXY(aim);
-    const pr = Math.hypot(fitMeasurePending.x - ax, fitMeasurePending.y - ay);
-    if (pr > 1e-6) {
-      const s = r / pr;
-      fitMeasurePending.x = ax + (fitMeasurePending.x - ax) * s;
-      fitMeasurePending.y = ay + (fitMeasurePending.y - ay) * s;
+    let ux = fitMeasurePending.ux;
+    let uy = fitMeasurePending.uy;
+    if (!Number.isFinite(ux) || !Number.isFinite(uy)) {
+      [ux, uy] = fitLandingUnit(aim, fitMeasurePending.x, fitMeasurePending.y);
+      fitMeasurePending.ux = ux;
+      fitMeasurePending.uy = uy;
     }
+    const [x, y] = fitLandingAtDistance(aim, ux, uy, r);
+    fitMeasurePending.x = x;
+    fitMeasurePending.y = y;
     fitMeasurePending.r = r;
     drawFitMeasureBoard();
   });
