@@ -35,15 +35,16 @@ const CameraScorer = (() => {
     [-R_OUTER_DOUBLE, 0]
   ];
 
-  const DIFF_THRESHOLD = 50;
-  const MIN_BLOB_PIXELS = 150;
-  const MAX_BLOB_PIXELS = 8000;
+  const DIFF_THRESHOLD = 30;
+  const MIN_BLOB_PIXELS = 40;
+  const MAX_BLOB_PIXELS = 12000;
   const COOLDOWN_MS = 2000;
-  const CONFIRM_FRAMES = 3;
+  const CONFIRM_FRAMES = 2;
 
   let lastScoreTime = 0;
   let pendingDetection = null;
   let commitFn = null;
+  let loopFrame = 0; // used to throttle status updates
 
   function init(container, onCommit) {
     commitFn = onCommit;
@@ -385,26 +386,35 @@ const CameraScorer = (() => {
 
   function detectLoop() {
     if (!detecting) return;
+    loopFrame += 1;
     const now = Date.now();
-    if (now - lastScoreTime > COOLDOWN_MS) {
-      const result = detectDart();
-      if (result) {
-        if (pendingDetection && Math.hypot(result.x - pendingDetection.x, result.y - pendingDetection.y) < 30) {
-          pendingDetection.confirmCount += 1;
-          pendingDetection.x = result.x;
-          pendingDetection.y = result.y;
-          pendingDetection.pixels = result.pixels;
-          if (pendingDetection.confirmCount >= CONFIRM_FRAMES) {
-            scoreDart(pendingDetection);
-            pendingDetection = null;
-            lastScoreTime = now;
-          }
-        } else {
-          pendingDetection = { x: result.x, y: result.y, pixels: result.pixels, confirmCount: 1 };
+    const inCooldown = now - lastScoreTime <= COOLDOWN_MS;
+
+    if (inCooldown) {
+      if (loopFrame % 30 === 0) setStatus('Cooldown… wait ' + Math.ceil((COOLDOWN_MS - (now - lastScoreTime)) / 1000) + 's');
+      animFrameId = requestAnimationFrame(detectLoop);
+      return;
+    }
+
+    const result = detectDart();
+    if (result) {
+      if (pendingDetection && Math.hypot(result.x - pendingDetection.x, result.y - pendingDetection.y) < 40) {
+        pendingDetection.confirmCount += 1;
+        pendingDetection.x = result.x;
+        pendingDetection.y = result.y;
+        pendingDetection.pixels = result.pixels;
+        if (loopFrame % 5 === 0) setStatus('Confirming dart… ' + pendingDetection.confirmCount + '/' + CONFIRM_FRAMES + ' (' + result.pixels + 'px)');
+        if (pendingDetection.confirmCount >= CONFIRM_FRAMES) {
+          scoreDart(pendingDetection);
+          pendingDetection = null;
+          lastScoreTime = now;
         }
       } else {
-        pendingDetection = null;
+        pendingDetection = { x: result.x, y: result.y, pixels: result.pixels, confirmCount: 1 };
       }
+    } else {
+      pendingDetection = null;
+      if (loopFrame % 30 === 0) setStatus('Watching… (no dart yet)');
     }
     animFrameId = requestAnimationFrame(detectLoop);
   }
