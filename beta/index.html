@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -152,7 +152,7 @@
   .card .seat-remove.hidden { display: none !important; }
   .card .seat-remove:active { background: #3a2a2a; }
 
-  /* Before New match: lineup / mode only â€” hide scoring chrome. */
+  /* Before New match: lineup / mode only — hide scoring chrome. */
   #pageScore.prematch .pad,
   #pageScore.prematch .board-wrap,
   #pageScore.prematch .stats,
@@ -543,7 +543,7 @@
     background: var(--accent); left: 50%; top: 50%;
     margin: -2px 0 0 -2px;
   }
-  /* AI solve sparkle (usual â˜…/âœ¦ affordance) on the board toggle. */
+  /* AI solve sparkle (usual ★/✦ affordance) on the board toggle. */
   .aim-board-toggle .abt-ai {
     position: absolute; right: 1px; top: 0; font-size: 11px; line-height: 1;
     color: var(--accent); font-weight: 900; pointer-events: none;
@@ -1384,17 +1384,17 @@
 <div class="gate" id="accessGate">
   <div class="gate-box">
     <h2>Darts AIm</h2>
-    <p>Darts + Aim + AI â€” a game of words with artificial intelligence. Know your throw. Get the right aim.</p>
+    <p>Darts + Aim + AI — a game of words with artificial intelligence. Know your throw. Get the right aim.</p>
     <button type="button" class="google" id="gateGoogle">Continue with Google</button>
     <button type="button" class="secondary" id="gateGuest">Continue free (no account)</button>
     <div class="divider">or</div>
-    <button type="button" class="admin-toggle" id="gateAdminToggle">Admin unlockâ€¦</button>
+    <button type="button" class="admin-toggle" id="gateAdminToggle">Admin unlock…</button>
     <div class="admin-row hidden" id="gateAdminRow">
       <input id="gatePass" type="password" autocomplete="current-password" placeholder="Admin password">
       <button type="button" id="gateGo">Unlock as Admin</button>
     </div>
     <div class="err" id="gateErr"></div>
-    <div class="hint" id="gateHint">Free: score + aims at a few Ïƒ. Pro: your profile, personal aims with why, practice, and progress.</div>
+    <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
     <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.165-beta / 2026-08-16 / 4ada0e6</div>
   </div>
 </div>
@@ -1403,7 +1403,7 @@
     <h2 id="playerModalTitle">Player</h2>
     <input id="playerModalName" type="text" maxlength="16" placeholder="Name" autocomplete="off">
     <div class="player-panel" id="playerRosterPanel">
-      <p class="hint">Shared roster for both sides. Tap a name to pick them. Edit <b>Switch â‰¤</b> on the row (use <b>2</b> to disable the auto switch), or tap <b>Ã—</b> to delete. Type a new name and <b>Save</b> to add. <b>Bot</b> is the CPU opponent.</p>
+      <p class="hint">Shared roster for both sides. Tap a name to pick them. Edit <b>Switch ≤</b> on the row (use <b>2</b> to disable the auto switch), or tap <b>×</b> to delete. Type a new name and <b>Save</b> to add. <b>Bot</b> is the CPU opponent.</p>
       <div class="player-list" id="playerList"></div>
       <div class="player-actions" style="grid-template-columns:1fr 1fr">
         <button type="button" id="playerCancel">Cancel</button>
@@ -1411,7 +1411,7 @@
       </div>
     </div>
     <div class="player-panel hidden" id="playerContactsPanel">
-      <p class="hint">Mates you play with â€” rematch or share results next time. Optional handle helps you find them on WhatsApp.</p>
+      <p class="hint">Mates you play with — rematch or share results next time. Optional handle helps you find them on WhatsApp.</p>
       <input id="contactHandle" type="text" maxlength="40" placeholder="Handle / phone (optional)" autocomplete="off"
              style="margin-bottom:8px">
       <div class="player-list" id="contactList"></div>
@@ -1441,22 +1441,22 @@
     <h2>Fit confidence</h2>
     <p>The colored line is the <b>worse</b> of two scores:</p>
     <div class="fit-ks-legend">
-      <div><span class="low">Low</span> â€” weak precision or model mismatch</div>
-      <div><span class="fair">Fair</span> â€” usable, still wide Â±% or soft KS</div>
-      <div><span class="good">Good</span> â€” solid n / CI and acceptable model fit</div>
-      <div><span class="high">High</span> â€” large n, tight CI, strong model fit</div>
+      <div><span class="low">Low</span> — weak precision or model mismatch</div>
+      <div><span class="fair">Fair</span> — usable, still wide ±% or soft KS</div>
+      <div><span class="good">Good</span> — solid n / CI and acceptable model fit</div>
+      <div><span class="high">High</span> — large n, tight CI, strong model fit</div>
     </div>
-    <p><b>1. Ïƒ precision</b> â€” how tightly Ïƒ is known from sample size n<br>
+    <p><b>1. σ precision</b> — how tightly σ is known from sample size n<br>
       Low: n &lt; 8<br>
-      Fair: n &lt; 40 or Â±% wider than ~16%<br>
-      Good: n &lt; 100 or Â±% wider than ~8%<br>
-      High: n â‰¥ 100 and a tight Â±% band</p>
-    <p><b>2. Model fit (KS p)</b> â€” do distances look like a Rayleigh curve at this Ïƒ?<br>
-      KS p &lt; 0.01 â†’ mismatch (caps at Low)<br>
-      KS p &lt; 0.05 â†’ weak (caps at Fair)<br>
-      KS p &lt; 0.20 â†’ acceptable<br>
-      KS p â‰¥ 0.20 â†’ good model fit</p>
-    <p class="hint">Â±% and (loâ€“hi mm) are the 95% CI on Ïƒ. KS p is how surprising the curve mismatch would be if the model were true.</p>
+      Fair: n &lt; 40 or ±% wider than ~16%<br>
+      Good: n &lt; 100 or ±% wider than ~8%<br>
+      High: n ≥ 100 and a tight ±% band</p>
+    <p><b>2. Model fit (KS p)</b> — do distances look like a Rayleigh curve at this σ?<br>
+      KS p &lt; 0.01 → mismatch (caps at Low)<br>
+      KS p &lt; 0.05 → weak (caps at Fair)<br>
+      KS p &lt; 0.20 → acceptable<br>
+      KS p ≥ 0.20 → good model fit</p>
+    <p class="hint">±% and (lo–hi mm) are the 95% CI on σ. KS p is how surprising the curve mismatch would be if the model were true.</p>
     <div class="player-actions" style="grid-template-columns:1fr">
       <button type="button" id="fitKsInfoClose" class="primary">Close</button>
     </div>
@@ -1464,12 +1464,12 @@
 </div>
 <div class="player-modal hidden" id="sigmaInfoModal">
   <div class="player-box">
-    <h2>Accuracy Ïƒ</h2>
-    <p><b>Ïƒ</b> (mm) is your typical dart scatter â€” how far throws land from the aim on average. Lower Ïƒ means a tighter thrower; optimal aims change with it.</p>
-    <p>Estimate yours in <b>Fit Ïƒ</b> from bull practice, then apply it to a seat.</p>
+    <h2>Accuracy σ</h2>
+    <p><b>σ</b> (mm) is your typical dart scatter — how far throws land from the aim on average. Lower σ means a tighter thrower; optimal aims change with it.</p>
+    <p>Estimate yours in <b>Fit σ</b> from bull practice, then apply it to a seat.</p>
     <div class="player-actions">
       <button type="button" id="sigmaInfoClose">Close</button>
-      <button type="button" class="primary" id="sigmaInfoGoFit">Open Fit Ïƒ</button>
+      <button type="button" class="primary" id="sigmaInfoGoFit">Open Fit σ</button>
     </div>
   </div>
 </div>
@@ -1491,10 +1491,10 @@
     <div class="bestof-legs" id="bestOfLegsBox">
       <label class="bestof-legs-toggle">
         <input type="checkbox" id="bestOfLegsEnable">
-        Already started â€” set legs score
+        Already started — set legs score
       </label>
       <div class="bestof-legs-row hidden" id="bestOfLegsRow"></div>
-      <p class="bestof-legs-hint hidden" id="bestOfLegsHint">Optional. Leave at 0â€“0 to start fresh.</p>
+      <p class="bestof-legs-hint hidden" id="bestOfLegsHint">Optional. Leave at 0–0 to start fresh.</p>
     </div>
     <div class="player-actions">
       <button type="button" id="bestOfCancel">Cancel</button>
@@ -1534,15 +1534,15 @@
   </div>
 </div>
 <div class="app locked" id="mainApp">
-  <div class="beta-banner" id="betaBanner">BETA â€” builds from the <b>dev</b> branch. <a href="../">Open stable app</a></div>
+  <div class="beta-banner" id="betaBanner">BETA — builds from the <b>dev</b> branch. <a href="../">Open stable app</a></div>
   <div class="pro-banner" id="proBanner">
-    Pro â€” personal coach: profile, aim-with-why, practice, groups &amp; progress.
+    Pro — personal coach: profile, aim-with-why, practice, groups &amp; progress.
     <button type="button" id="proBannerUpgrade">Upgrade</button>
   </div>
   <div class="nav" id="pageNav">
     <button type="button" class="active" data-page="score">Play</button>
     <button type="button" data-page="coach" id="navCoach">Coach</button>
-    <button type="button" data-page="fit" id="navFit">Fit Ïƒ <span class="nav-pro" title="Pro">Pro</span></button>
+    <button type="button" data-page="fit" id="navFit">Fit σ <span class="nav-pro" title="Pro">Pro</span></button>
     <button type="button" data-page="history" id="navHistory">History</button>
   </div>
 
@@ -1552,7 +1552,7 @@
   <div class="entry-toggle cricket-hide" id="entryToggle">
     <button type="button" class="active" data-entry="visit">Visit total</button>
     <button type="button" data-entry="dart">By dart</button>
-    <button type="button" data-entry="camera">Autoscore</button>
+    <button type="button" data-entry="camera">Camera</button>
   </div>
   <div class="hidden" id="cameraContainer"></div>
 
@@ -1568,11 +1568,11 @@
            role="button" tabindex="0">0</div>
       <div class="meta" id="meta0">Legs 0</div>
       <div class="sigma-row cricket-hide" id="simpleRow0">
-        <label for="sigma0">Ïƒ</label>
+        <label for="sigma0">σ</label>
         <input id="sigma0" type="number" inputmode="numeric" min="1" max="50" step="1"
-               value="25" placeholder="1â€“50">
+               value="25" placeholder="1–50">
         <button type="button" class="sigma-info" data-sigma-info
-                title="What is Ïƒ?" aria-label="What is sigma?">i</button>
+                title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
       <button type="button" class="seat-remove hidden" data-seat-remove="0"
               title="Remove this player">Remove</button>
@@ -1581,7 +1581,7 @@
       <button type="button" class="seat-count-btn" id="btnSeatCount"
               title="Add a third player">Add</button>
       <button type="button" class="swap-sides" id="btnSwapSides"
-              title="Swap these two players" aria-label="Swap seat 1 and seat 2">â‡„</button>
+              title="Swap these two players" aria-label="Swap seat 1 and seat 2">⇄</button>
     </div>
     <div class="card" id="card1">
       <div class="name-row">
@@ -1594,17 +1594,17 @@
            role="button" tabindex="0">0</div>
       <div class="meta" id="meta1">Legs 0</div>
       <div class="sigma-row cricket-hide" id="simpleRow1">
-        <label for="sigma1">Ïƒ</label>
+        <label for="sigma1">σ</label>
         <input id="sigma1" type="number" inputmode="numeric" min="1" max="50" step="1"
-               value="25" placeholder="1â€“50">
+               value="25" placeholder="1–50">
         <button type="button" class="sigma-info" data-sigma-info
-                title="What is Ïƒ?" aria-label="What is sigma?">i</button>
+                title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
       <button type="button" class="seat-remove hidden" data-seat-remove="1"
               title="Remove this player">Remove</button>
     </div>
     <button type="button" class="swap-sides swap-adj-extra hidden" id="btnSwap12"
-            title="Swap these two players" aria-label="Swap seat 2 and seat 3">â‡„</button>
+            title="Swap these two players" aria-label="Swap seat 2 and seat 3">⇄</button>
     <div class="card seat-extra hidden" id="card2">
       <div class="name-row">
         <input class="name" id="name2" value="" placeholder="Select player" maxlength="16" readonly
@@ -1616,11 +1616,11 @@
            role="button" tabindex="0">0</div>
       <div class="meta" id="meta2">Legs 0</div>
       <div class="sigma-row cricket-hide" id="simpleRow2">
-        <label for="sigma2">Ïƒ</label>
+        <label for="sigma2">σ</label>
         <input id="sigma2" type="number" inputmode="numeric" min="1" max="50" step="1"
-               value="25" placeholder="1â€“50">
+               value="25" placeholder="1–50">
         <button type="button" class="sigma-info" data-sigma-info
-                title="What is Ïƒ?" aria-label="What is sigma?">i</button>
+                title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
       <button type="button" class="seat-remove hidden" data-seat-remove="2"
               title="Remove this player">Remove</button>
@@ -1629,9 +1629,9 @@
 
   <div class="cricket-board hidden" id="cricketBoard"></div>
   <div class="cricket-help hidden" id="cricketHelp">
-    Targets <b>20â€“15 &amp; Bull</b>: 3 hits to close (S=1, D=2, T=3; outer bull=1, red bull=2).
+    Targets <b>20–15 &amp; Bull</b>: 3 hits to close (S=1, D=2, T=3; outer bull=1, red bull=2).
     Tap <b>Miss</b> for a dart that scores nothing. Extra hits score the face value only while
-    the opponent has not closed that number. Win by closing all targets with points â‰¥ opponent;
+    the opponent has not closed that number. Win by closing all targets with points ≥ opponent;
     if you close first but trail, keep scoring on numbers they still have open.
   </div>
 
@@ -1647,7 +1647,7 @@
   <div class="info" id="info"></div>
   <div class="board-wrap cricket-hide" id="playBoardWrap">
     <canvas id="board" width="800" height="800"
-            aria-label="AI aim board â€” tap landing when scoring by dart"></canvas>
+            aria-label="AI aim board — tap landing when scoring by dart"></canvas>
     <p class="play-board-hint hidden" id="playBoardHint">Tap where the dart landed</p>
   </div>
 
@@ -1671,18 +1671,18 @@
     <div class="coach-card" id="coachProfileCard">
       <h2>Your throw</h2>
       <p class="promise">Fit once, then Play uses aims matched to your accuracy.</p>
-      <div class="coach-empty" id="coachEmpty">No saved fit yet â€” open Fit Ïƒ and save under this name.</div>
+      <div class="coach-empty" id="coachEmpty">No saved fit yet — open Fit σ and save under this name.</div>
       <div id="coachProfileBody" class="hidden">
-        <div class="hero-sigma" id="coachSigma">â€”</div>
+        <div class="hero-sigma" id="coachSigma">—</div>
         <div class="subline" id="coachSigmaSub"></div>
         <div class="quality" id="coachQuality"></div>
         <div class="coach-metrics">
-          <div class="cell"><div class="v" id="coachN">â€”</div><div class="l">throws</div></div>
-          <div class="cell"><div class="v" id="coachWhen">â€”</div><div class="l">last fit</div></div>
-          <div class="cell"><div class="v" id="coachTrend">â€”</div><div class="l">vs prior</div></div>
+          <div class="cell"><div class="v" id="coachN">—</div><div class="l">throws</div></div>
+          <div class="cell"><div class="v" id="coachWhen">—</div><div class="l">last fit</div></div>
+          <div class="cell"><div class="v" id="coachTrend">—</div><div class="l">vs prior</div></div>
         </div>
         <canvas class="coach-trend" id="coachTrendChart" width="560" height="140"></canvas>
-        <div class="subline" id="coachTrendCaption">Ïƒ over recent fits (lower = tighter)</div>
+        <div class="subline" id="coachTrendCaption">σ over recent fits (lower = tighter)</div>
       </div>
       <div class="coach-actions triple">
         <button type="button" id="coachGoFit">Update fit</button>
@@ -1694,14 +1694,14 @@
       <h2>Match form</h2>
       <p class="promise" id="coachFormSummary">Finished matches on this device for this name.</p>
       <div class="coach-metrics">
-        <div class="cell"><div class="v" id="coachWins">â€”</div><div class="l">wins</div></div>
-        <div class="cell"><div class="v" id="coachLosses">â€”</div><div class="l">losses</div></div>
-        <div class="cell"><div class="v" id="coachAvg">â€”</div><div class="l">3-dart avg</div></div>
+        <div class="cell"><div class="v" id="coachWins">—</div><div class="l">wins</div></div>
+        <div class="cell"><div class="v" id="coachLosses">—</div><div class="l">losses</div></div>
+        <div class="cell"><div class="v" id="coachAvg">—</div><div class="l">3-dart avg</div></div>
       </div>
       <div class="coach-metrics" style="margin-top:8px">
-        <div class="cell"><div class="v" id="coachWinRate">â€”</div><div class="l">win rate</div></div>
-        <div class="cell"><div class="v" id="coachCheckout">â€”</div><div class="l">checkout %</div></div>
-        <div class="cell"><div class="v" id="coachPayoff">â€”</div><div class="l">payoff</div></div>
+        <div class="cell"><div class="v" id="coachWinRate">—</div><div class="l">win rate</div></div>
+        <div class="cell"><div class="v" id="coachCheckout">—</div><div class="l">checkout %</div></div>
+        <div class="cell"><div class="v" id="coachPayoff">—</div><div class="l">payoff</div></div>
       </div>
       <p class="promise" id="coachPayoffDetail" style="margin-top:8px"></p>
       <div class="coach-actions">
@@ -1710,26 +1710,26 @@
       </div>
       <div class="coach-actions" style="margin-top:8px">
         <button type="button" id="coachShare">Share profile</button>
-        <button type="button" id="coachWarmup">Todayâ€™s warm-up</button>
+        <button type="button" id="coachWarmup">Today’s warm-up</button>
       </div>
     </div>
     <div class="coach-card" id="coachHabitCard">
-      <h2>Todayâ€™s habit</h2>
+      <h2>Today’s habit</h2>
       <p class="promise" id="coachHabitText">A 3-minute ritual so you open the app with a purpose.</p>
       <div class="coach-metrics">
         <div class="cell"><div class="v" id="coachStreak">0</div><div class="l">day streak</div></div>
-        <div class="cell"><div class="v" id="coachHabitDone">â€”</div><div class="l">warm-up</div></div>
-        <div class="cell"><div class="v" id="coachLastDiag">â€”</div><div class="l">last focus</div></div>
+        <div class="cell"><div class="v" id="coachHabitDone">—</div><div class="l">warm-up</div></div>
+        <div class="cell"><div class="v" id="coachLastDiag">—</div><div class="l">last focus</div></div>
       </div>
     </div>
     <div class="coach-card" id="coachContactsCard">
       <h2>Your darts circle</h2>
-      <p class="promise">Saved contacts â€” rematch or share the next scorecard in one tap.</p>
+      <p class="promise">Saved contacts — rematch or share the next scorecard in one tap.</p>
       <div id="coachContactsList" class="contact-chips"><div class="coach-empty">Play someone, then save them as a contact.</div></div>
     </div>
     <div class="coach-card" id="coachGroupsCard">
       <h2>Groups <span class="group-pro-tag">PRO</span></h2>
-      <p class="promise" id="coachGroupsPromise">Build a crew from contacts â€” ranked standings from every match they play.</p>
+      <p class="promise" id="coachGroupsPromise">Build a crew from contacts — ranked standings from every match they play.</p>
       <div id="coachGroupsBody"></div>
     </div>
     </div><!-- /coachPanelProfile -->
@@ -1740,33 +1740,33 @@
       <p class="promise">Drills tied to your profile and last match diagnosis. Finish a fit, then train the leak.</p>
     </div>
     <div class="drill-card" data-drill="warmup">
-      <div class="tag">DAILY Â· HABIT</div>
-      <h3 id="warmupTitle">Todayâ€™s warm-up</h3>
-      <p id="warmupBlurb">A short ritual â€” bull check or a finish leave â€” so progress compounds.</p>
+      <div class="tag">DAILY · HABIT</div>
+      <h3 id="warmupTitle">Today’s warm-up</h3>
+      <p id="warmupBlurb">A short ritual — bull check or a finish leave — so progress compounds.</p>
       <button type="button" class="primary" id="drillWarmup">Start warm-up</button>
     </div>
     <div class="drill-card" data-drill="bull">
-      <div class="tag">DRILL 1 Â· PROFILE</div>
+      <div class="tag">DRILL 1 · PROFILE</div>
       <h3>Bull calibration</h3>
-      <p>Aim bull, log landings in Fit Ïƒ, save under your name. Rebuilds the profile the coach uses.</p>
+      <p>Aim bull, log landings in Fit σ, save under your name. Rebuilds the profile the coach uses.</p>
       <button type="button" class="primary" id="drillBull">Start bull fit</button>
     </div>
     <div class="drill-card" data-drill="double">
-      <div class="tag">DRILL 2 Â· FINISH</div>
+      <div class="tag">DRILL 2 · FINISH</div>
       <h3>Double focus</h3>
-      <p>Jump into a checkout leave at your Ïƒ. Throw the recommended double until it feels automatic.</p>
+      <p>Jump into a checkout leave at your σ. Throw the recommended double until it feels automatic.</p>
       <button type="button" class="primary" id="drillDouble">Practice doubles</button>
     </div>
     <div class="drill-card" data-drill="path">
-      <div class="tag">DRILL 3 Â· SETUP</div>
+      <div class="tag">DRILL 3 · SETUP</div>
       <h3>Checkout path</h3>
-      <p>Walk a full visit path (aim â†’ next â†’ finish) so match advice feels familiar at the oche.</p>
+      <p>Walk a full visit path (aim → next → finish) so match advice feels familiar at the oche.</p>
       <button type="button" class="primary" id="drillPath">Walk a path</button>
     </div>
     <div class="drill-card" data-drill="cricket">
-      <div class="tag">DRILL 4 Â· CRICKET</div>
+      <div class="tag">DRILL 4 · CRICKET</div>
       <h3>Marks first</h3>
-      <p>Open Cricket and follow the coached aim â€” close high numbers before you chase points.</p>
+      <p>Open Cricket and follow the coached aim — close high numbers before you chase points.</p>
       <button type="button" class="primary" id="drillCricket">Practice Cricket</button>
     </div>
     <div class="coach-card" id="practiceStatus">
@@ -1777,9 +1777,9 @@
     <div class="coach-panel hidden" id="coachPanelCheckout">
     <div class="coach-card">
       <h2>Checkout table</h2>
-      <p class="promise">Pick Ïƒ â€” most likely visit path for every leave 2â€“170 (same for 501 and 301 once you are open). Tap a path to see the board aim for the first dart.</p>
+      <p class="promise">Pick σ — most likely visit path for every leave 2–170 (same for 501 and 301 once you are open). Tap a path to see the board aim for the first dart.</p>
       <div class="checkout-controls">
-        <label>Ïƒ (mm)
+        <label>σ (mm)
           <input id="checkoutSigma" type="number" inputmode="numeric" min="1" max="50" step="1" value="15">
         </label>
         <button type="button" id="checkoutLoad">Show</button>
@@ -1789,7 +1789,7 @@
         <button type="button" data-darts="3">3 left</button>
         <button type="button" data-darts="2">2 left</button>
         <button type="button" data-darts="1">1 left</button>
-        <button type="button" id="checkoutExtended" class="checkout-extended-btn">Extended (â‰¤200)</button>
+        <button type="button" id="checkoutExtended" class="checkout-extended-btn">Extended (≤200)</button>
       </div>
       <div class="checkout-wrap">
         <table class="checkout-table">
@@ -1797,7 +1797,7 @@
             <tr><th>Score</th><th>Darts</th><th>Path</th><th>E[turns]</th></tr>
           </thead>
           <tbody id="checkoutTableBody">
-            <tr><td colspan="4" class="et">Tap Show to load the aim table for this Ïƒ.</td></tr>
+            <tr><td colspan="4" class="et">Tap Show to load the aim table for this σ.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1818,7 +1818,7 @@
     </div>
     <div class="fit-measure-aim-row">
       <button type="button" id="fitMeasureAimBtn" aria-pressed="false">
-        Aim Â· Bull
+        Aim · Bull
         <span class="sub">Select by clicking on the dartboard</span>
       </button>
     </div>
@@ -1836,7 +1836,7 @@
 
     <div class="fit-help" id="fitError" style="display:none;color:#ff8a8a;margin-top:0;margin-bottom:8px"></div>
     <div class="fit-result hidden" id="fitResult">
-      <div class="big" id="fitSigma">â€”</div>
+      <div class="big" id="fitSigma">—</div>
       <div class="quality" id="fitQuality"></div>
       <div class="sub" id="fitDetail" style="display:none"></div>
       <div class="fit-aim-sigmas hidden" id="fitAimSigmas"></div>
@@ -1848,7 +1848,7 @@
     <div class="fit-actions" style="grid-template-columns:1fr 1fr">
       <button type="button" id="fitClear">Clear</button>
       <button type="button" class="primary" id="fitSaveBottom" disabled
-              title="Select a player and estimate Ïƒ first">Save fit</button>
+              title="Select a player and estimate σ first">Save fit</button>
     </div>
     <div class="fit-saved" id="fitSavedList">
       <div class="hdr"><span>Saved fits</span><span>this device</span></div>
@@ -1904,7 +1904,7 @@ const AUTH_CONFIG = DATA.auth || {
   stripe: { enabled: false, checkoutUrl: '' },
 };
 
-/** Session entitlement. Admin / VIP email / break-glass password â†’ Pro. */
+/** Session entitlement. Admin / VIP email / break-glass password → Pro. */
 const AUTH = {
   source: null,       // 'guest' | 'google' | 'password'
   user: null,         // { uid, email, name, photoURL }
@@ -1938,7 +1938,7 @@ function syncTierChrome() {
   document.body.classList.toggle('free-tier', !isPro());
   const navFit = document.getElementById('navFit');
   if (navFit) {
-    navFit.title = isPro() ? 'Fit throwing accuracy Ïƒ' : 'Fit Ïƒ is Pro';
+    navFit.title = isPro() ? 'Fit throwing accuracy σ' : 'Fit σ is Pro';
   }
 }
 function refreshEntitlement() {
@@ -1969,7 +1969,7 @@ function refreshEntitlement() {
 function showProBanner(msg) {
   const el = document.getElementById('proBanner');
   if (!el) return;
-  el.childNodes[0].textContent = (msg || 'Pro â€” personal coach: profile, aim-with-why, practice & progress.') + ' ';
+  el.childNodes[0].textContent = (msg || 'Pro — personal coach: profile, aim-with-why, practice & progress.') + ' ';
   el.classList.add('show');
 }
 function hideProBanner() {
@@ -2001,8 +2001,8 @@ function updateAccountBar() {
 const OUTER_BULL_RADIUS = 15.9, BULL_RADIUS = 6.35;
 const TRIPLE_INNER = 99.0, TRIPLE_OUTER = 107.0;
 const DOUBLE_INNER = 162.0, DOUBLE_OUTER = 170.0;
-// Winmau Blade 6: staple-free 60Â° blade wire; bull rings 25% thinner.
-// Effective = geom half-width Ã— P(bounce|wire) â†’ ~0.15 / ~0.10 mm.
+// Winmau Blade 6: staple-free 60° blade wire; bull rings 25% thinner.
+// Effective = geom half-width × P(bounce|wire) → ~0.15 / ~0.10 mm.
 const WIRE_SPIDER_BOUNCE_HALF_MM = 0.15;
 const WIRE_BULL_BOUNCE_HALF_MM = 0.10;
 const WIRE_BOUNCE_HALF_WIDTH_MM = WIRE_SPIDER_BOUNCE_HALF_MM; // back-compat
@@ -2026,7 +2026,7 @@ const elPad = document.getElementById('pad');
 let currentModeKey = DATA.default_mode;
 let pendingMult = 'S';
 /** 'dart' = per-dart pad; 'visit' = enter 3-dart visit total.
- *  Auto uses each seat's saved Dartâ‰¤ threshold (default 170). */
+ *  Auto uses each seat's saved Dart≤ threshold (default 170). */
 let scoreEntryMode = 'visit';
 let visitDigits = '';
 /** Lineup size for 501 / 301 DI / Cricket: 2 or 3 (cricket 3p = cut-throat).
@@ -2037,7 +2037,7 @@ try {
   localStorage.removeItem('dartsCricketPlayers');
   localStorage.removeItem('dartsDartEntryUi');
 } catch (_) {}
-/** @deprecated use lineupPlayerCount â€” kept in sync for older call sites. */
+/** @deprecated use lineupPlayerCount — kept in sync for older call sites. */
 let cricketPlayerCount = lineupPlayerCount;
 /** Built-in roster name: selecting it for a seat makes that seat the CPU. */
 const BOT_PLAYER_NAME = 'Bot';
@@ -2058,7 +2058,7 @@ function clampEntryDartThreshold(v) {
   let n = Math.round(Number(v));
   if (!Number.isFinite(n)) n = ENTRY_DART_AT_OR_BELOW_DEFAULT;
   if (n < 0) n = 0;
-  // 1 is never a valid leave (bust) â€” treat like 2 (auto-switch off).
+  // 1 is never a valid leave (bust) — treat like 2 (auto-switch off).
   if (n === 1) n = 2;
   if (n > 501) n = 501;
   return n;
@@ -2107,7 +2107,7 @@ function entryDartThresholdForSeat(idx) {
 }
 
 function syncModalEntryDartFromName(name) {
-  // Dart â‰¤ is edited on the roster list; keep the legacy field hidden if present.
+  // Dart ≤ is edited on the roster list; keep the legacy field hidden if present.
   const row = document.getElementById('playerModalEntryDartRow');
   if (row) row.classList.add('hidden');
   const el = document.getElementById('playerModalEntryDart');
@@ -2124,7 +2124,7 @@ function readModalEntryDartThreshold() {
 function commitModalEntryDartThreshold(name) {
   if (isPlaceholderPlayerName(name) || isBotPlayerName(name)) return;
   const el = document.getElementById('playerModalEntryDart');
-  // Roster Dart â‰¤ is edited on the list; skip if the old field is gone.
+  // Roster Dart ≤ is edited on the list; skip if the old field is gone.
   if (!el) return;
   const thr = readModalEntryDartThreshold();
   el.value = String(thr);
@@ -2207,7 +2207,7 @@ function drawAimOn(c, x, y, sigmaOrShape) {
     g.beginPath();
     const rPix = k * sigma * s;
     g.arc(X, Y, Math.max(rPix, 2), 0, 2 * Math.PI);
-    // Dashes vanish on tiny rings (preliminary small-Ïƒ policies).
+    // Dashes vanish on tiny rings (preliminary small-σ policies).
     g.setLineDash(rPix < 18 ? [] : [6, 5]);
     g.stroke();
   }
@@ -2300,7 +2300,7 @@ function isOnBounceWire(r, thetaRad) {
   return false;
 }
 
-/** Exact board classifier â†’ scorekeeper label (Bull / 25 / T20 / Miss / Bounce). */
+/** Exact board classifier → scorekeeper label (Bull / 25 / T20 / Miss / Bounce). */
 function scoreLabelFromXY(x, y) {
   const r = Math.hypot(x, y);
   const theta = Math.atan2(x, y); // 0 at top, clockwise
@@ -2314,12 +2314,12 @@ function scoreLabelFromXY(x, y) {
   return 'S' + val;
 }
 
-/** Sample landing ~ isotropic N(aim, ÏƒÂ² I). */
+/** Sample landing ~ isotropic N(aim, σ² I). */
 function sampleGaussianLanding(ax, ay, shape) {
   const s = Math.max(0.5, Number(
     shape && shape.sigma != null ? shape.sigma
       : (shape && shape.sigma != null ? shape.sigma : 25)) || 25);
-  // Boxâ€“Muller
+  // Box–Muller
   let u = 0, v = 0;
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();
@@ -2341,7 +2341,7 @@ function drawLandingMark(x, y) {
   ctx.stroke();
 }
 
-/** UI label: drop * / i / o â€” the board crosshair shows the exact aim. */
+/** UI label: drop * / i / o — the board crosshair shows the exact aim. */
 function prettyAimLabel(label) {
   let lab = String(label || '').replace(/\*+$/, '').trim();
   lab = lab.replace(/^([STD]\d+)[io]$/i, '$1');
@@ -2481,7 +2481,7 @@ function hitContinuation(policy, score, dartsLeft) {
     const nxt = s - pts;
     if (nxt === 0 && isDbl) { steps.push([s, d, clean, 0, 'checkout']); break; }
     if (nxt < 0 || nxt === 0) { steps.push([s, d, clean, null, 'bust']); break; }
-    // Already on a finishing double/bull â€” only this dart matters (no D20 D20 D20).
+    // Already on a finishing double/bull — only this dart matters (no D20 D20 D20).
     if (typeof isOneDartFinish === 'function' && isOneDartFinish(s)) {
       steps.push([s, d, clean, nxt, d === 1 ? 'end_turn' : 'continue']);
       break;
@@ -2572,7 +2572,7 @@ function matchLosers(m) {
   return m.players.filter((_, i) => i !== m.winner);
 }
 
-/** Diagnose finished match â†’ one prescribed drill. */
+/** Diagnose finished match → one prescribed drill. */
 function diagnoseMatch(m) {
   if (!m || m.winner === null) return null;
   const w = m.players[m.winner];
@@ -2586,14 +2586,14 @@ function diagnoseMatch(m) {
       return {
         code: 'cricket_marks',
         title: 'Close marks first',
-        detail: 'Points raced ahead of closes. Drill: Cricket â€” follow coached aims on open numbers.',
+        detail: 'Points raced ahead of closes. Drill: Cricket — follow coached aims on open numbers.',
         drill: 'cricket',
       };
     }
     return {
       code: 'cricket_pace',
       title: 'Sharpen Cricket pace',
-      detail: 'You closed out â€” keep opening on T20/T19. Warm-up: Cricket marks drill.',
+      detail: 'You closed out — keep opening on T20/T19. Warm-up: Cricket marks drill.',
       drill: 'cricket',
     };
   }
@@ -2622,7 +2622,7 @@ function diagnoseMatch(m) {
     return {
       code: 'accuracy',
       title: 'Tighten the throw',
-      detail: '3-dart avg ' + avg.toFixed(1) + '. Prescribe: Bull calibration â†’ save Fit.',
+      detail: '3-dart avg ' + avg.toFixed(1) + '. Prescribe: Bull calibration → save Fit.',
       drill: 'bull',
     };
   }
@@ -2665,7 +2665,7 @@ function cricketHeuristicAim(meMarks, oppMarks, myPts, oppPts) {
     if ((meMarks[n] || 0) < 3) {
       return {
         aim: 'T' + n,
-        why: 'Close ' + n + ' first â€” marks beat early points in Cricket.',
+        why: 'Close ' + n + ' first — marks beat early points in Cricket.',
         x: 0, y: 103,
       };
     }
@@ -2673,7 +2673,7 @@ function cricketHeuristicAim(meMarks, oppMarks, myPts, oppPts) {
   if ((meMarks.Bull || 0) < 3) {
     return {
       aim: 'Bull',
-      why: 'Bull is still open â€” close it before you chase points.',
+      why: 'Bull is still open — close it before you chase points.',
       x: 0, y: 0,
     };
   }
@@ -2682,7 +2682,7 @@ function cricketHeuristicAim(meMarks, oppMarks, myPts, oppPts) {
     if ((oppMarks[n] || 0) < 3) {
       return {
         aim: 'T' + n,
-        why: 'Youâ€™re closed â€” score on ' + n + ' while they still have it open.',
+        why: 'You’re closed — score on ' + n + ' while they still have it open.',
         x: 0, y: 103,
       };
     }
@@ -2690,21 +2690,21 @@ function cricketHeuristicAim(meMarks, oppMarks, myPts, oppPts) {
   if ((oppMarks.Bull || 0) < 3) {
     return {
       aim: 'Bull',
-      why: 'Score Bull while theirs is open â€” protect the lead.',
+      why: 'Score Bull while theirs is open — protect the lead.',
       x: 0, y: 0,
     };
   }
   return {
     aim: 'T20',
-    why: 'Both closed â€” stay sharp on T20.',
+    why: 'Both closed — stay sharp on T20.',
     x: 0, y: 103,
   };
 }
 
 function explainCricketWhy(aim, pWin, heuristicWhy) {
-  let why = heuristicWhy || ('Aim ' + aim + ' â€” best Cricket mark at your Ïƒ.');
+  let why = heuristicWhy || ('Aim ' + aim + ' — best Cricket mark at your σ.');
   if (pWin != null && Number.isFinite(Number(pWin))) {
-    why += ' Â· win chance ~' + (100 * Number(pWin)).toFixed(0) + '% from this state.';
+    why += ' · win chance ~' + (100 * Number(pWin)).toFixed(0) + '% from this state.';
   }
   return why;
 }
@@ -2721,13 +2721,13 @@ function sharePayload(title, text, feedbackSel) {
   };
   if (navigator.share) {
     navigator.share({ title: title, text: text, url: shareAppUrl() }).then(() => {
-      done('Shared â€” send it to a contact for the rematch.');
+      done('Shared — send it to a contact for the rematch.');
     }).catch(() => {});
     return;
   }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => {
-      done('Copied â€” paste to a contact (WhatsApp, Messagesâ€¦).');
+      done('Copied — paste to a contact (WhatsApp, Messages…).');
     }).catch(() => { window.prompt('Copy match result:', text); });
     return;
   }
@@ -2742,7 +2742,7 @@ function shareGreetingFor(m) {
   if (!invitee || isPlaceholderPlayerName(invitee.name)) return '';
   const c = findContact(invitee.name);
   const who = (c && c.handle) ? c.handle : invitee.name;
-  return 'Hey ' + who + ' â€” great game!\n\n';
+  return 'Hey ' + who + ' — great game!\n\n';
 }
 
 function saveMatchPlayersAsContacts(m, opts) {
@@ -2761,7 +2761,7 @@ function saveMatchPlayersAsContacts(m, opts) {
 }
 
 function fmtShareStat(v, digits) {
-  if (v === null || v === undefined || Number.isNaN(Number(v))) return 'â€”';
+  if (v === null || v === undefined || Number.isNaN(Number(v))) return '—';
   return Number(v).toFixed(digits == null ? 0 : digits);
 }
 
@@ -2791,13 +2791,13 @@ function buildMatchShareText(m) {
   const winner = m.players[m.winner];
   const losers = matchLosers(m);
   const lines = [];
-  lines.push('Darts AIm â€” match result');
-  lines.push(modeName + ' Â· ' + when);
+  lines.push('Darts AIm — match result');
+  lines.push(modeName + ' · ' + when);
   lines.push('');
   lines.push(winner.name + ' beat ' + losers.map(p => p.name).join(' / '));
   if (Array.isArray(m.finishOrder) && m.finishOrder.length >= 2) {
     lines.push(m.finishOrder.map((idx, pi) =>
-      placeOrdinal(pi + 1) + ' ' + m.players[idx].name).join(' Â· '));
+      placeOrdinal(pi + 1) + ' ' + m.players[idx].name).join(' · '));
   }
   lines.push('');
   lines.push(shareStatRow('', ps.map(p => p.name)));
@@ -2818,28 +2818,28 @@ function buildMatchShareText(m) {
     lines.push(shareStatRow('3-dart avg', ps.map(p => fmtShareStat(avg3(p), 1))));
     lines.push(shareStatRow('First 9', ps.map(p => fmtShareStat(avgFirst9(p), 1))));
     lines.push(shareStatRow('Checkout %', ps.map(p =>
-      checkoutPct(p) == null ? 'â€”' : fmtShareStat(checkoutPct(p), 0) + '%')));
-    lines.push(shareStatRow('Hi checkout', ps.map(p => p.highestCheckout || 'â€”')));
-    lines.push(shareStatRow('Hi visit', ps.map(p => p.highestVisit || 'â€”')));
+      checkoutPct(p) == null ? '—' : fmtShareStat(checkoutPct(p), 0) + '%')));
+    lines.push(shareStatRow('Hi checkout', ps.map(p => p.highestCheckout || '—')));
+    lines.push(shareStatRow('Hi visit', ps.map(p => p.highestVisit || '—')));
     lines.push(shareStatRow('180s', ps.map(p => p.scores180 | 0)));
     lines.push(shareStatRow('Busts', ps.map(p => p.busts | 0)));
     lines.push(shareStatRow('Darts', ps.map(p => p.dartsThrown | 0)));
   }
   lines.push('');
-  lines.push('Rematch with personal aims â€” fit your throw, get coached aims.');
+  lines.push('Rematch with personal aims — fit your throw, get coached aims.');
   lines.push('Try Darts AIm (free): ' + shareAppUrl());
-  lines.push('Darts + Aim + AI â€” know your throw. Get the right aim.');
+  lines.push('Darts + Aim + AI — know your throw. Get the right aim.');
   return lines.join('\n');
 }
 
 function shareMatchResults() {
   if (!match || match.winner === null || matchHasBot(match)) return;
-  // Keep players in the circle when sharing â€” next rematch is one tap.
+  // Keep players in the circle when sharing — next rematch is one tap.
   saveMatchPlayersAsContacts(match, { bumpPlay: false });
   const text = shareGreetingFor(match) + buildMatchShareText(match);
   const losers = matchLosers(match);
   const title = match.players[match.winner].name + ' beat '
-    + losers.map(p => p.name).join(' / ') + ' Â· Darts AIm';
+    + losers.map(p => p.name).join(' / ') + ' · Darts AIm';
   sharePayload(title, text, '#shareMatchFeedback');
 }
 
@@ -2858,7 +2858,7 @@ function renderMatchReviewExtrasHtml() {
   let aimLine = '';
   if (last && last.aim) {
     aimLine = '<div class="row" style="margin-top:8px"><span class="k">Last coached aim:</span> '
-      + last.aim + (last.why ? (' â€” ' + last.why) : '') + '</div>';
+      + last.aim + (last.why ? (' — ' + last.why) : '') + '</div>';
   }
   let diagHtml = '';
   if (diag) {
@@ -2871,7 +2871,7 @@ function renderMatchReviewExtrasHtml() {
   if (!vsBot && loser) {
     const oppLabel = losers.map(p => p.name).join(' / ') || loser.name;
     shareBlock = '<div class="invite">Save '
-      + oppLabel + ' as a contact, then share the scorecard â€” rematch next time in one tap.</div>'
+      + oppLabel + ' as a contact, then share the scorecard — rematch next time in one tap.</div>'
       + '<div class="share-row">'
       + '<button type="button" class="primary" data-review="share">Share results with '
       + oppLabel + '</button>'
@@ -2892,7 +2892,7 @@ function renderMatchReviewExtrasHtml() {
     + '</div></div>';
 }
 
-// â”€â”€ Match engine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Match engine ─────────────────────────────────────────────────────────
 const CRICKET_KEYS = [20, 19, 18, 17, 16, 15, 'Bull'];
 
 function emptyCricketMarks() {
@@ -2905,7 +2905,7 @@ function makePlayer(name, start, doubleIn, game) {
   const p = {
     name, remaining: start, opened: !doubleIn,
     dartsThrown: 0, pointsScored: 0, visitScores: [],
-    entryDarts: 0, // x01 DI darts thrown before opening (excluded from Ïƒ inference avg)
+    entryDarts: 0, // x01 DI darts thrown before opening (excluded from σ inference avg)
     visitHistory: [],  // per-player copy of finished visits (labels + outcomes)
     first9Points: 0, first9Darts: 0,
     checkoutHits: 0, checkoutAttempts: 0, highestCheckout: 0, highestVisit: 0,
@@ -2944,7 +2944,7 @@ function normalizeBestOf(bestOf) {
   let n = bestOf | 0;
   if (n < 1) n = 1;
   if (n > 99) n = 99;
-  // Prefer odd â€œbest ofâ€ lengths (1,3,5â€¦) so a winner is always possible.
+  // Prefer odd “best of” lengths (1,3,5…) so a winner is always possible.
   if (n > 1 && (n % 2 === 0)) n += 1;
   return n;
 }
@@ -2971,7 +2971,7 @@ function applyLegWin(m, seat) {
   const need = m.legsToWin | 0;
   if (need > 0 && (p.legsWon | 0) >= need) {
     m.matchWinner = seat;
-    const scoreline = m.players.map(x => x.legsWon | 0).join('â€“');
+    const scoreline = m.players.map(x => x.legsWon | 0).join('–');
     m.message = p.name + ' wins best of ' + (m.bestOf | 0)
       + ' (' + scoreline + ')!';
   }
@@ -3018,7 +3018,7 @@ function stillPlayingNames(m) {
 /**
  * Record an x01 checkout. In 3p, the leg ends only after 2 finishes
  * (1st and 2nd); 3rd is filled in automatically. Returns true when the
- * leg is complete (winner set â€” safe to archive).
+ * leg is complete (winner set — safe to archive).
  */
 function recordCheckoutFinish(m, seat, remBefore) {
   const fo = ensureFinishOrder(m);
@@ -3042,9 +3042,9 @@ function recordCheckoutFinish(m, seat, remBefore) {
   const matchOver = applyLegWin(m, first);
   if (!matchOver) {
     if (playOn && fo.length >= 2) {
-      let msg = m.players[first].name + ' wins Â· '
+      let msg = m.players[first].name + ' wins · '
         + m.players[fo[1]].name + ' 2nd';
-      if (fo[2] != null) msg += ' Â· ' + m.players[fo[2]].name + ' 3rd';
+      if (fo[2] != null) msg += ' · ' + m.players[fo[2]].name + ' 3rd';
       m.message = msg + '!';
     } else {
       m.message = p.name + ' checks out ' + remBefore + '!';
@@ -3058,7 +3058,7 @@ function playerCount(m) {
   return (m && Array.isArray(m.players)) ? m.players.length : 2;
 }
 
-/** True once any dart/visit/marks/leg progress has happened â€” lineup is then locked. */
+/** True once any dart/visit/marks/leg progress has happened — lineup is then locked. */
 function matchPlayStarted(m) {
   m = m || match;
   if (!m || !Array.isArray(m.players)) return false;
@@ -3100,7 +3100,7 @@ function isCutThroat(m) {
 }
 
 function cricketScoreline(m) {
-  return (m.players || []).map(p => p.points | 0).join('â€“');
+  return (m.players || []).map(p => p.points | 0).join('–');
 }
 
 function newMatch(startScore, doubleIn, namesArr, game, bestOf) {
@@ -3127,7 +3127,7 @@ function newMatch(startScore, doubleIn, namesArr, game, bestOf) {
     visitLog: [],  // chronological visits (darts) for archive / history
     legSheets: [], // per-leg stats snapshots (filled when a leg ends)
     botSeat: null,
-    finishOrder: [],  // x01 3p: checkout order this leg (1st, 2nd, â€¦)
+    finishOrder: [],  // x01 3p: checkout order this leg (1st, 2nd, …)
     winner: null, matchWinner: null, archiveId: null,
     message: players[0].name + ' to throw', undo: [],
   };
@@ -3137,7 +3137,7 @@ function isBotPlayerName(name) {
   return normPlayerName(name) === normPlayerName(BOT_PLAYER_NAME);
 }
 
-/** Cricket scorekeeper has no reliable bot policy yet â€” hide CPU seats there. */
+/** Cricket scorekeeper has no reliable bot policy yet — hide CPU seats there. */
 function cricketModeActive() {
   return !!(match && match.game === 'cricket') || isCricket();
 }
@@ -3205,7 +3205,7 @@ function matchHasBot(m) {
 }
 
 function isBotTurn() {
-  // Prematch: lineup only â€” never auto-throw until New match â†’ Start.
+  // Prematch: lineup only — never auto-throw until New match → Start.
   return !!(match && matchUiActive && match.winner === null && isBotSeat(match.current));
 }
 
@@ -3254,8 +3254,8 @@ function syncBotUi() {
 }
 
 /**
- * Bot: look up optimal aim for (remaining, darts left), sample N(aim, ÏƒÂ² I)
- * from this seat's Ïƒ, classify landing, score like a human dart.
+ * Bot: look up optimal aim for (remaining, darts left), sample N(aim, σ² I)
+ * from this seat's σ, classify landing, score like a human dart.
  */
 function runBotThrow() {
   botThrowTimer = null;
@@ -3268,7 +3268,7 @@ function runBotThrow() {
   const shapeForPolicy = snapPolicyShape(shape);
   const resolved = resolvePolicy(m.key, shapeForPolicy);
   if (resolved.status === 'loading' || !resolved.policy) {
-    match.message = 'Bot waiting for aim table (Ïƒ ' + shapeForPolicy.sigma + ')â€¦';
+    match.message = 'Bot waiting for aim table (σ ' + shapeForPolicy.sigma + ')…';
     scheduleBotThrow(500);
     return;
   }
@@ -3278,7 +3278,7 @@ function runBotThrow() {
   if (m.game === 'cricket') {
     let cr = resolvePolicy('cricket', shapeForPolicy);
     if (cr.status === 'loading') {
-      match.message = 'Bot waiting for Cricket aim tableâ€¦';
+      match.message = 'Bot waiting for Cricket aim table…';
       scheduleBotThrow(500);
       return;
     }
@@ -3312,7 +3312,7 @@ function runBotThrow() {
     if (entry && entry.length >= 3) {
       aimLab = entry[0]; ax = entry[1]; ay = entry[2];
     } else {
-      match.message = 'Bot: no aim for ' + score + 'Ã—' + darts + ' â€” aiming bull';
+      match.message = 'Bot: no aim for ' + score + '×' + darts + ' — aiming bull';
       ax = 0; ay = 0; aimLab = 'Bull';
     }
   }
@@ -3326,7 +3326,7 @@ function runBotThrow() {
   } finally {
     botThrowInFlight = false;
   }
-  // render() inside commitLabel may have skipped scheduling while in-flight â€”
+  // render() inside commitLabel may have skipped scheduling while in-flight —
   // queue the next dart now if it is still the bot's turn.
   if (isBotTurn()) scheduleBotThrow(700);
 }
@@ -3334,7 +3334,7 @@ function runBotThrow() {
 function scheduleBotThrow(delayMs) {
   clearBotTimerOnly();
   if (!isBotTurn() || botPaused) return;
-  // Do not gate on botThrowInFlight: commitLabel â†’ render calls this while the
+  // Do not gate on botThrowInFlight: commitLabel → render calls this while the
   // current dart is still committing; blocking here froze the bot after dart 1.
   botThrowTimer = setTimeout(() => {
     if (botPaused) return;
@@ -3364,7 +3364,7 @@ function cricketClosed(p) {
 
 function formatMarks(n) {
   n = Math.max(0, Math.min(3, n | 0));
-  return 'â—'.repeat(n) + 'â—‹'.repeat(3 - n);
+  return '●'.repeat(n) + '○'.repeat(3 - n);
 }
 
 function throwCricketDart(m, label, opts) {
@@ -3407,7 +3407,7 @@ function throwCricketDart(m, label, opts) {
         scored = dealt;
         if (hitOpen) {
           marksThisDart += left;
-          note = label + ' +' + face + ' â†’ ' + hitOpen + ' open';
+          note = label + ' +' + face + ' → ' + hitOpen + ' open';
         } else
           note = label + ' (dead)';
       } else {
@@ -3486,7 +3486,7 @@ function throwCricketDart(m, label, opts) {
       const bestOpp = Math.min(...m.players
         .filter((_, i) => i !== m.current)
         .map(o => o.points | 0));
-      m.message = p.name + ': all closed â€” need â‰¤ ' + bestOpp + ' pts (have '
+      m.message = p.name + ': all closed — need ≤ ' + bestOpp + ' pts (have '
         + myPts + ')';
     } else {
       const opp = m.players[1 - m.current];
@@ -3494,10 +3494,10 @@ function throwCricketDart(m, label, opts) {
         finishVisit(m, false);
         const matchOver = applyLegWin(m, m.current);
         if (!matchOver)
-          m.message = p.name + ' wins Cricket (' + p.points + 'â€“' + opp.points + ')!';
+          m.message = p.name + ' wins Cricket (' + p.points + '–' + opp.points + ')!';
         return result;
       }
-      m.message = p.name + ': all closed â€” need â‰¥ ' + opp.points + ' pts (trail '
+      m.message = p.name + ': all closed — need ≥ ' + opp.points + ' pts (trail '
         + (opp.points - p.points) + ')';
     }
   }
@@ -3551,8 +3551,8 @@ function matchFirst9Avg(p, legSheets, playerIdx) {
 }
 
 /**
- * Infer Ïƒ (mm) from a 3-dart average using the pre-computed
- * optimal-aim expected-score curve (Ïƒ=1..50, step 1 mm).
+ * Infer σ (mm) from a 3-dart average using the pre-computed
+ * optimal-aim expected-score curve (σ=1..50, step 1 mm).
  * Returns null if avg is out of range or not finite.
  */
 const SIGMA_AVG_TABLE = [
@@ -3561,7 +3561,7 @@ const SIGMA_AVG_TABLE = [
    50.0, 48.8, 47.7, 46.7, 45.8, 45.0, 44.3,43.7,43.1,42.6,
    42.1, 41.7, 41.4, 41.0, 40.7, 40.4, 40.1,39.9,39.6,39.4,
    39.1, 38.9, 38.7, 38.5, 38.3, 38.1, 37.9,37.7,37.5,37.4
-]; // index 0 â†’ Ïƒ=1 mm, index 49 â†’ Ïƒ=50 mm
+]; // index 0 → σ=1 mm, index 49 → σ=50 mm
 function inferSigmaFromAvg(avg3Val) {
   if (!Number.isFinite(avg3Val) || avg3Val <= 0) return null;
   // Table is monotonically decreasing; clamp to range.
@@ -3573,7 +3573,7 @@ function inferSigmaFromAvg(avg3Val) {
     const lo = SIGMA_AVG_TABLE[i + 1];
     if (avg3Val <= hi && avg3Val >= lo) {
       const t = (hi - avg3Val) / (hi - lo);
-      return Math.round((i + 1 + t) * 10) / 10; // Ïƒ in mm, 1 decimal
+      return Math.round((i + 1 + t) * 10) / 10; // σ in mm, 1 decimal
     }
   }
   return null;
@@ -3593,17 +3593,17 @@ function checkoutPct(p) {
   return p.checkoutAttempts ? (100 * p.checkoutHits / p.checkoutAttempts) : null;
 }
 /**
- * True if rem can be finished double-out in â‰¤3 darts.
+ * True if rem can be finished double-out in ≤3 darts.
  * Excludes bogeys (159, 162, 163, 165, 166, 168, 169) and >170.
  */
 function isCheckoutChance(rem) {
   rem = rem | 0;
   if (rem < 2 || rem > 170) return false;
-  // Can leave a finishing double (D1â€“D20 / bull) with at most 2 setup darts.
+  // Can leave a finishing double (D1–D20 / bull) with at most 2 setup darts.
   return isFinite(minDartsToOneDartFinish(rem, 2));
 }
 
-/** True if rem can be checked out double-out with at most maxDarts (1â€“3). */
+/** True if rem can be checked out double-out with at most maxDarts (1–3). */
 function canCheckoutWithDarts(rem, maxDarts) {
   rem = rem | 0;
   maxDarts = maxDarts | 0;
@@ -3612,7 +3612,7 @@ function canCheckoutWithDarts(rem, maxDarts) {
   return isFinite(minDartsToOneDartFinish(rem, maxDarts - 1));
 }
 
-/** True if n is a legal double score (D1â€“D20 or bull). */
+/** True if n is a legal double score (D1–D20 or bull). */
 function isValidOpeningDoubleScore(n) {
   n = n | 0;
   if (n === 50) return true;
@@ -3620,7 +3620,7 @@ function isValidOpeningDoubleScore(n) {
   return (n % 2) === 0;
 }
 
-/** Remaining that can be finished with one dart on a double (D1â€“D20 or bull). */
+/** Remaining that can be finished with one dart on a double (D1–D20 or bull). */
 function isOneDartFinish(rem) {
   return isValidOpeningDoubleScore(rem);
 }
@@ -3712,7 +3712,7 @@ function maxClosingDoubleAttempts(leave, maxDarts) {
   return n < 0 ? 0 : n;
 }
 
-/** One checkout attempt per visit that starts on a finishable leave (2â€“170). */
+/** One checkout attempt per visit that starts on a finishable leave (2–170). */
 function countCheckoutAttemptIfNeeded(m, p) {
   addCheckoutAttempts(m, p, 1);
 }
@@ -3789,7 +3789,7 @@ function undoMatch(m) {
   botPaused = true;
   suppressAutoNextLeg = true;
   if (prevWinner != null || prevMatchWinner != null)
-    m.message = 'Undone Â· bot paused â€” tap Start next to Bot';
+    m.message = 'Undone · bot paused — tap Start next to Bot';
   return true;
 }
 
@@ -3956,7 +3956,7 @@ function throwDart(m, label, opts) {
     const result = { label, points: pts, isDouble: isDbl, outcome: 'bust', remainingAfter: m.turnStart };
     record(result);
     finishVisit(m, true);
-    m.message = p.name + ' busts â€” back to ' + m.turnStart;
+    m.message = p.name + ' busts — back to ' + m.turnStart;
     nextPlayer(m);
     return result;
   }
@@ -3965,14 +3965,14 @@ function throwDart(m, label, opts) {
   p.remaining = newRem;
   const result = { label, points: pts, isDouble: isDbl, outcome: 'ok', remainingAfter: newRem };
   record(result);
-  m.message = p.name + ': ' + label + ' â†’ ' + newRem;
+  m.message = p.name + ': ' + label + ' → ' + newRem;
   afterDart(m);
   return result;
 }
 
 /**
  * Apply a full 3-dart visit total (x01). Counts 3 darts for averages.
- * Checkout when score === remaining (2â€“170). Bust when score too high or leaves 1.
+ * Checkout when score === remaining (2–170). Bust when score too high or leaves 1.
  */
 function throwVisitTotal(m, score, opts) {
   opts = opts || {};
@@ -3983,7 +3983,7 @@ function throwVisitTotal(m, score, opts) {
   const forceBust = !!opts.bust;
   score = forceBust ? -1 : (score | 0);
   if (!forceBust && (score < 0 || score > 180))
-    throw new Error('Visit score must be 0â€“180');
+    throw new Error('Visit score must be 0–180');
 
   const pCheck = m.players[m.current];
   const remCheck = pCheck.remaining;
@@ -4016,7 +4016,7 @@ function throwVisitTotal(m, score, opts) {
   }
 
   function pushVisitResult(result) {
-    // Visit totals have no per-dart hit â€” do not store aim suggestions in history.
+    // Visit totals have no per-dart hit — do not store aim suggestions in history.
     applySuggestedAim(result, null);
     m.visitDarts.push(result);
     return result;
@@ -4047,7 +4047,7 @@ function throwVisitTotal(m, score, opts) {
       points: 0, isDouble: false, outcome: 'bust', remainingAfter: m.turnStart,
     });
     finishVisit(m, true);
-    m.message = p.name + ' busts â€” back to ' + m.turnStart;
+    m.message = p.name + ' busts — back to ' + m.turnStart;
     nextPlayer(m);
     return result;
   }
@@ -4086,7 +4086,7 @@ function throwVisitTotal(m, score, opts) {
   });
   m.visitPoints = score;
   finishVisit(m, false);
-  m.message = p.name + ': visit ' + score + ' â†’ ' + p.remaining;
+  m.message = p.name + ': visit ' + score + ' → ' + p.remaining;
   nextPlayer(m);
   return result;
 }
@@ -4126,7 +4126,7 @@ function newLeg(m, opts) {
 
 /**
  * After a leg win, start the next leg automatically until best-of is decided.
- * Skips pushUndo so Undo reverts the winning dart, not a stuck â€œleg overâ€ screen.
+ * Skips pushUndo so Undo reverts the winning dart, not a stuck “leg over” screen.
  */
 function maybeStartNextLeg(m) {
   if (!m || m.winner === null) return false;
@@ -4134,12 +4134,12 @@ function maybeStartNextLeg(m) {
   const wonBy = m.players[m.winner].name;
   const legWon = m.legNumber | 0;
   newLeg(m, { skipUndo: true });
-  m.message = wonBy + ' won leg ' + legWon + ' Â· '
+  m.message = wonBy + ' won leg ' + legWon + ' · '
     + m.players[m.current].name + ' to throw (leg ' + m.legNumber + ')';
   return true;
 }
 
-// â”€â”€ UI state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── UI state ─────────────────────────────────────────────────────────────
 let match = null;
 
 /** Active lineup size for the current mode (2 or 3). */
@@ -4152,7 +4152,7 @@ function names() {
     (document.getElementById('name0').value || '').trim(),
     (document.getElementById('name1').value || '').trim(),
   ];
-  // Seat 3 only when 3-up â€” a leftover name on the hidden card must not
+  // Seat 3 only when 3-up — a leftover name on the hidden card must not
   // keep greying Bot / blocking the roster.
   if (lineupSeatCount() >= 3) {
     const el = document.getElementById('name2');
@@ -4184,7 +4184,7 @@ function refuseMatchStart(reason) {
 function syncLineupMsg() {
   const el = document.getElementById('lineupMsg');
   if (!el) return;
-  // Prematch hides .info â€” show refusals next to New match instead.
+  // Prematch hides .info — show refusals next to New match instead.
   const show = !!(match && !matchUiActive && match.messageIsError && match.message);
   if (show) {
     el.textContent = match.message;
@@ -4212,7 +4212,7 @@ function swapDomValues(idA, idB) {
   b.value = t;
 }
 
-/** Swap two seats (players + name/Ïƒ inputs). Remaps turn/winner indices with the people. */
+/** Swap two seats (players + name/σ inputs). Remaps turn/winner indices with the people. */
 function exchangePlayerSeatsPair(i, j) {
   if (!match || i === j) return;
   const n = playerCount(match);
@@ -4249,7 +4249,7 @@ function exchangePlayerSeats() {
 function swapPlayerSides() {
   if (!match) return;
   if (lineupLocked()) {
-    match.message = 'Seats locked while the match is in progress â€” change lineup after it ends or via New match';
+    match.message = 'Seats locked while the match is in progress — change lineup after it ends or via New match';
     render();
     return;
   }
@@ -4281,7 +4281,7 @@ function swapPlayerSides() {
       && isBotSeat(match.current)) {
     botPaused = true;
     match.message = match.players[match.current].name
-      + ' to throw Â· swap sides to change order, then tap Start next to Bot';
+      + ' to throw · swap sides to change order, then tap Start next to Bot';
   } else if (!isBotSeat(match.current)) {
     botPaused = false;
   }
@@ -4290,17 +4290,17 @@ function swapPlayerSides() {
   if (scoreEntryMode === 'visit') buildPad();
 }
 
-/** Swap two seats; names/Ïƒ move, throw-order seats stay put until play has started. */
+/** Swap two seats; names/σ move, throw-order seats stay put until play has started. */
 function swapAdjacentSeats(i, j) {
   if (!match) return;
   if (lineupLocked()) {
-    match.message = 'Seats locked while the match is in progress â€” change lineup after it ends or via New match';
+    match.message = 'Seats locked while the match is in progress — change lineup after it ends or via New match';
     render();
     return;
   }
   syncNames();
   pushUndo(match);
-  // Prematch / before first dart: keep starter seat (yellow box) fixed â€” only
+  // Prematch / before first dart: keep starter seat (yellow box) fixed — only
   // rearrange who sits where. Mid-visit remaps are blocked by lineupLocked().
   const keepThrowSeats = match.winner === null && !matchPlayStarted(match);
   const seatCurrent = match.current;
@@ -4329,7 +4329,7 @@ function swapAdjacentSeats(i, j) {
       && isBotSeat(match.current)) {
     botPaused = true;
     match.message = match.players[match.current].name
-      + ' to throw Â· swap sides to change order, then tap Start next to Bot';
+      + ' to throw · swap sides to change order, then tap Start next to Bot';
   } else if (!isBotSeat(match.current)) {
     botPaused = false;
   }
@@ -4341,10 +4341,10 @@ function swapAdjacentSeats(i, j) {
 function formatVisitDartLabels(v) {
   if (!v || !Array.isArray(v.darts) || !v.darts.length) return '';
   return v.darts.map(d => {
-    if (!d) return 'â€”';
+    if (!d) return '—';
     if (typeof formatHistDart === 'function') return formatHistDart(d);
-    return d.label || 'â€”';
-  }).join(' Â· ');
+    return d.label || '—';
+  }).join(' · ');
 }
 
 let visitListPlayerIdx = null;
@@ -4475,7 +4475,7 @@ function syncPlayerRemainingFromHistory(m, playerIdx) {
   } else if (rem > 0 && atIdx >= 0) {
     fo.splice(atIdx, 1);
   } else if (rem === 0 && !isX01PlayOn(m) && playerCount(m) < 3) {
-    // 2p: checkout visit should end the leg â€” leave winner handling to caller if needed.
+    // 2p: checkout visit should end the leg — leave winner handling to caller if needed.
   }
 }
 
@@ -4494,7 +4494,7 @@ function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
     return 'Only visits in the current leg can be edited';
   bust = !!bust;
   let sc = bust ? 0 : (newScore | 0);
-  if (!bust && (sc < 0 || sc > 180)) return 'Score must be 0â€“180';
+  if (!bust && (sc < 0 || sc > 180)) return 'Score must be 0–180';
 
   const before = remBeforePlayerVisit(match, playerIdx, histIdx);
   const remBefore = before.remBefore | 0;
@@ -4503,7 +4503,7 @@ function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
     return '301 DI: open score between 2 and 170';
   if (!bust && sc > remBefore) return 'Score cannot exceed leave (' + remBefore + ')';
   if (!bust && sc > 0 && (remBefore - sc) === 1) return 'Cannot leave 1';
-  // Bust button or impossible leave (incl. bogeys like 169) â†’ refuse checkout.
+  // Bust button or impossible leave (incl. bogeys like 169) → refuse checkout.
   if (!bust && sc > 0 && sc === remBefore && !isCheckoutChance(remBefore))
     return 'Cannot check out ' + remBefore;
 
@@ -4537,7 +4537,7 @@ function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
   if (p.visitScores && p.visitScores.length > histIdx)
     p.visitScores[histIdx] = sc;
 
-  // Checkout hit bookkeeping (attempts left as-is â€” user already logged them).
+  // Checkout hit bookkeeping (attempts left as-is — user already logged them).
   if (wasCheckout && !nowCheckout)
     p.checkoutHits = Math.max(0, (p.checkoutHits | 0) - 1);
   else if (!wasCheckout && nowCheckout)
@@ -4628,7 +4628,7 @@ function renderVisitListHtml(idx) {
           + '<div class="v-edit-row">'
           + '<input type="number" inputmode="numeric" min="0" max="180" step="1" '
           + 'id="visitEditScore" value="' + (bust ? '' : sc) + '" '
-          + 'placeholder="0â€“' + Math.min(180, before.remBefore) + '" '
+          + 'placeholder="0–' + Math.min(180, before.remBefore) + '" '
           + 'aria-label="Edit visit score">'
           + '<button type="button" class="bust-btn" data-visit-bust>Bust</button>'
           + '<button type="button" class="primary" data-visit-save>Save</button>'
@@ -4654,7 +4654,7 @@ function refreshVisitListModal() {
   const title = document.getElementById('visitListTitle');
   const hint = document.getElementById('visitListHint');
   const body = document.getElementById('visitListBody');
-  if (title) title.textContent = (p.name || ('Player ' + (idx + 1))) + ' â€” visits';
+  if (title) title.textContent = (p.name || ('Player ' + (idx + 1))) + ' — visits';
   const n = (p.visitHistory && p.visitHistory.length)
     || (p.visitScores && p.visitScores.length) || 0;
   const canEdit = visitEditableInMatch(match);
@@ -4662,10 +4662,10 @@ function refreshVisitListModal() {
     if (!n) hint.textContent = 'No visits yet';
     else if (canEdit)
       hint.textContent = n + ' visit' + (n === 1 ? '' : 's')
-        + ' Â· tap a current-leg score to edit';
+        + ' · tap a current-leg score to edit';
     else
       hint.textContent = n + ' visit' + (n === 1 ? '' : 's')
-        + ' this match Â· newest first';
+        + ' this match · newest first';
   }
   if (body) body.innerHTML = renderVisitListHtml(idx);
   const inp = document.getElementById('visitEditScore');
@@ -4693,7 +4693,7 @@ function closeVisitListModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-// â”€â”€ Saved players (localStorage) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Saved players (localStorage) ─────────────────────────────────────────
 const PLAYERS_KEY = 'dartsSavedPlayers';
 const CONTACTS_KEY = 'dartsContacts';
 const CONTACTS_MAX = 80;
@@ -4805,7 +4805,7 @@ function statsFromVisits(visits, game) {
           s.first9MarkDarts = (s.first9MarkDarts | 0) + 1;
         }
       }
-      // Visits shorter than dart list (shouldn't happen) â€” pad first-9 dart count.
+      // Visits shorter than dart list (shouldn't happen) — pad first-9 dart count.
       const dartN = (v.darts && v.darts.length) ? v.darts.length : dc;
       if (dartN < dc && (s.first9MarkDarts | 0) < 9) {
         const pad = Math.min(dc - dartN, 9 - (s.first9MarkDarts | 0));
@@ -4965,7 +4965,7 @@ function archiveFinishedMatch(m) {
     winnerName: m.players[m.winner].name,
     finishOrder: Array.isArray(m.finishOrder) ? m.finishOrder.slice() : [m.winner],
     players: m.players.map(p => playerStatsSnapshot(p, m.game)),
-    // Chronological throw history for the whole match (visits â†’ darts).
+    // Chronological throw history for the whole match (visits → darts).
     visits: (m.visitLog || []).map(cloneVisitRec),
     // Per-leg stats (each visit-total visit counts 3 darts; closing attempts stored).
     legs: (m.legSheets || []).map(sheet => ({
@@ -5031,7 +5031,7 @@ function formatIsoSeconds(ts) {
 }
 
 function modeLabel(rec) {
-  if (!rec) return 'â€”';
+  if (!rec) return '—';
   if (rec.game === 'cricket' || rec.mode === 'cricket') return 'Cricket';
   if (rec.mode === '301di' || rec.doubleIn) return '301 DI';
   if (rec.mode === '501') return '501';
@@ -5039,16 +5039,16 @@ function modeLabel(rec) {
 }
 
 function matchTitle(rec) {
-  const names = ((rec && rec.players) || []).map(p => (p && p.name) || 'â€”');
-  if (names.length >= 3) return modeLabel(rec) + ': ' + names.join(' Â· ');
-  return modeLabel(rec) + ': ' + (names[0] || 'â€”') + ' vs ' + (names[1] || 'â€”');
+  const names = ((rec && rec.players) || []).map(p => (p && p.name) || '—');
+  if (names.length >= 3) return modeLabel(rec) + ': ' + names.join(' · ');
+  return modeLabel(rec) + ': ' + (names[0] || '—') + ' vs ' + (names[1] || '—');
 }
 
 function histMetric(side, rec) {
-  if (!side || !side.me) return 'â€”';
+  if (!side || !side.me) return '—';
   if (rec.game === 'cricket' || rec.mode === 'cricket')
-    return String(side.me.points != null ? side.me.points : 'â€”') + ' pts';
-  if (side.me.avg3 == null) return 'â€”';
+    return String(side.me.points != null ? side.me.points : '—') + ' pts';
+  if (side.me.avg3 == null) return '—';
   return Number(side.me.avg3).toFixed(1);
 }
 
@@ -5088,7 +5088,7 @@ function deleteHistDetail() {
     'Delete this saved match from history?\n\n'
     + matchTitle(rec) + '\n'
     + when + '\n'
-    + 'Winner: ' + (rec.winnerName || 'â€”') + '\n'
+    + 'Winner: ' + (rec.winnerName || '—') + '\n'
     + 'id: ' + rec.id + '\n\n'
     + 'This cannot be undone.');
   if (!ok) return;
@@ -5106,7 +5106,7 @@ function renderPlayerHistory() {
   const box = document.getElementById('histOverview');
   const rows = matchesForPlayer(name);
   hint.textContent = name
-    ? ('History for ' + name + ' Â· ' + rows.length + ' saved match'
+    ? ('History for ' + name + ' · ' + rows.length + ' saved match'
       + (rows.length === 1 ? '' : 'es') + ' on this device')
     : 'Type a player name to see history.';
 
@@ -5176,9 +5176,9 @@ function renderPlayerHistory() {
   box.innerHTML =
     '<div class="hist-summary">'
     + '<div class="cell"><div class="v">' + rows.length + '</div><div class="k">Matches</div></div>'
-    + '<div class="cell"><div class="v">' + wins + 'â€“' + losses + '</div><div class="k">Winâ€“loss</div></div>'
+    + '<div class="cell"><div class="v">' + wins + '–' + losses + '</div><div class="k">Win–loss</div></div>'
     + '<div class="cell"><div class="v">'
-    + (careerAvg == null ? 'â€”' : careerAvg.toFixed(1))
+    + (careerAvg == null ? '—' : careerAvg.toFixed(1))
     + '</div><div class="k">Avg 3-dart</div></div>'
     + '</div>'
     + '<div class="hist-list">' + list + '</div>'
@@ -5272,56 +5272,56 @@ function buildLifetimeHtml(lt) {
     }
     return ema;
   }
-  const winRate = lt.n ? (100 * lt.wins / lt.n).toFixed(0) + '%' : 'â€”';
+  const winRate = lt.n ? (100 * lt.wins / lt.n).toFixed(0) + '%' : '—';
   const ewaAvg3 = computeEwa(lt.rows, lt.playerName, 'avg3');
   const ewaF9 = computeEwa(lt.rows, lt.playerName, 'avgFirst9');
   const ewaCo = computeEwa(lt.rows, lt.playerName, 'checkoutPct');
-  let html = '<div class="hist-lifetime"><div class="hist-lifetime-title">Lifetime Â· '
+  let html = '<div class="hist-lifetime"><div class="hist-lifetime-title">Lifetime · '
     + lt.n + ' match' + (lt.n === 1 ? '' : 'es') + '</div>';
   html += section('Record', [
-    { k: 'Win-loss', avg: lt.wins + 'â€“' + lt.losses, exp: 'â€”' },
-    { k: 'Win rate', avg: winRate, exp: 'â€”' },
-    { k: 'Legs won', avg: String(lt.tLegs), exp: 'â€”' },
+    { k: 'Win-loss', avg: lt.wins + '–' + lt.losses, exp: '—' },
+    { k: 'Win rate', avg: winRate, exp: '—' },
+    { k: 'Legs won', avg: String(lt.tLegs), exp: '—' },
   ]);
   if (lt.avgN) {
     html += section('Scoring', [
       {
         k: 'Career avg',
-        avg: (lt.careerAvg != null ? lt.careerAvg.toFixed(1) : 'â€”'),
-        exp: (ewaAvg3 != null ? ewaAvg3.toFixed(1) : 'â€”'),
+        avg: (lt.careerAvg != null ? lt.careerAvg.toFixed(1) : '—'),
+        exp: (ewaAvg3 != null ? ewaAvg3.toFixed(1) : '—'),
         trend: 'avg3',
       },
       {
         k: 'First 9 avg',
-        avg: (lt.f9N ? (lt.f9Sum / lt.f9N).toFixed(1) : 'â€”'),
-        exp: (ewaF9 != null ? ewaF9.toFixed(1) : 'â€”'),
+        avg: (lt.f9N ? (lt.f9Sum / lt.f9N).toFixed(1) : '—'),
+        exp: (ewaF9 != null ? ewaF9.toFixed(1) : '—'),
         trend: 'avgFirst9',
       },
       {
         k: 'Best avg',
-        avg: (lt.bestAvg != null ? lt.bestAvg.toFixed(1) : 'â€”'),
-        exp: 'â€”',
+        avg: (lt.bestAvg != null ? lt.bestAvg.toFixed(1) : '—'),
+        exp: '—',
       },
     ]);
     html += section('Finishing', [
       {
         k: 'Checkout %',
-        avg: (lt.coN ? (lt.coSum / lt.coN).toFixed(0) + '%' : 'â€”'),
-        exp: (ewaCo != null ? ewaCo.toFixed(0) + '%' : 'â€”'),
+        avg: (lt.coN ? (lt.coSum / lt.coN).toFixed(0) + '%' : '—'),
+        exp: (ewaCo != null ? ewaCo.toFixed(0) + '%' : '—'),
         trend: 'checkoutPct',
       },
-      { k: 'Best checkout', avg: (lt.bestCo || 'â€”'), exp: 'â€”' },
-      { k: 'Best visit', avg: (lt.bestVisit || 'â€”'), exp: 'â€”' },
+      { k: 'Best checkout', avg: (lt.bestCo || '—'), exp: '—' },
+      { k: 'Best visit', avg: (lt.bestVisit || '—'), exp: '—' },
     ]);
     html += section('Big visits', [
-      { k: '180s', avg: String(lt.t180), exp: 'â€”' },
-      { k: '140-179', avg: String(lt.t140), exp: 'â€”' },
-      { k: '100-139', avg: String(lt.t100), exp: 'â€”' },
+      { k: '180s', avg: String(lt.t180), exp: '—' },
+      { k: '140-179', avg: String(lt.t140), exp: '—' },
+      { k: '100-139', avg: String(lt.t100), exp: '—' },
     ]);
   }
   html += section('Other', [
-    { k: 'Darts thrown', avg: String(lt.tDarts), exp: 'â€”' },
-    { k: 'Busts', avg: String(lt.tBusts), exp: 'â€”' },
+    { k: 'Darts thrown', avg: String(lt.tDarts), exp: '—' },
+    { k: 'Busts', avg: String(lt.tBusts), exp: '—' },
   ]);
   return html + '</div>';
 }
@@ -5388,7 +5388,7 @@ function drawHistTrendChart(pts, label) {
   const toX = i => pad.l + (pts.length > 1 ? i / (pts.length - 1) : 0.5) * pw;
   const toY = v => pad.t + (1 - (v - yMin) / span) * ph;
 
-  // â”€â”€ Spines (left + bottom axes) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Spines (left + bottom axes) ─────────────────
   ctx.strokeStyle = '#555';
   ctx.lineWidth = 1.5 * dpr;
   ctx.beginPath();
@@ -5396,7 +5396,7 @@ function drawHistTrendChart(pts, label) {
   ctx.lineTo(W - pad.r, H - pad.b); // bottom spine
   ctx.stroke();
 
-  // â”€â”€ Y-axis ticks + grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Y-axis ticks + grid ─────────────────────────
   const nYTicks = 5;
   ctx.textBaseline = 'middle';
   for (let g = 0; g <= nYTicks; g++) {
@@ -5417,7 +5417,7 @@ function drawHistTrendChart(pts, label) {
     ctx.fillText(fmt(gv), pad.l - 7 * dpr, y);
   }
 
-  // â”€â”€ X-axis ticks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── X-axis ticks ────────────────────────────────
   const xStep = Math.max(1, Math.ceil(pts.length / 10));
   ctx.textBaseline = 'top';
   for (let i = 0; i < pts.length; i++) {
@@ -5434,14 +5434,14 @@ function drawHistTrendChart(pts, label) {
     ctx.fillText(String(pts[i].idx), x, H - pad.b + 6 * dpr);
   }
 
-  // â”€â”€ X-axis label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── X-axis label ────────────────────────────────
   ctx.fillStyle = '#888';
   ctx.font = Math.round(10 * dpr) + 'px -apple-system,BlinkMacSystemFont,sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.fillText('Match #', pad.l + pw / 2, H - 2 * dpr);
 
-  // â”€â”€ Mean dashed line â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Mean dashed line ────────────────────────────
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
   if (vals.length >= 2) {
     const ay = toY(avg);
@@ -5458,7 +5458,7 @@ function drawHistTrendChart(pts, label) {
     ctx.fillText('\u03bc = ' + fmt(avg), pad.l + 6 * dpr, ay - 3 * dpr);
   }
 
-  // â”€â”€ Data line (smooth, anti-aliased) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Data line (smooth, anti-aliased) ────────────
   ctx.beginPath();
   pts.forEach((p, i) => {
     const x = toX(i), y = toY(p.y);
@@ -5470,7 +5470,7 @@ function drawHistTrendChart(pts, label) {
   ctx.lineCap = 'round';
   ctx.stroke();
 
-  // â”€â”€ Data markers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Data markers ────────────────────────────────
   pts.forEach((p, i) => {
     const x = toX(i), y = toY(p.y);
     // Outer ring
@@ -5491,10 +5491,10 @@ function closeHistTrend() {
 function renderMatchDetailHtml(rec, focusName) {
   const ps = (rec.players && rec.players.length)
     ? rec.players
-    : [{ name: 'â€”' }, { name: 'â€”' }];
+    : [{ name: '—' }, { name: '—' }];
   const cricket = rec.game === 'cricket' || rec.mode === 'cricket';
   const game = cricket ? 'cricket' : 'x01';
-  const winName = rec.winnerName || (ps[rec.winner] && ps[rec.winner].name) || 'â€”';
+  const winName = rec.winnerName || (ps[rec.winner] && ps[rec.winner].name) || '—';
   const colStyle = 'grid-template-columns: 1.1fr repeat(' + ps.length + ', 1fr)';
   let body = '';
   const legs = Array.isArray(rec.legs) ? rec.legs.slice() : [];
@@ -5533,7 +5533,7 @@ function renderMatchDetailHtml(rec, focusName) {
   return '<div class="hist-detail">'
     + '<div class="d-title">' + matchTitle(rec) + '</div>'
     + '<div class="d-meta">' + formatHistWhen(rec.ts || rec.id)
-    + ' Â· ' + winName + ' won'
+    + ' · ' + winName + ' won'
     + '<br>' + formatIsoSeconds(rec.id) + '</div>'
     + body
     + renderMatchThrowsHtml(rec, focusName)
@@ -5570,8 +5570,8 @@ function renderMatchThrowsHtml(rec, focusName) {
     const whoCls = (focus && normPlayerName(who) === focus) ? ' focus' : '';
     const dartN = visitRecDartCount(v);
     const darts = (v.darts && v.darts.length)
-      ? v.darts.map(formatHistDart).join(' Â· ')
-      : 'â€”';
+      ? v.darts.map(formatHistDart).join(' · ')
+      : '—';
     let scoreCls = '';
     let scoreTxt = String(v.score | 0);
     if (v.busted) { scoreCls = ' bust'; scoreTxt = 'bust'; }
@@ -5580,7 +5580,7 @@ function renderMatchThrowsHtml(rec, focusName) {
     }
     let meta = dartN ? (dartN + 'd') : '';
     if ((v.checkoutAttempts | 0) > 0)
-      meta += (meta ? ' Â· ' : '') + (v.checkoutAttempts | 0) + ' chk';
+      meta += (meta ? ' · ' : '') + (v.checkoutAttempts | 0) + ' chk';
     body += '<div class="th-row">'
       + '<div><span class="th-who' + whoCls + '">' + who + '</span>'
       + '<div class="th-darts">' + darts
@@ -5593,7 +5593,7 @@ function renderMatchThrowsHtml(rec, focusName) {
   return body;
 }
 
-/** One dart in history: "aim â†’ hit" (or just hit if suggestion missing / matched). */
+/** One dart in history: "aim → hit" (or just hit if suggestion missing / matched). */
 function formatHistDart(d) {
   const hit = (d && d.label) ? String(d.label) : '?';
   const sug = (d && d.suggested) ? String(d.suggested) : '';
@@ -5603,7 +5603,7 @@ function formatHistDart(d) {
     const sugNorm = sug.replace(/\*$/, '').trim();
     const hitNorm = hit.replace(/\*$/, '').trim();
     if (sugNorm === hitNorm) body = '<span class="ok">' + hit + '</span>';
-    else body = '<span class="aim">' + sug + '</span>â†’<span class="hit">' + hit + '</span>';
+    else body = '<span class="aim">' + sug + '</span>→<span class="hit">' + hit + '</span>';
   }
   if (d && Number.isFinite(d.x) && Number.isFinite(d.y)) {
     body += '<span class="xy"> (' + Number(d.x).toFixed(1) + ','
@@ -5617,7 +5617,7 @@ function loadSavedPlayers() {
     const raw = localStorage.getItem(PLAYERS_KEY);
     const arr = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(arr)) return [];
-    // Names only (strip any old Ïƒ fields from earlier versions).
+    // Names only (strip any old σ fields from earlier versions).
     // Never treat built-in Bot as a saved/deletable roster row.
     const seen = new Set();
     const out = [];
@@ -5749,8 +5749,8 @@ function renderContactList(filterName) {
     : contacts;
   if (!shown.length) {
     list.innerHTML = '<div class="empty">'
-      + (contacts.length ? 'No match â€” Save to add this contact'
-        : 'No contacts yet â€” save opponents after a match')
+      + (contacts.length ? 'No match — Save to add this contact'
+        : 'No contacts yet — save opponents after a match')
       + '</div>';
     return;
   }
@@ -5762,7 +5762,7 @@ function renderContactList(filterName) {
       c.handle || '',
       c.plays ? (c.plays + ' match' + (c.plays === 1 ? '' : 'es')) : '',
       c.lastPlayed ? formatHistWhen(c.lastPlayed) : '',
-    ].filter(Boolean).join(' Â· ');
+    ].filter(Boolean).join(' · ');
     const cls = [
       contactListSel === key ? 'sel' : '',
       taken ? 'taken' : '',
@@ -5861,8 +5861,8 @@ function renderCoachContacts() {
     return;
   }
   box.innerHTML = contacts.map(c => {
-    const sub = (c.plays ? (c.plays + 'Ã—') : '')
-      + (c.handle ? (' Â· ' + c.handle) : '');
+    const sub = (c.plays ? (c.plays + '×') : '')
+      + (c.handle ? (' · ' + c.handle) : '');
     return '<button type="button" class="chip" data-rematch="'
       + encodeURIComponent(c.name) + '">'
       + c.name
@@ -5879,7 +5879,7 @@ function renderCoachContacts() {
   });
 }
 
-// â”€â”€ Pro groups: ranking from contacts + multi-match log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Pro groups: ranking from contacts + multi-match log ──────────────────
 function loadGroups() {
   try {
     const raw = localStorage.getItem(GROUPS_KEY);
@@ -6002,7 +6002,7 @@ function candidateGroupMembers() {
 
 function openGroupModal(editId) {
   if (!isPro()) {
-    showProBanner('Groups & rankings are Pro â€” build a crew from your contacts.');
+    showProBanner('Groups & rankings are Pro — build a crew from your contacts.');
     openUpgrade();
     return;
   }
@@ -6113,18 +6113,18 @@ function renderCoachGroups() {
     }
     box.innerHTML = '<div class="group-locked">'
       + 'Create groups from saved contacts.<br>'
-      + 'Auto-ranking from every match members play â€” league table + match log on this device.'
+      + 'Auto-ranking from every match members play — league table + match log on this device.'
       + '<br><button type="button" id="groupsUpgradeBtn">Unlock Groups (Pro)</button>'
       + '</div>';
     const up = document.getElementById('groupsUpgradeBtn');
     if (up) up.addEventListener('click', () => {
-      showProBanner('Groups & rankings are Pro â€” build a crew from your contacts.');
+      showProBanner('Groups & rankings are Pro — build a crew from your contacts.');
       openUpgrade();
     });
     return;
   }
   if (promise) {
-    promise.textContent = 'Crew from contacts â€” standings update every time two members finish a match.';
+    promise.textContent = 'Crew from contacts — standings update every time two members finish a match.';
   }
   const groups = loadGroups();
   if (activeGroupId && !findGroup(activeGroupId)) activeGroupId = null;
@@ -6142,18 +6142,18 @@ function renderCoachGroups() {
       + '<button type="button" id="groupEditBtn">Edit</button>'
       + '</div>';
     html += '<div class="subline" style="margin:10px 0 4px"><b style="color:#fff;font-size:16px">'
-      + g.name + '</b> Â· ' + g.members.length + ' players Â· '
+      + g.name + '</b> · ' + g.members.length + ' players · '
       + matchesForGroup(g).length + ' matches</div>';
     html += '<table class="group-standings"><thead><tr>'
       + '<th>#</th><th>Player</th><th class="num">W</th><th class="num">L</th>'
       + '<th class="num">%</th><th class="num">Avg</th></tr></thead><tbody>';
     standings.forEach((row, i) => {
       const pct = row.played ? Math.round(100 * row.wins / row.played) : null;
-      const avg = row.avgN ? (row.avgSum / row.avgN).toFixed(1) : 'â€”';
+      const avg = row.avgN ? (row.avgSum / row.avgN).toFixed(1) : '—';
       const cls = (me && normPlayerName(row.name) === me) ? ' class="me"' : '';
       html += '<tr' + cls + '><td class="num">' + (i + 1) + '</td><td>' + row.name
         + '</td><td class="num">' + row.wins + '</td><td class="num">' + row.losses
-        + '</td><td class="num">' + (pct == null ? 'â€”' : pct + '%')
+        + '</td><td class="num">' + (pct == null ? '—' : pct + '%')
         + '</td><td class="num">' + avg + '</td></tr>';
     });
     html += '</tbody></table>';
@@ -6173,7 +6173,7 @@ function renderCoachGroups() {
 
     html += '<div class="subline" style="margin-top:12px">Match log</div><div class="group-match-log">';
     if (!matches.length) {
-      html += '<div class="coach-empty">No group matches yet â€” play two members and finish a leg.</div>';
+      html += '<div class="coach-empty">No group matches yet — play two members and finish a leg.</div>';
     } else {
       html += matches.map(m => {
         const w = m.players[m.winner];
@@ -6183,7 +6183,7 @@ function renderCoachGroups() {
         });
         return '<div class="row"><b>' + (w && w.name) + '</b> beat <b>'
           + losers.map(p => p.name).join(' / ') + '</b><br>' + mode
-          + ' Â· ' + formatHistWhen(m.ts || m.id)
+          + ' · ' + formatHistWhen(m.ts || m.id)
           + '</div>';
       }).join('');
     }
@@ -6226,7 +6226,7 @@ function renderCoachGroups() {
     + '<button type="button" class="primary" id="groupNewBtn">New group from contacts</button>'
     + '</div>';
   if (!groups.length) {
-    html += '<div class="coach-empty">No groups yet â€” create one, then record matches between members to build the ranking.</div>';
+    html += '<div class="coach-empty">No groups yet — create one, then record matches between members to build the ranking.</div>';
     box.innerHTML = html;
     const neu = document.getElementById('groupNewBtn');
     if (neu) neu.addEventListener('click', () => openGroupModal(null));
@@ -6236,11 +6236,11 @@ function renderCoachGroups() {
   html += groups.map(g => {
     const n = matchesForGroup(g).length;
     const lead = groupStandings(g)[0];
-    const sub = g.members.length + ' players Â· ' + n + ' match' + (n === 1 ? '' : 'es')
-      + (lead && lead.played ? (' Â· lead ' + lead.name) : '');
+    const sub = g.members.length + ' players · ' + n + ' match' + (n === 1 ? '' : 'es')
+      + (lead && lead.played ? (' · lead ' + lead.name) : '');
     return '<button type="button" class="group-row" data-group="'
       + encodeURIComponent(g.id) + '"><span>' + g.name
-      + '<span class="sub">' + sub + '</span></span><span class="chev">â€º</span></button>';
+      + '<span class="sub">' + sub + '</span></span><span class="chev">›</span></button>';
   }).join('');
   html += '</div>';
   box.innerHTML = html;
@@ -6353,7 +6353,7 @@ function otherPlayerNameKeys(idx) {
   return keys;
 }
 
-/** Max Bot seats: 0 in cricket (unavailable), 2 in cricket 3-player was prior â€” now off; else 1. */
+/** Max Bot seats: 0 in cricket (unavailable), 2 in cricket 3-player was prior — now off; else 1. */
 function maxBotSeats() {
   if (cricketModeActive()) return 0;
   return 1;
@@ -6416,7 +6416,7 @@ function renderPlayerList(filterName) {
     .filter(p => !isBotPlayerName(p.name))
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-  // Built-in Bot for x01 seats only â€” not for Fit Ïƒ, and cricket has no CPU yet.
+  // Built-in Bot for x01 seats only — not for Fit σ, and cricket has no CPU yet.
   const players = (isFitPlayerEdit() || cricketModeActive()
     ? []
     : [{ name: BOT_PLAYER_NAME, builtin: true }]).concat(saved);
@@ -6427,8 +6427,8 @@ function renderPlayerList(filterName) {
   if (!shown.length) {
     list.innerHTML = '<div class="empty">'
       + (cricketModeActive()
-        ? 'No match â€” Save to create this player (Bot is unavailable in Cricket for now)'
-        : 'No match â€” Save to create this player')
+        ? 'No match — Save to create this player (Bot is unavailable in Cricket for now)'
+        : 'No match — Save to create this player')
       + '</div>';
     return;
   }
@@ -6448,14 +6448,14 @@ function renderPlayerList(filterName) {
     let dart = '';
     if (showDart && !bot && thr != null) {
       dart = '<label class="dart-inline" title="Switch to by-dart at or below this leave (2 = never auto-switch)">'
-        + 'Switch â‰¤'
+        + 'Switch ≤'
         + '<input type="number" inputmode="numeric" min="0" max="501" step="1"'
         + ' data-dart-name="' + encodeURIComponent(p.name) + '"'
         + (taken ? ' disabled' : '')
         + ' value="' + thr + '"></label>'
         + '<button type="button" class="dart-del" data-del-name="'
         + encodeURIComponent(p.name) + '" title="Delete player" aria-label="Delete '
-        + p.name + '">Ã—</button>';
+        + p.name + '">×</button>';
     }
     return '<div class="' + cls + '" data-name="' + encodeURIComponent(p.name) + '">'
       + '<button type="button" class="pick"'
@@ -6531,7 +6531,7 @@ function syncPlayerModalPrimaryLabel() {
 function openPlayerModal(idx) {
   if (idx !== FIT_PLAYER_EDIT && lineupLocked()) {
     if (match) {
-      match.message = 'Names locked while the match is in progress â€” change lineup after it ends or via New match';
+      match.message = 'Names locked while the match is in progress — change lineup after it ends or via New match';
       render();
     }
     return;
@@ -6570,8 +6570,8 @@ function openPlayerModal(idx) {
         + 'Type a new name and <b>Save</b> to add them. '
         + '<b>Bot</b> is unavailable in Cricket for now.';
     } else {
-      hint.innerHTML = 'Tap a name to pick them. Edit <b>Switch â‰¤</b> on the row '
-        + '(use <b>2</b> to disable the auto switch), or tap <b>Ã—</b> to delete. '
+      hint.innerHTML = 'Tap a name to pick them. Edit <b>Switch ≤</b> on the row '
+        + '(use <b>2</b> to disable the auto switch), or tap <b>×</b> to delete. '
         + 'Type a new name and <b>Save</b> to add. <b>Bot</b> is the CPU opponent.';
     }
   }
@@ -6595,7 +6595,7 @@ function closePlayerModal() {
   contactListSel = null;
 }
 
-/** Cancel on roster: if a player / Dart â‰¤ is selected, return to the list; else close. */
+/** Cancel on roster: if a player / Dart ≤ is selected, return to the list; else close. */
 function cancelPlayerModal() {
   if (playerModalTab === 'roster') {
     const nameIn = document.getElementById('playerModalName');
@@ -6713,7 +6713,7 @@ function populateSigmas() {
     el.min = String(lo);
     el.max = String(hi);
     el.step = '1';
-    el.placeholder = isPro() ? (m.sigmas[0] + 'â€“' + m.sigmas[m.sigmas.length - 1])
+    el.placeholder = isPro() ? (m.sigmas[0] + '–' + m.sigmas[m.sigmas.length - 1])
       : ('Free: ' + allowed.join(', '));
     let pick = Number.isFinite(prev) ? prev : 25;
     if (!allowed.includes(pick))
@@ -6727,7 +6727,7 @@ function commitSigmaInput(el) {
   if (!isPro()) {
     const allowed = freeSigmas();
     if (!allowed.includes(nearestPolicySigma(raw)) && !allowed.includes(Math.round(raw))) {
-      showProBanner('Ïƒ = ' + Math.round(raw) + ' mm is Pro. Free aims: '
+      showProBanner('σ = ' + Math.round(raw) + ' mm is Pro. Free aims: '
         + allowed.join(', ') + ' mm.');
     }
   }
@@ -6742,7 +6742,7 @@ function activeSigma() {
   return nearestPolicySigma(parseFloat(el && el.value));
 }
 
-/** Isotropic Ïƒ (mm) from this seat's input. */
+/** Isotropic σ (mm) from this seat's input. */
 function playerShape(idx) {
   const el = document.getElementById('sigma' + idx);
   let s = parseFloat(el && el.value);
@@ -6754,7 +6754,7 @@ function shapeSigmaEq(shape) {
   return snapPolicyShape(shape || {}).sigma;
 }
 
-/** Snap to isotropic policy grid: clamp/round Ïƒ to 1..50 â†’ sÏƒ. */
+/** Snap to isotropic policy grid: clamp/round σ to 1..50 → sσ. */
 function snapPolicyShape(shape) {
   let s = Math.round(Number(
     shape && shape.sigma != null ? shape.sigma
@@ -6764,7 +6764,7 @@ function snapPolicyShape(shape) {
   return { sigma: s };
 }
 
-// On-demand policies: policies/{mode}/s{Ïƒ}.json
+// On-demand policies: policies/{mode}/s{σ}.json
 const policyCache = Object.create(null);   // key -> policy object | false (404)
 const policyInflight = Object.create(null);
 let policyStatus = '';
@@ -6786,7 +6786,7 @@ function policyUrl(modeKey, s) {
 /** Return cached policy or null; kick off fetch if needed. */
 function resolvePolicy(modeKey, shape) {
   let snap = snapPolicyShape(shape);
-  // Free tier: free Ïƒ allow-list only (full 1â€“50 grid is Pro).
+  // Free tier: free σ allow-list only (full 1–50 grid is Pro).
   if (!isPro()) {
     const allowed = freeSigmas();
     let s = snap.sigma;
@@ -6797,16 +6797,16 @@ function resolvePolicy(modeKey, shape) {
         if (d < bestD) { best = a; bestD = d; }
       }
       s = best;
-      showProBanner('Full Ïƒ grid (1â€“50 mm) is Pro. Using free Ïƒ = ' + s + ' mm.');
+      showProBanner('Full σ grid (1–50 mm) is Pro. Using free σ = ' + s + ' mm.');
     }
     snap = { sigma: s };
   }
   const key = policyCacheKey(modeKey, snap.sigma);
-  const label = 'Ïƒ=' + snap.sigma + ' mm';
+  const label = 'σ=' + snap.sigma + ' mm';
   if (Object.prototype.hasOwnProperty.call(policyCache, key)) {
     const data = policyCache[key];
     if (data) {
-      // Drop stale miss/loading text from a previous Ïƒ.
+      // Drop stale miss/loading text from a previous σ.
       policyStatus = '';
       return { policy: data, snap, status: 'ready' };
     }
@@ -6814,7 +6814,7 @@ function resolvePolicy(modeKey, shape) {
     return { policy: null, snap, status: 'missing' };
   }
   if (!policyInflight[key]) {
-    policyStatus = 'Loading aim table (' + label + ')â€¦';
+    policyStatus = 'Loading aim table (' + label + ')…';
     policyInflight[key] = fetch(policyUrl(modeKey, snap.sigma), {
       cache: 'no-store',
     })
@@ -6825,7 +6825,7 @@ function resolvePolicy(modeKey, shape) {
       .then(data => {
         policyCache[key] = data;
         delete policyInflight[key];
-        // resolvePolicy on render clears or sets status for the *current* Ïƒ.
+        // resolvePolicy on render clears or sets status for the *current* σ.
         render();
         if (typeof coachTab !== 'undefined' && coachTab === 'checkout'
             && typeof renderCheckoutTable === 'function')
@@ -6840,7 +6840,7 @@ function resolvePolicy(modeKey, shape) {
           renderCheckoutTable();
       });
   } else {
-    policyStatus = 'Loading aim table (' + label + ')â€¦';
+    policyStatus = 'Loading aim table (' + label + ')…';
   }
   return { policy: null, snap, status: 'loading' };
 }
@@ -6851,7 +6851,7 @@ function syncPolicyFromShape(idx) {
   if (el) el.value = String(snap.sigma);
 }
 
-/** In-progress matches parked by mode key when switching 501 â†” cricket, etc. */
+/** In-progress matches parked by mode key when switching 501 ↔ cricket, etc. */
 const parkedMatches = Object.create(null);
 const parkedUiActive = Object.create(null);
 /** False until the user starts a match via New match (best-of dialog). */
@@ -6878,7 +6878,7 @@ function setMatchUiActive(on) {
     aimBoardSource = 'primary';
     statsHistoryOpen = false;
   }
-  // Board was display:none in prematch â€” clientWidth was 0, so the canvas
+  // Board was display:none in prematch — clientWidth was 0, so the canvas
   // bitmap stayed empty. Re-measure after it becomes visible.
   if (matchUiActive && !was) {
     requestAnimationFrame(() => {
@@ -6961,15 +6961,15 @@ function syncCricketChrome() {
     help.classList.toggle('hidden', !showBoard);
     if (cricket) {
       if (isCutThroat(match) || cricketPlayerCount >= 3) {
-        help.innerHTML = 'Targets <b>20â€“15 &amp; Bull</b>: 3 hits to close. Tap <b>Miss</b> for no score. '
+        help.innerHTML = 'Targets <b>20–15 &amp; Bull</b>: 3 hits to close. Tap <b>Miss</b> for no score. '
           + '<b>Cut-throat (3 players)</b>: after you close a number, extra hits add '
           + 'that face value to each opponent who has <b>not</b> closed it. '
           + 'Lowest points wins once you have closed everything.';
       } else {
-        help.innerHTML = 'Targets <b>20â€“15 &amp; Bull</b>: 3 hits to close (S=1, D=2, T=3; outer bull=1, red bull=2). '
+        help.innerHTML = 'Targets <b>20–15 &amp; Bull</b>: 3 hits to close (S=1, D=2, T=3; outer bull=1, red bull=2). '
           + 'Tap <b>Miss</b> for a dart that scores nothing. '
           + 'Extra hits score the face value only while the opponent has not closed that number. '
-          + 'Win by closing all targets with points â‰¥ opponent; if you close first but trail, keep '
+          + 'Win by closing all targets with points ≥ opponent; if you close first but trail, keep '
           + 'scoring on numbers they still have open.';
       }
     }
@@ -6983,7 +6983,7 @@ function syncSeatCountButtons() {
   const locked = lineupLocked();
   const addBtn = document.getElementById('btnSeatCount');
   if (addBtn) {
-    // Add stays above â‡„; hide once at 3 seats or when lineup is locked.
+    // Add stays above ⇄; hide once at 3 seats or when lineup is locked.
     const showAdd = !locked && n < 3;
     addBtn.classList.toggle('hidden', !showAdd);
     addBtn.disabled = locked;
@@ -7005,7 +7005,7 @@ function removeLineupSeat(idx) {
   const n = match ? playerCount(match) : lineupSeatCount();
   if (n < 3 || idx < 0 || idx > 2) return;
   if (match && lineupLocked()) {
-    match.message = 'Seat count locked while the match is in progress â€” change after it ends or via New match';
+    match.message = 'Seat count locked while the match is in progress — change after it ends or via New match';
     syncCricketChrome();
     render();
     return;
@@ -7064,7 +7064,7 @@ function setLineupPlayerCount(n) {
   if (n === lineupPlayerCount && match && playerCount(match) === n)
     return;
   if (match && lineupLocked()) {
-    match.message = 'Seat count locked while the match is in progress â€” change after it ends or via New match';
+    match.message = 'Seat count locked while the match is in progress — change after it ends or via New match';
     syncCricketChrome();
     render();
     return;
@@ -7087,7 +7087,7 @@ function setLineupPlayerCount(n) {
   render();
 }
 
-/** @deprecated alias â€” cricket UI used this name. */
+/** @deprecated alias — cricket UI used this name. */
 function setCricketPlayerCount(n) { setLineupPlayerCount(n); }
 
 function cricketCommit(target, mult) {
@@ -7111,7 +7111,7 @@ function renderCricketBoard() {
   const n = playerCount(match);
   el.classList.toggle('players-3', n >= 3);
   const seats = match.players;
-  // Layout: marksâ€¦ | D Â· number Â· T | â€¦marks  (3p: hit | P1 | P2 | P3)
+  // Layout: marks… | D · number · T | …marks  (3p: hit | P1 | P2 | P3)
   let colgroup = '<colgroup>';
   if (n >= 3) {
     colgroup += '<col class="mid"><col class="side"><col class="side"><col class="side">';
@@ -7121,10 +7121,10 @@ function renderCricketBoard() {
   colgroup += '</colgroup>';
   let head = '<thead><tr>';
   if (n >= 3) {
-    head += '<th class="num">D Â· # Â· T</th><th>' + seats[0].name + '</th>'
+    head += '<th class="num">D · # · T</th><th>' + seats[0].name + '</th>'
       + '<th>' + seats[1].name + '</th><th>' + seats[2].name + '</th>';
   } else {
-    head += '<th>' + seats[0].name + '</th><th class="num">D Â· # Â· T</th><th>'
+    head += '<th>' + seats[0].name + '</th><th class="num">D · # · T</th><th>'
       + seats[1].name + '</th>';
   }
   head += '</tr></thead>';
@@ -7206,7 +7206,7 @@ function setScoreEntryMode(mode, opts) {
     match.visitDarts = [];
     match.visitPoints = 0;
     match.dartsLeft = 3;
-    match.message = 'Switched to visit total â€” visit cleared';
+    match.message = 'Switched to visit total — visit cleared';
   }
   scoreEntryMode = next;
   visitDigits = '';
@@ -7233,8 +7233,8 @@ function setScoreEntryMode(mode, opts) {
   if (opts && opts.render !== false) render();
 }
 
-/** Visit total while remaining > this seat's Switchâ‰¤; By dart at or below it.
- *  Switchâ‰¤ of 2 (or less) disables auto-switch â€” stay on visit total. */
+/** Visit total while remaining > this seat's Switch≤; By dart at or below it.
+ *  Switch≤ of 2 (or less) disables auto-switch — stay on visit total. */
 function autoScoreEntryMode() {
   if (!match || match.game === 'cricket' || match.winner !== null) return null;
   const rem = match.players[match.current].remaining | 0;
@@ -7245,8 +7245,8 @@ function autoScoreEntryMode() {
 
 /**
  * Keep entry mode in sync with the current player's remaining.
- * Auto only upgrades Visit â†’ By dart when rem hits Switchâ‰¤.
- * Never auto-downgrades By dart â†’ Visit (board open / render must not undo a
+ * Auto only upgrades Visit → By dart when rem hits Switch≤.
+ * Never auto-downgrades By dart → Visit (board open / render must not undo a
  * manual By dart choice).
  */
 function syncAutoScoreEntryMode(opts) {
@@ -7297,7 +7297,7 @@ function buildPad() {
     elPad.classList.add('hidden');
     return;
   }
-  // Cricket: D / number / T are on the scoreboard â€” no pad.
+  // Cricket: D / number / T are on the scoreboard — no pad.
   if (cricket) {
     elPad.classList.add('hidden');
     return;
@@ -7421,7 +7421,7 @@ function buildVisitPad() {
   zero.addEventListener('click', () => visitAppendDigit('0'));
   elPad.appendChild(zero);
   const bk = document.createElement('button');
-  bk.type = 'button'; bk.textContent = 'âŒ«';
+  bk.type = 'button'; bk.textContent = '⌫';
   bk.addEventListener('click', () => {
     visitDigits = visitDigits.slice(0, -1);
     clearVisitReject();
@@ -7470,7 +7470,7 @@ function onNum(n) {
   commitLabel(pendingMult + n);
 }
 
-/** Scorekeeper entry: Bounce has no pad key â€” record as Miss (0 pts).
+/** Scorekeeper entry: Bounce has no pad key — record as Miss (0 pts).
  *  Policy / board model still treat Bounce as its own region. */
 function scorekeeperLabel(label) {
   if (label === 'Bounce' || label === 'B' || label === 'b') return 'Miss';
@@ -7490,7 +7490,7 @@ function commitLabel(label, opts) {
   if (match.winner !== null) {
     const id = archiveFinishedMatch(match);
     if (id && match.matchWinner != null)
-      match.message += ' Â· saved ' + formatHistWhen(id);
+      match.message += ' · saved ' + formatHistWhen(id);
     maybeStartNextLeg(match);
     visitDigits = '';
   }
@@ -7516,7 +7516,7 @@ function commitVisitTotal(score, opts) {
   if (match.winner !== null) {
     const id = archiveFinishedMatch(match);
     if (id && match.matchWinner != null)
-      match.message += ' Â· saved ' + formatHistWhen(id);
+      match.message += ' · saved ' + formatHistWhen(id);
     maybeStartNextLeg(match);
     visitDigits = '';
     match.messageIsError = false;
@@ -7526,19 +7526,19 @@ function commitVisitTotal(score, opts) {
 }
 
 function fmt(v, dig) {
-  if (v === null || v === undefined) return 'â€”';
+  if (v === null || v === undefined) return '—';
   return (dig === 0) ? String(Math.round(v)) : v.toFixed(dig);
 }
 
 /** True for bare turn prompts like "Player 1 to throw" (turn line already covers this). */
 function isThrowOnlyMessage(msg) {
-  return /^[^Â·]+ to throw(\s*\(leg \d+\))?\.?$/i.test(String(msg || '').trim());
+  return /^[^·]+ to throw(\s*\(leg \d+\))?\.?$/i.test(String(msg || '').trim());
 }
 
 function aimBoardToggleHtml(source) {
-  // Only for live x01 â€” cricket has no aim canvas.
+  // Only for live x01 — cricket has no aim canvas.
   if (!match || !matchUiActive || match.game === 'cricket') return '';
-  // By dart always shows the board for scoring â€” no hide toggle needed.
+  // By dart always shows the board for scoring — no hide toggle needed.
   if (scoreEntryMode === 'dart') return '';
   const src = source || 'primary';
   const open = !!(aimBoardVisible && aimBoardSource === src);
@@ -7549,7 +7549,7 @@ function aimBoardToggleHtml(source) {
     + '" aria-label="'
     + (open ? 'Hide AI aim board' : 'Show AI aim board')
     + '"><span class="abt-ring"><span class="abt-dot"></span></span>'
-    + '<span class="abt-ai" aria-hidden="true">âœ¦</span></button>';
+    + '<span class="abt-ai" aria-hidden="true">✦</span></button>';
 }
 
 function wrapAimWithBoardToggle(aimInnerHtml, etHtml) {
@@ -7603,9 +7603,9 @@ function wrapSecondaryAimWithBoardToggle(aimInnerHtml, etHtml) {
 
 function statusMessageHtml(msg) {
   if (!msg || isThrowOnlyMessage(msg)) return '';
-  // Bot throws already show on the board / remaining â€” don't echo "Bot: â€¦" under Aim.
+  // Bot throws already show on the board / remaining — don't echo "Bot: …" under Aim.
   if (/^Bot\b/i.test(String(msg).trim())) return '';
-  // Visit-total errors show on the pad (#visitReject) â€” don't duplicate under Aim.
+  // Visit-total errors show on the pad (#visitReject) — don't duplicate under Aim.
   if (match && match.messageIsError && scoreEntryMode === 'visit') return '';
   const err = !!(match && match.messageIsError);
   return '<div class="msg' + (err ? ' err' : '') + '">' + msg + '</div>';
@@ -7642,23 +7642,23 @@ function statsRowsForPlayers(ps, game, opts) {
     ['3-dart avg', ...ps.map(p => fmt(p.avg3 != null ? p.avg3 : avg3(p), 1))],
     ['First 9', ...ps.map((p, i) => fmt(
       legSheets ? matchFirst9Avg(p, legSheets, i) : (p.avgFirst9 != null ? p.avgFirst9 : avgFirst9(p)), 1))],
-    ['Inferred Ïƒ', ...ps.map(p => {
+    ['Inferred σ', ...ps.map(p => {
       const a = avg3ForSigma(p, { doubleIn: useDoubleIn });
       const s = inferSigmaFromAvg(a);
-      return s != null ? s + ' mm' : 'â€”';
+      return s != null ? s + ' mm' : '—';
     })],
     ['Darts', ...ps.map(p => p.dartsThrown | 0)],
-    ['Visits 100â€“139', ...ps.map(p => p.scores100 | 0)],
-    ['Visits 140â€“179', ...ps.map(p => p.scores140 | 0)],
+    ['Visits 100–139', ...ps.map(p => p.scores100 | 0)],
+    ['Visits 140–179', ...ps.map(p => p.scores140 | 0)],
     ['Visits 180', ...ps.map(p => p.scores180 | 0)],
     ['Checkout %', ...ps.map(p => {
       const pct = p.checkoutPct != null ? p.checkoutPct : checkoutPct(p);
       const hits = p.checkoutHits | 0;
       const att = p.checkoutAttempts | 0;
-      return (pct == null ? 'â€”' : fmt(pct, 0) + '%') + ' (' + hits + '/' + att + ')';
+      return (pct == null ? '—' : fmt(pct, 0) + '%') + ' (' + hits + '/' + att + ')';
     })],
-    ['Hi checkout', ...ps.map(p => p.highestCheckout || 'â€”')],
-    ['Hi visit', ...ps.map(p => p.highestVisit || 'â€”')],
+    ['Hi checkout', ...ps.map(p => p.highestCheckout || '—')],
+    ['Hi visit', ...ps.map(p => p.highestVisit || '—')],
     ['Busts', ...ps.map(p => p.busts | 0)],
   ];
   if (includeLegs) rows.push(['Legs', ...ps.map(p => p.legsWon | 0)]);
@@ -7678,7 +7678,7 @@ function statsGridHtml(ps, rows, colStyle, opts) {
   for (let i = 0; i < ps.length; i++) {
     let cls = 'head';
     if (classes && classes[i]) cls += ' ' + classes[i];
-    html += '<div class="' + cls + '">' + ((ps[i] && ps[i].name) || 'â€”') + '</div>';
+    html += '<div class="' + cls + '">' + ((ps[i] && ps[i].name) || '—') + '</div>';
   }
   for (const row of rows) {
     html += '<div class="lbl">' + row[0] + '</div>';
@@ -7728,7 +7728,7 @@ function renderStats() {
     const wIdx = (sheet.winner != null) ? (sheet.winner | 0) : -1;
     const sheetPs = sheet.players || [];
     let h = '<h3>Leg ' + (sheet.leg | 0);
-    if (subtitle) h += ' Â· ' + subtitle;
+    if (subtitle) h += ' · ' + subtitle;
     h += '</h3>';
     h += statsGridHtml(
       sheetPs,
@@ -7742,8 +7742,8 @@ function renderStats() {
   if (!hasSheet) {
     const live = ps.map((_, i) => playerLegSnapshot(match, i, curLeg));
     html += '<h3>Leg ' + curLeg
-      + (legDone && !finished ? ' Â· just finished'
-        : (finished ? '' : ' Â· in progress')) + '</h3>';
+      + (legDone && !finished ? ' · just finished'
+        : (finished ? '' : ' · in progress')) + '</h3>';
     html += statsGridHtml(
       live,
       statsRowsForPlayers(live, match.game, { includeLegs: false, doubleIn: !!match.doubleIn }),
@@ -7788,8 +7788,8 @@ function renderStats() {
   if (finished) html += renderMatchReviewExtrasHtml();
   if (match.archiveId) {
     html += '<div class="msg" style="margin-top:8px;font-size:11px;color:var(--mute)">'
-      + 'Match saved Â· ' + formatHistWhen(match.archiveId)
-      + ' Â· tap a name â†’ History to review</div>';
+      + 'Match saved · ' + formatHistWhen(match.archiveId)
+      + ' · tap a name → History to review</div>';
   }
   elStats.innerHTML = html;
   const more = document.getElementById('btnStatsHistory');
@@ -7811,7 +7811,7 @@ function finishRenderBotHooks() {
   if (isBotTurn()) scheduleBotThrow(700);
 }
 
-/** Aim dartboard while a leg is in progress â€” always on in By dart (for scoring). */
+/** Aim dartboard while a leg is in progress — always on in By dart (for scoring). */
 function syncPlayBoardChrome() {
   const wrap = document.getElementById('playBoardWrap');
   if (!wrap) return;
@@ -7825,7 +7825,7 @@ function syncPlayBoardChrome() {
     if (scoring) {
       const left = match ? (match.dartsLeft | 0) : 3;
       hint.textContent = left > 0
-        ? ('Tap where the dart landed Â· ' + left + ' left this visit')
+        ? ('Tap where the dart landed · ' + left + ' left this visit')
         : 'Visit complete';
       hint.classList.remove('hidden');
     } else {
@@ -7867,14 +7867,14 @@ function render() {
       remEl.textContent = String(pts);
       if (!matchUiActive) {
         metaEl.textContent = 'Legs ' + p.legsWon
-          + (match.bestOf ? (' Â· Bo' + match.bestOf) : '');
+          + (match.bestOf ? (' · Bo' + match.bestOf) : '');
       } else {
         const marks = p.marks || emptyCricketMarks();
         const closed = CRICKET_KEYS.filter(k => (marks[k] || 0) >= 3).length;
         metaEl.textContent =
-          closed + '/7 closed Â· Legs ' + p.legsWon
-          + (match.bestOf ? (' Â· Bo' + match.bestOf) : '')
-          + (isCutThroat(match) ? ' Â· low wins' : '');
+          closed + '/7 closed · Legs ' + p.legsWon
+          + (match.bestOf ? (' · Bo' + match.bestOf) : '')
+          + (isCutThroat(match) ? ' · low wins' : '');
       }
     } else {
       const fo = match.finishOrder || [];
@@ -7882,12 +7882,12 @@ function render() {
       if (place >= 0 && (match.winner !== null || isX01PlayOn(match))) {
         remEl.textContent = placeOrdinal(place + 1);
         metaEl.textContent = (match.winner !== null ? 'Finished' : 'Out')
-          + ' Â· Legs ' + p.legsWon
-          + (match.bestOf ? (' Â· Bo' + match.bestOf) : '');
+          + ' · Legs ' + p.legsWon
+          + (match.bestOf ? (' · Bo' + match.bestOf) : '');
       } else {
         remEl.textContent = String(p.remaining);
         metaEl.textContent = 'Legs ' + p.legsWon
-          + (match.bestOf ? (' Â· Bo' + match.bestOf) : '');
+          + (match.bestOf ? (' · Bo' + match.bestOf) : '');
       }
     }
     const active = (match.winner === null && match.current === i
@@ -7945,7 +7945,7 @@ function render() {
         html += '<div class="aim">Aim: ' + aimLab + '</div>';
         html += '<div class="why">' + why + '</div>';
         if (resolved.status === 'loading')
-          html += '<div class="row warn">Loading Cricket aim tableâ€¦</div>';
+          html += '<div class="row warn">Loading Cricket aim table…</div>';
       }
       html += statusMessageHtml(match.message);
       elInfo.innerHTML = html;
@@ -7968,7 +7968,7 @@ function render() {
   const shapeForPolicy = playerShape(match.current);
   const resolved = resolvePolicy(m.key, shapeForPolicy);
   const policy = resolved.policy || {};
-  const aimSource = 'Ïƒ ' + resolved.snap.sigma + ' mm';
+  const aimSource = 'σ ' + resolved.snap.sigma + ' mm';
 
   const score = match.players[match.current].remaining;
   const darts = match.dartsLeft;
@@ -7983,7 +7983,7 @@ function render() {
     if (!resolved.policy && resolved.status !== 'loading')
       html += '<div class="warn">No aim table loaded for this accuracy yet.</div>';
     else if (resolved.status === 'loading')
-      html += '<div class="warn">Waiting for aim tableâ€¦</div>';
+      html += '<div class="warn">Waiting for aim table…</div>';
     else
       html += '<div class="warn">No optimal aim for ' + score + ' with ' + darts + ' dart(s).</div>';
     if (playBoardWanted()) drawVisitDartLandingsOnPlayBoard();
@@ -8007,7 +8007,7 @@ function render() {
         const infSteps = hitContinuation(infPolicy, score, darts);
         const infAims = formatHitPath(infPolicy, infSteps);
         const infClean = infAims.length ? infAims[0] : displayAim(ia, ix, iy);
-        const infInner = '<span class="aim-label">Ïƒ' + infResolved.snap.sigma + ':</span>'
+        const infInner = '<span class="aim-label">σ' + infResolved.snap.sigma + ':</span>'
           + infClean
           + infAims.slice(1).map(a => '<span class="next"> ' + a + '</span>').join('');
         inferredRow = {
@@ -8096,7 +8096,7 @@ function remainingAfterVisitTotal(leave, score) {
 }
 
 /**
- * Ask checkout attempts only when leave after the visit is below 50 â€”
+ * Ask checkout attempts only when leave after the visit is below 50 —
  * otherwise no dart this visit could have been at a finishing double.
  */
 function shouldAskVisitCheckoutAttempts(leave, score) {
@@ -8359,7 +8359,7 @@ function syncBestOfLegsRow(preserveValues) {
       + 'data-leg-seat="' + i + '" aria-label="' + label + ' legs won">'
       + '</div>';
     if (n === 2 && i === 0)
-      html += '<div class="bestof-legs-sep" aria-hidden="true">â€“</div>';
+      html += '<div class="bestof-legs-sep" aria-hidden="true">–</div>';
   }
   row.innerHTML = html;
   row.querySelectorAll('input[data-leg-seat]').forEach(inp => {
@@ -8372,8 +8372,8 @@ function syncBestOfLegsRow(preserveValues) {
   });
   if (hint) {
     hint.textContent = max <= 0
-      ? 'Best of 1 â€” legs score stays 0â€“0.'
-      : ('Each player 0â€“' + max + ' (first to '
+      ? 'Best of 1 — legs score stays 0–0.'
+      : ('Each player 0–' + max + ' (first to '
         + legsToWinFromBestOf(bestOfDraft) + '). Optional.');
   }
 }
@@ -8403,8 +8403,8 @@ function applyOpeningLegsScore(m, scores) {
   m.finishOrder = [];
   m.winner = null;
   m.matchWinner = null;
-  const scoreline = m.players.map(p => p.legsWon | 0).join('â€“');
-  m.message = (total > 0 ? (scoreline + ' Â· ') : '')
+  const scoreline = m.players.map(p => p.legsWon | 0).join('–');
+  m.message = (total > 0 ? (scoreline + ' · ') : '')
     + m.players[m.current].name + ' to throw (leg ' + legNo + ')';
 }
 
@@ -8483,7 +8483,7 @@ function startMatchWithBestOf(bestOf) {
   if (isBotSeat(match.current)) {
     botPaused = true;
     match.message = match.players[match.current].name
-      + ' to throw Â· swap sides to change who starts, then tap Start next to Bot';
+      + ' to throw · swap sides to change who starts, then tap Start next to Bot';
   } else {
     botPaused = false;
   }
@@ -8654,7 +8654,7 @@ for (const idx of [0, 1, 2]) {
       if (match && match.winner !== null) {
         const id = archiveFinishedMatch(match);
         if (id && match.matchWinner != null)
-          match.message += ' Â· saved ' + formatHistWhen(id);
+          match.message += ' · saved ' + formatHistWhen(id);
         maybeStartNextLeg(match);
         closeVisitListModal();
       } else {
@@ -8775,7 +8775,7 @@ if (contactHandleEl) {
 function sizeCanvas() {
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   const cssW = cv.clientWidth;
-  // Hidden (prematch / cricket-hide): don't collapse the bitmap to 0Ã—0.
+  // Hidden (prematch / cricket-hide): don't collapse the bitmap to 0×0.
   if (cssW >= 8) {
     cv.width = Math.round(cssW * dpr);
     cv.height = cv.width;
@@ -8801,7 +8801,7 @@ function sizeCheckoutBoard() {
 window.addEventListener('resize', sizeCanvas);
 window.addEventListener('orientationchange', sizeCanvas);
 
-// â”€â”€ Page navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Page navigation ──────────────────────────────────────────────────────
 const pageNav = document.getElementById('pageNav');
 const pageScore = document.getElementById('pageScore');
 const pageFit = document.getElementById('pageFit');
@@ -8848,7 +8848,7 @@ ensureScreenWakeLock();
 
 function setCoachTab(tab) {
   if (tab === 'practice' && !isPro()) {
-    showProBanner('Practice drills are Pro â€” train from your fitted throw.');
+    showProBanner('Practice drills are Pro — train from your fitted throw.');
     tab = 'profile';
   }
   coachTab = tab || 'profile';
@@ -8878,7 +8878,7 @@ function setCoachTab(tab) {
       const s = fits[0] ? latestFitSigma(fits[0]) : nearestPolicySigma(activeSigma());
       if (Number.isFinite(s)) sigEl.value = String(Math.round(s));
     }
-    // Keep previous table if same Ïƒ; otherwise wait for Show.
+    // Keep previous table if same σ; otherwise wait for Show.
   }
 }
 
@@ -8889,7 +8889,7 @@ function showPage(id) {
     openCoachTab = 'practice';
   }
   if (id === 'fit' && !isPro()) {
-    showProBanner('Fit Ïƒ (accuracy calibration) is Pro â€” it builds your coach profile.');
+    showProBanner('Fit σ (accuracy calibration) is Pro — it builds your coach profile.');
     id = 'coach';
     openCoachTab = 'profile';
   }
@@ -8933,7 +8933,7 @@ for (const b of pageNav.children)
   });
 })();
 
-// â”€â”€ Coach profile + practice drills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Coach profile + practice drills ──────────────────────────────────────
 function coachPlayerName() {
   const el = document.getElementById('coachPlayerName');
   if (!el) return '';
@@ -8982,7 +8982,7 @@ function renderCoachPlayerPick() {
   const players = listCoachProfilePlayers();
   const selKey = normPlayerName(coachPlayerName());
   if (!players.length) {
-    list.innerHTML = '<div class="empty">No saved stats yet â€” finish a match or Fit Ïƒ under a player name.</div>';
+    list.innerHTML = '<div class="empty">No saved stats yet — finish a match or Fit σ under a player name.</div>';
     return;
   }
   list.innerHTML = players.map(p => {
@@ -8990,7 +8990,7 @@ function renderCoachPlayerPick() {
     const bits = [];
     if (p.fits) bits.push(p.fits + ' fit' + (p.fits === 1 ? '' : 's'));
     if (p.matches) bits.push(p.matches + ' match' + (p.matches === 1 ? '' : 'es'));
-    const sub = bits.join(' Â· ');
+    const sub = bits.join(' · ');
     const cls = key === selKey ? 'sel' : '';
     return '<button type="button" data-name="' + encodeURIComponent(p.name) + '"'
       + (cls ? (' class="' + cls + '"') : '') + '>'
@@ -9014,7 +9014,7 @@ function renderHistPlayerPick() {
   const players = listCoachProfilePlayers();
   const selKey = normPlayerName(coachPlayerName());
   if (!players.length) {
-    list.innerHTML = '<div class="empty">No saved stats yet â€” finish a match or Fit Ïƒ under a player name.</div>';
+    list.innerHTML = '<div class="empty">No saved stats yet — finish a match or Fit σ under a player name.</div>';
     return;
   }
   list.innerHTML = players.map(p => {
@@ -9022,7 +9022,7 @@ function renderHistPlayerPick() {
     const bits = [];
     if (p.fits) bits.push(p.fits + ' fit' + (p.fits === 1 ? '' : 's'));
     if (p.matches) bits.push(p.matches + ' match' + (p.matches === 1 ? '' : 'es'));
-    const sub = bits.join(' Â· ');
+    const sub = bits.join(' · ');
     const cls = key === selKey ? 'sel' : '';
     return '<button type="button" data-name="' + encodeURIComponent(p.name) + '"'
       + (cls ? (' class="' + cls + '"') : '') + '>'
@@ -9069,7 +9069,7 @@ function seedCoachNameIfEmpty() {
   return coachPlayerName();
 }
 
-/** @deprecated alias â€” prefer coachPlayerName(); does not auto-fill. */
+/** @deprecated alias — prefer coachPlayerName(); does not auto-fill. */
 function ensureCoachName() {
   return coachPlayerName();
 }
@@ -9102,7 +9102,7 @@ function drawCoachTrend(recs) {
   ctx.fillStyle = '#2a2a2a';
   ctx.fillRect(0, 0, cssW, cssH);
   const pts = recs.slice(0, 12).map(r => latestFitSigma(r)).filter(v => Number.isFinite(v));
-  pts.reverse(); // oldest â†’ newest
+  pts.reverse(); // oldest → newest
   if (pts.length < 2) {
     ctx.fillStyle = '#888';
     ctx.font = '14px sans-serif';
@@ -9167,45 +9167,45 @@ function renderCoachPage() {
   }
   const losses = formRows.length - wins;
   const winRate = formRows.length ? (100 * wins / formRows.length) : null;
-  document.getElementById('coachWins').textContent = name ? String(wins) : 'â€”';
-  document.getElementById('coachLosses').textContent = name ? String(losses) : 'â€”';
-  document.getElementById('coachAvg').textContent = avgN ? (avgSum / avgN).toFixed(1) : 'â€”';
+  document.getElementById('coachWins').textContent = name ? String(wins) : '—';
+  document.getElementById('coachLosses').textContent = name ? String(losses) : '—';
+  document.getElementById('coachAvg').textContent = avgN ? (avgSum / avgN).toFixed(1) : '—';
   const wrEl = document.getElementById('coachWinRate');
   const coEl = document.getElementById('coachCheckout');
   const payEl = document.getElementById('coachPayoff');
   const payDetail = document.getElementById('coachPayoffDetail');
-  if (wrEl) wrEl.textContent = winRate != null ? (winRate.toFixed(0) + '%') : 'â€”';
-  if (coEl) coEl.textContent = coN ? ((coSum / coN).toFixed(0) + '%') : 'â€”';
+  if (wrEl) wrEl.textContent = winRate != null ? (winRate.toFixed(0) + '%') : '—';
+  if (coEl) coEl.textContent = coN ? ((coSum / coN).toFixed(0) + '%') : '—';
 
-  // Payoff: translate Ïƒ + form into one emotional number.
-  let payoff = 'â€”', payoffText = '';
+  // Payoff: translate σ + form into one emotional number.
+  let payoff = '—', payoffText = '';
   const latestFit = fits[0];
   const sig = latestFit ? latestFitSigma(latestFit) : null;
   if (winRate != null && formRows.length >= 3) {
     payoff = (winRate >= 55 ? 'Edge' : winRate >= 45 ? 'Even' : 'Climb');
     payoffText = 'Win rate ' + winRate.toFixed(0) + '% over ' + formRows.length
-      + ' matches â€” '
-      + (winRate >= 55 ? 'youâ€™re converting. Protect it with todayâ€™s warm-up.'
+      + ' matches — '
+      + (winRate >= 55 ? 'you’re converting. Protect it with today’s warm-up.'
         : winRate >= 45 ? 'coin-flip form. One prescribed drill after each loss.'
-          : 'below break-even. Fit â†’ doubles â†’ Play until win rate rises.');
+          : 'below break-even. Fit → doubles → Play until win rate rises.');
   } else if (Number.isFinite(sig)) {
-    // Rough recreational mapping: lower Ïƒ â†’ fewer wasted darts.
+    // Rough recreational mapping: lower σ → fewer wasted darts.
     const waste = Math.max(0, Math.min(40, (sig - 5) * 1.2));
     payoff = '~' + waste.toFixed(0);
-    payoffText = 'At Ïƒ â‰ˆ ' + sig.toFixed(1)
+    payoffText = 'At σ ≈ ' + sig.toFixed(1)
       + ' mm, expect roughly ' + waste.toFixed(0)
-      + ' â€œwastedâ€ mm of miss radius vs a 5 mm throw. Tighten Fit to cut waste.';
+      + ' “wasted” mm of miss radius vs a 5 mm throw. Tighten Fit to cut waste.';
   } else {
-    payoffText = 'Save a Fit and play a few matches â€” payoff unlocks (win rate + waste).';
+    payoffText = 'Save a Fit and play a few matches — payoff unlocks (win rate + waste).';
   }
   if (payEl) payEl.textContent = payoff;
   if (payDetail) payDetail.textContent = payoffText;
 
   document.getElementById('coachFormSummary').textContent = name
     ? (formRows.length + ' finished match' + (formRows.length === 1 ? '' : 'es')
-      + ' on this device Â· ' + (isPro()
-        ? 'Pro coach Â· Fit, practice & groups'
-        : 'Free â€” upgrade for Fit, practice & groups'))
+      + ' on this device · ' + (isPro()
+        ? 'Pro coach · Fit, practice & groups'
+        : 'Free — upgrade for Fit, practice & groups'))
     : 'Pick a player above to see form.';
 
   // Habit strip
@@ -9217,20 +9217,20 @@ function renderCoachPage() {
   if (streakEl) streakEl.textContent = String(habit.streak | 0);
   if (doneEl) doneEl.textContent = (habit.lastDone === todayKey()) ? 'Done' : 'Due';
   const lastDiag = loadLastDiagnosis();
-  if (diagEl) diagEl.textContent = lastDiag ? String(lastDiag.title).slice(0, 14) : 'â€”';
+  if (diagEl) diagEl.textContent = lastDiag ? String(lastDiag.title).slice(0, 14) : '—';
   if (habitText) {
     const kind = todaysWarmupKind();
     habitText.textContent = (habit.lastDone === todayKey())
-      ? 'Warm-up done today. Streak ' + (habit.streak | 0) + ' â€” Play when ready.'
-      : ('Todayâ€™s warm-up: ' + kind + ' Â· 3 minutes. Tap below or Practice.');
+      ? 'Warm-up done today. Streak ' + (habit.streak | 0) + ' — Play when ready.'
+      : ('Today’s warm-up: ' + kind + ' · 3 minutes. Tap below or Practice.');
   }
 
   if (!fits.length) {
     empty.classList.remove('hidden');
     body.classList.add('hidden');
     empty.textContent = name
-      ? ('No saved fit for ' + name + ' yet â€” open Fit Ïƒ and Save.')
-      : 'Pick a player with saved stats, or Fit Ïƒ â†’ Save under a name.';
+      ? ('No saved fit for ' + name + ' yet — open Fit σ and Save.')
+      : 'Pick a player with saved stats, or Fit σ → Save under a name.';
     drawCoachTrend([]);
     renderCoachContacts();
     renderCoachGroups();
@@ -9241,23 +9241,23 @@ function renderCoachPage() {
   const latest = fits[0];
   const prev = fits[1];
   const elSig = document.getElementById('coachSigma');
-  elSig.textContent = 'Ïƒ ' + Number(sig).toFixed(1) + ' mm';
+  elSig.textContent = 'σ ' + Number(sig).toFixed(1) + ' mm';
   document.getElementById('coachSigmaSub').textContent =
     (latest.quality && latest.quality.pct != null)
-      ? ('Â±' + Number(latest.quality.pct).toFixed(0) + '% on Ïƒ (95% CI)')
+      ? ('±' + Number(latest.quality.pct).toFixed(0) + '% on σ (95% CI)')
       : 'isotropic profile';
   const qEl = document.getElementById('coachQuality');
   const q = latest.quality || {};
   qEl.className = 'quality ' + (q.level || '');
   qEl.textContent = q.label || 'Saved fit';
-  document.getElementById('coachN').textContent = String(latest.n != null ? latest.n : 'â€”');
+  document.getElementById('coachN').textContent = String(latest.n != null ? latest.n : '—');
   document.getElementById('coachWhen').textContent = formatHistWhen(latest.ts || latest.id);
   if (prev && Number.isFinite(sig) && Number.isFinite(latestFitSigma(prev))) {
     const d = sig - latestFitSigma(prev);
     document.getElementById('coachTrend').textContent =
       (d > 0.05 ? '+' : '') + d.toFixed(1) + ' mm';
   } else {
-    document.getElementById('coachTrend').textContent = 'â€”';
+    document.getElementById('coachTrend').textContent = '—';
   }
   drawCoachTrend(fits);
   renderCoachContacts();
@@ -9277,16 +9277,16 @@ function shareCoachProfile() {
   const sig = fits[0] ? latestFitSigma(fits[0]) : null;
   const wr = formRows.length ? Math.round(100 * wins / formRows.length) : null;
   const lines = [
-    'Darts AIm Â· ' + name,
-    sig != null ? ('Ïƒ â‰ˆ ' + Number(sig).toFixed(1) + ' mm') : 'Ïƒ not fitted yet',
+    'Darts AIm · ' + name,
+    sig != null ? ('σ ≈ ' + Number(sig).toFixed(1) + ' mm') : 'σ not fitted yet',
     formRows.length
-      ? (wins + 'Wâ€“' + (formRows.length - wins) + 'L'
-        + (wr != null ? (' Â· ' + wr + '% win rate') : ''))
+      ? (wins + 'W–' + (formRows.length - wins) + 'L'
+        + (wr != null ? (' · ' + wr + '% win rate') : ''))
       : 'No matches yet',
-    'Darts + Aim + AI â€” know your throw. Get the right aim.',
+    'Darts + Aim + AI — know your throw. Get the right aim.',
     'Try free: ' + shareAppUrl(),
   ];
-  sharePayload('Darts AIm Â· ' + name, lines.join('\n'), '#coachPayoffDetail');
+  sharePayload('Darts AIm · ' + name, lines.join('\n'), '#coachPayoffDetail');
 }
 
 function hideCheckoutAimPreview() {
@@ -9308,7 +9308,7 @@ function showCheckoutAimPreview(score, darts, opts) {
   const board = document.getElementById('checkoutBoard');
   const body = document.getElementById('checkoutTableBody');
   if (!preview || !board) return;
-  // Tap same row again â†’ dismiss popup (skip when refreshing an open preview).
+  // Tap same row again → dismiss popup (skip when refreshing an open preview).
   if (!(opts && opts.force)
       && checkoutPreviewSel
       && checkoutPreviewSel.score === score
@@ -9358,7 +9358,7 @@ function showCheckoutAimPreview(score, darts, opts) {
   const steps = hitContinuation(policy, score, darts);
   const aims = formatHitPath(policy, steps);
   const first = aims.length ? aims[0] : displayAim(aim, x, y);
-  const why = explainAimWhy(score, darts, entry, steps, 'Ïƒ ' + snap.sigma + ' mm');
+  const why = explainAimWhy(score, darts, entry, steps, 'σ ' + snap.sigma + ' mm');
   checkoutPreviewSel = { score: score, darts: darts };
   if (body) {
     for (const tr of body.querySelectorAll('tr.checkout-row')) {
@@ -9366,9 +9366,9 @@ function showCheckoutAimPreview(score, darts, opts) {
       tr.classList.toggle('selected', on);
     }
   }
-  let html = '<div>Leave <b>' + score + '</b> Â· '
+  let html = '<div>Leave <b>' + score + '</b> · '
     + darts + ' dart' + (darts === 1 ? '' : 's') + ' left'
-    + ' Â· Ïƒ ' + snap.sigma + ' mm</div>';
+    + ' · σ ' + snap.sigma + ' mm</div>';
   html += '<div class="aim">Aim: ' + first;
   for (let i = 1; i < aims.length; i++)
     html += '<span class="next"> ' + aims[i] + '</span>';
@@ -9400,7 +9400,7 @@ function renderCheckoutTable() {
   if (!Number.isFinite(sigma)) sigma = 15;
   sigma = Math.max(1, Math.min(50, sigma));
   if (sigEl) sigEl.value = String(sigma);
-  // Leaves 2â€“170 are identical for 501 / 301 DI â€” always load 501.
+  // Leaves 2–170 are identical for 501 / 301 DI — always load 501.
   const modeKey = '501';
   const shape = { sigma: sigma };
   const resolved = resolvePolicy(modeKey, shape);
@@ -9408,10 +9408,10 @@ function renderCheckoutTable() {
   const key = modeKey + '|' + snap.sigma + '|' + checkoutDartFilter + '|' + scoreHi;
   if (resolved.status === 'loading' || (!resolved.policy && resolved.status !== 'missing')) {
     hideCheckoutAimPreview();
-    body.innerHTML = '<tr><td colspan="4" class="et">Loading aim table for Ïƒ = '
-      + snap.sigma + ' mmâ€¦</td></tr>';
-    if (status) status.textContent = 'Fetching policyâ€¦';
-    // Re-render when fetch completes (resolvePolicy â†’ render also fires).
+    body.innerHTML = '<tr><td colspan="4" class="et">Loading aim table for σ = '
+      + snap.sigma + ' mm…</td></tr>';
+    if (status) status.textContent = 'Fetching policy…';
+    // Re-render when fetch completes (resolvePolicy → render also fires).
     setTimeout(() => {
       if (coachTab === 'checkout') renderCheckoutTable();
     }, 400);
@@ -9419,16 +9419,16 @@ function renderCheckoutTable() {
   }
   if (!resolved.policy) {
     hideCheckoutAimPreview();
-    body.innerHTML = '<tr><td colspan="4" class="et">No aim table for Ïƒ = '
+    body.innerHTML = '<tr><td colspan="4" class="et">No aim table for σ = '
       + snap.sigma + ' mm yet.</td></tr>';
-    if (status) status.textContent = 'Missing policy JSON for this Ïƒ.';
+    if (status) status.textContent = 'Missing policy JSON for this σ.';
     return;
   }
   const policy = resolved.policy;
   const wantD = checkoutDartFilter === 'all' ? null : parseInt(checkoutDartFilter, 10);
   const rows = [];
   for (let s = scoreHi; s >= 2; s--) {
-    // 2 left â†’ â‰¤110 (max T20+Bull); 1 left â†’ â‰¤50 (doubles + bull).
+    // 2 left → ≤110 (max T20+Bull); 1 left → ≤50 (doubles + bull).
     if (!isExtended && wantD === 2 && s > 110) continue;
     if (!isExtended && wantD === 1 && s > 50) continue;
     for (const d of [3, 2, 1]) {
@@ -9436,7 +9436,7 @@ function renderCheckoutTable() {
       const entry = policy[s + ',' + d];
       if (!entry || !entry[0]) continue;
       const steps = hitContinuation(policy, s, d);
-      const path = formatHitPath(policy, steps).join(' â†’ ');
+      const path = formatHitPath(policy, steps).join(' → ');
       const et = entry[3];
       const sel = checkoutPreviewSel
         && checkoutPreviewSel.score === s
@@ -9449,7 +9449,7 @@ function renderCheckoutTable() {
         + '<td class="' + (possible ? '' : 'score-impossible') + '">' + s + '</td>'
         + '<td>' + d + '</td><td class="path">'
         + path + '</td><td class="et">'
-        + (et != null && Number.isFinite(+et) ? Number(et).toFixed(3) : 'â€”')
+        + (et != null && Number.isFinite(+et) ? Number(et).toFixed(3) : '—')
         + '</td></tr>');
     }
   }
@@ -9458,16 +9458,16 @@ function renderCheckoutTable() {
     : '<tr><td colspan="4" class="et">No checkout leaves in this table.</td></tr>';
   checkoutLoadedKey = key;
   if (status) {
-    let range = 'scores 2â€“170';
-    if (isExtended) range = 'scores 2â€“200 (extended)';
-    else if (wantD === 2) range = 'scores 2â€“110 (2 darts)';
-    else if (wantD === 1) range = 'scores 2â€“50 (1 dart)';
-    else if (wantD === 3) range = 'scores 2â€“170 (3 darts)';
-    status.textContent = 'Ïƒ = ' + snap.sigma + ' mm Â· ' + range
-      + ' Â· red = cannot finish in that many darts'
-      + ' Â· tap a path to show the first-dart aim on the board'
+    let range = 'scores 2–170';
+    if (isExtended) range = 'scores 2–200 (extended)';
+    else if (wantD === 2) range = 'scores 2–110 (2 darts)';
+    else if (wantD === 1) range = 'scores 2–50 (1 dart)';
+    else if (wantD === 3) range = 'scores 2–170 (3 darts)';
+    status.textContent = 'σ = ' + snap.sigma + ' mm · ' + range
+      + ' · red = cannot finish in that many darts'
+      + ' · tap a path to show the first-dart aim on the board'
       + (snap.sigma !== sigma ? (' (snapped from ' + sigma + ')') : '')
-      + ' Â· ' + rows.length + ' rows';
+      + ' · ' + rows.length + ' rows';
   }
   if (checkoutPreviewSel) {
     const still = body.querySelector(
@@ -9495,28 +9495,28 @@ function renderPracticePage() {
     cricket: 'Cricket marks',
   };
   const blurbs = {
-    bull: 'Log 8â€“12 bull landings in Fit Ïƒ and Save â€” keep the profile honest.',
-    double: 'Finish a random double leave at your Ïƒ. One clean D beats ten wild T20s.',
+    bull: 'Log 8–12 bull landings in Fit σ and Save — keep the profile honest.',
+    double: 'Finish a random double leave at your σ. One clean D beats ten wild T20s.',
     path: 'Walk a full visit from a mid score. Trust Aim + why.',
     cricket: 'Switch to Cricket and throw the coached opening marks.',
   };
   const wt = document.getElementById('warmupTitle');
   const wb = document.getElementById('warmupBlurb');
-  if (wt) wt.textContent = 'Todayâ€™s warm-up Â· ' + (titles[kind] || kind);
+  if (wt) wt.textContent = 'Today’s warm-up · ' + (titles[kind] || kind);
   if (wb) wb.textContent = blurbs[kind] || '';
   if (!isPro()) {
-    el.textContent = 'Practice is Pro. Free users can still Play with coarse Ïƒ aims.';
+    el.textContent = 'Practice is Pro. Free users can still Play with coarse σ aims.';
     return;
   }
   const diag = loadLastDiagnosis();
   if (!fits.length) {
-    el.textContent = 'Tip: run Bull calibration first so doubles/path use your fitted Ïƒ.';
+    el.textContent = 'Tip: run Bull calibration first so doubles/path use your fitted σ.';
   } else {
     const sig = latestFitSigma(fits[0]);
     el.textContent = 'Profile ready'
       + (name ? (' for ' + name) : '')
-      + (Number.isFinite(sig) ? (' Â· Ïƒ â‰ˆ ' + sig.toFixed(1) + ' mm') : '')
-      + (diag ? (' Â· last focus: ' + diag.title) : '')
+      + (Number.isFinite(sig) ? (' · σ ≈ ' + sig.toFixed(1) + ' mm') : '')
+      + (diag ? (' · last focus: ' + diag.title) : '')
       + '.';
   }
 }
@@ -9556,7 +9556,7 @@ function startDrillDouble() {
   match.players[0].remaining = leave;
   match.players[0].opened = true;
   match.current = 0;
-  match.message = 'Double drill â€” finish ' + leave + ' (D' + (leave / 2) + ').';
+  match.message = 'Double drill — finish ' + leave + ' (D' + (leave / 2) + ').';
   setMatchUiActive(true);
   buildPad();
   showPage('score');
@@ -9575,7 +9575,7 @@ function startDrillPath() {
   match.players[0].remaining = start;
   match.players[0].opened = true;
   match.current = 0;
-  match.message = 'Path drill â€” follow Aim + why from ' + start + '.';
+  match.message = 'Path drill — follow Aim + why from ' + start + '.';
   setMatchUiActive(true);
   buildPad();
   showPage('score');
@@ -9590,7 +9590,7 @@ function startDrillCricket() {
   switchGameMode('cricket');
   match = newMatch(0, false, names(), 'cricket');
   clearBotsFromCricketLineup();
-  match.message = 'Cricket drill â€” throw the coached aim (marks first).';
+  match.message = 'Cricket drill — throw the coached aim (marks first).';
   setMatchUiActive(true);
   buildPad();
   showPage('score');
@@ -9599,7 +9599,7 @@ function startDrillCricket() {
 
 function startDrillWarmup() {
   if (!isPro()) {
-    showProBanner('Daily warm-up is Pro â€” builds your streak and profile.');
+    showProBanner('Daily warm-up is Pro — builds your streak and profile.');
     showPage('coach');
     return;
   }
@@ -9706,9 +9706,9 @@ function startDrillWarmup() {
   }
 })();
 
-// â”€â”€ Live Gaussian Ïƒ fit from aim landings (isotropic distance only) â”€â”€â”€â”€â”€â”€â”€
+// ── Live Gaussian σ fit from aim landings (isotropic distance only) ───────
 const fitThrows = [];
-/** Aim target: 'bull' | 'triple' | 'double' plus sector 1â€“20 for T/D. */
+/** Aim target: 'bull' | 'triple' | 'double' plus sector 1–20 for T/D. */
 let fitAimSector = 20;
 let fitAimKind = 'bull'; // 'bull' | 'triple' | 'double'
 
@@ -9729,7 +9729,7 @@ const elFitResult = document.getElementById('fitResult');
 const elFitChartBox = document.getElementById('fitChartBox');
 const fitCv = document.getElementById('fitChart');
 const fitCtx = fitCv.getContext('2d');
-const FIT_R_MAX = DOUBLE_OUTER;  // board outer radius (mm) â€” bull-from-centre
+const FIT_R_MAX = DOUBLE_OUTER;  // board outer radius (mm) — bull-from-centre
 const FIT_AIM_R_MAX = 340;       // distance from any aim point (mm)
 
 function loadFitHistory() {
@@ -9763,8 +9763,8 @@ function fitAimKindTag(counts) {
   if (counts.trip) parts.push('T');
   if (counts.dbl) parts.push('D');
   if (!parts.length) return '';
-  if (parts.length === 1) return ' Â· ' + parts[0];
-  return ' Â· ' + parts.join('+');
+  if (parts.length === 1) return ' · ' + parts[0];
+  return ' · ' + parts.join('+');
 }
 
 function parseFitAimId(aim) {
@@ -9784,12 +9784,12 @@ function applyFitAimId(aim) {
 }
 
 function fitSummaryLabel(rec) {
-  if (!rec) return 'â€”';
+  if (!rec) return '—';
   const s = latestFitSigma(rec);
-  if (!Number.isFinite(s)) return 'â€”';
+  if (!Number.isFinite(s)) return '—';
   const tag = fitAimKindTag(fitAimKindCounts(
     (rec.throws || []).map(t => (t && t.aim) || 'bull')));
-  return 'Ïƒ ' + Number(s).toFixed(1) + ' mm' + tag;
+  return 'σ ' + Number(s).toFixed(1) + ' mm' + tag;
 }
 
 function upsertSavedPlayerName(name) {
@@ -9863,7 +9863,7 @@ function saveCurrentFit() {
   }
   const fit = fitCurrent();
   if (!fit) {
-    showFitError('Add throws to estimate Ïƒ before saving');
+    showFitError('Add throws to estimate σ before saving');
     return;
   }
   showFitError('');
@@ -9880,7 +9880,7 @@ function loadSavedFit(id) {
   const rec = loadFitHistory().find(r => r && r.id === id);
   if (!rec) return;
   if (rec.method === 'zones') {
-    showFitError('This saved fit used score zones (removed). Delete it or keep Ïƒ via Coach.');
+    showFitError('This saved fit used score zones (removed). Delete it or keep σ via Coach.');
     return;
   }
   elFitPlayerName.value = rec.name || '';
@@ -9917,7 +9917,7 @@ function deleteSavedFit(id) {
   if (!rec) return;
   const ok = window.confirm(
     'Delete saved fit?\n\n'
-    + (rec.name || 'â€”') + '\n'
+    + (rec.name || '—') + '\n'
     + fitSummaryLabel(rec) + '\n'
     + formatHistWhen(rec.ts || rec.id));
   if (!ok) return;
@@ -9933,7 +9933,7 @@ function renderFitSavedList() {
     ? all.filter(r => normPlayerName(r.name) === filter)
     : all;
   let html = '<div class="hdr"><span>Saved fits'
-    + (filter ? (' Â· ' + (elFitPlayerName.value || '').trim()) : '')
+    + (filter ? (' · ' + (elFitPlayerName.value || '').trim()) : '')
     + '</span><span>' + rows.length + (filter && all.length !== rows.length
       ? (' / ' + all.length) : '') + '</span></div>';
   if (!rows.length) {
@@ -9950,14 +9950,14 @@ function renderFitSavedList() {
     return '<div class="fit-save-row" data-load="' + encodeURIComponent(rec.id) + '">'
       + '<div><div class="name">' + rec.name + '</div>'
       + '<div class="meta">' + formatHistWhen(rec.ts || rec.id)
-      + (n ? (' Â· ' + n) : '')
-      + (q ? (' Â· ' + q) : '')
+      + (n ? (' · ' + n) : '')
+      + (q ? (' · ' + q) : '')
       + '</div>'
       + (preview ? ('<div class="preview">' + preview + '</div>') : '')
       + '</div>'
       + '<div class="sig">' + fitSummaryLabel(rec) + '</div>'
       + '<button type="button" class="del" title="Delete" data-del-fit="'
-      + encodeURIComponent(rec.id) + '">Ã—</button>'
+      + encodeURIComponent(rec.id) + '">×</button>'
       + '</div>';
   }).join('');
   elFitSavedList.innerHTML = html;
@@ -9984,14 +9984,14 @@ function syncFitSaveButton() {
 function renderFitAimSigmas() {
   if (!elFitAimSigmas) return;
   const rows = fitPerAimRows();
-  // Only show when â‰¥2 aims (otherwise it duplicates global Ïƒ).
+  // Only show when ≥2 aims (otherwise it duplicates global σ).
   if (rows.length < 2) {
     elFitAimSigmas.innerHTML = '';
     elFitAimSigmas.classList.add('hidden');
     return;
   }
   elFitAimSigmas.classList.remove('hidden');
-  let html = '<div class="hdr">Per-aim Ïƒ</div>';
+  let html = '<div class="hdr">Per-aim σ</div>';
   for (const r of rows) {
     const lab = r.aim === 'bull' ? 'Bull' : r.aim;
     const conf = formatFitConfidenceHtml(r);
@@ -10000,7 +10000,7 @@ function renderFitAimSigmas() {
       + '<span class="swatch" style="background:' + r.color + '"></span>'
       + '<span class="aim">' + lab + '</span>'
       + '</div>'
-      + '<div class="sigma">Ïƒ = ' + r.sigma.toFixed(1) + ' mm</div>'
+      + '<div class="sigma">σ = ' + r.sigma.toFixed(1) + ' mm</div>'
       + '<div class="quality ' + conf.level + '">' + conf.html + '</div>'
       + '</div>';
   }
@@ -10024,7 +10024,7 @@ function fitAimXY(aim) {
   return ringAimPoint(p.kind, p.sector);
 }
 
-/** CSS click â†’ board mm on a square board canvas. */
+/** CSS click → board mm on a square board canvas. */
 function mmOfCanvas(c, clientX, clientY) {
   const rect = c.getBoundingClientRect();
   if (rect.width < 1 || rect.height < 1) return [0, 0];
@@ -10148,7 +10148,7 @@ function drawFitMeasureBoard() {
   }
   const aim = activeFitAimId();
   const [ax, ay] = fitAimXY(aim);
-  // Aim marker: cross only (no Ïƒ rings).
+  // Aim marker: cross only (no σ rings).
   drawFitAimCross(c, ax, ay);
   for (const t of fitThrows) {
     if (t.x == null || t.y == null) continue;
@@ -10165,7 +10165,7 @@ function drawFitMeasureBoard() {
   const hint = document.getElementById('fitMeasureBoardHint');
   if (hint) {
     if (fitMeasurePending) {
-      hint.textContent = 'Landing marked â€” tweak mm if needed, then Add';
+      hint.textContent = 'Landing marked — tweak mm if needed, then Add';
       hint.style.display = '';
     } else {
       hint.textContent = '';
@@ -10236,10 +10236,10 @@ function syncMeasureAimChrome() {
     btn.classList.toggle('picking', fitMeasurePickAim);
     btn.setAttribute('aria-pressed', fitMeasurePickAim ? 'true' : 'false');
     if (fitMeasurePickAim) {
-      btn.innerHTML = 'Choosing aimâ€¦'
+      btn.innerHTML = 'Choosing aim…'
         + '<span class="sub">Select by clicking on the dartboard</span>';
     } else {
-      btn.innerHTML = 'Aim Â· ' + aimLab
+      btn.innerHTML = 'Aim · ' + aimLab
         + '<span class="sub">Select by clicking on the dartboard</span>';
     }
   }
@@ -10290,7 +10290,7 @@ function fitAimColorRgba(aim, alpha) {
   return 'hsl(' + fitAimHue(aim) + ' 78% 58% / ' + a + ')';
 }
 
-/** Per-aim isotropic fits from distance throws (nâ‰¥1 each). */
+/** Per-aim isotropic fits from distance throws (n≥1 each). */
 function fitPerAimMeasure() {
   const by = {};
   for (const t of fitThrows) {
@@ -10384,7 +10384,7 @@ function drawIsoChart(fit, cssW, cssH) {
   const binW = rMax / nBins;
   const counts = new Array(nBins).fill(0);
   for (const r of radii) counts[Math.min(nBins - 1, Math.floor(r / binW))]++;
-  // Model curve in count units: pdf Ã— n Ã— bin width.
+  // Model curve in count units: pdf × n × bin width.
   const modelCount = (r) => rayleighPdf(r, fit.sigma) * fit.n * binW;
   let yMax = Math.max.apply(null, counts);
   for (let i = 0; i <= 40; i++)
@@ -10471,7 +10471,7 @@ function rayleighCdf(r, sigma) {
 }
 
 /**
- * One-sample KS test of radii vs Rayleigh(Ïƒ).
+ * One-sample KS test of radii vs Rayleigh(σ).
  * Returns D, approx p-value, and a qualitative model-fit level.
  */
 function fitRayleighGof(radii, sigma) {
@@ -10487,7 +10487,7 @@ function fitRayleighGof(radii, sigma) {
       p: null,
       level: 'unknown',
       label: 'Model fit n/a',
-      detail: 'Need â‰¥3 darts for goodness of fit',
+      detail: 'Need ≥3 darts for goodness of fit',
     };
   }
   let dPlus = 0, dMinus = 0;
@@ -10497,7 +10497,7 @@ function fitRayleighGof(radii, sigma) {
     dMinus = Math.max(dMinus, F - i / n);
   }
   const D = Math.max(dPlus, dMinus);
-  // Stephens / asymptotic KS p-value: Î» = (âˆšn + 0.12 + 0.11/âˆšn) D
+  // Stephens / asymptotic KS p-value: λ = (√n + 0.12 + 0.11/√n) D
   const lam = (Math.sqrt(n) + 0.12 + 0.11 / Math.sqrt(n)) * D;
   let p = 0;
   for (let k = 1; k <= 200; k++) {
@@ -10509,7 +10509,7 @@ function fitRayleighGof(radii, sigma) {
   if (p > 1) p = 1;
 
   let level, label;
-  // p = Prob(data at least this far from Rayleigh | Ïƒ true).
+  // p = Prob(data at least this far from Rayleigh | σ true).
   if (p < 0.01) {
     level = 'poor'; label = 'Model mismatch';
   } else if (p < 0.05) {
@@ -10526,7 +10526,7 @@ function fitRayleighGof(radii, sigma) {
     level: level,
     label: label,
     detail: 'KS p=' + (p < 0.001 ? p.toExponential(1) : p.toFixed(2))
-      + ' Â· D=' + D.toFixed(2),
+      + ' · D=' + D.toFixed(2),
   };
 }
 
@@ -10540,7 +10540,7 @@ function fitQuality(fit) {
   const relSe = sigma > 1e-9 ? se / sigma : 1;
   const pct = 100 * 1.96 * relSe;
 
-  // Precision of Ïƒ (sample size / CI width only).
+  // Precision of σ (sample size / CI width only).
   let precRank, precLabel;
   if (n < 8) {
     precRank = 0; precLabel = 'Low';
@@ -10556,7 +10556,7 @@ function fitQuality(fit) {
     ? fit.radii
     : fitThrows.map(t => t.r);
   const gof = fitRayleighGof(radii, sigma);
-  // Map model fit â†’ same 0â€“3 scale so a bad model cannot look â€œgoodâ€.
+  // Map model fit → same 0–3 scale so a bad model cannot look “good”.
   let gofRank = 3;
   if (gof.level === 'poor') gofRank = 0;
   else if (gof.level === 'weak') gofRank = 1;
@@ -10589,10 +10589,10 @@ function formatFitConfidenceHtml(fit, withInfoBtn) {
     ? (gof.p < 0.001 ? gof.p.toExponential(1) : gof.p.toFixed(2))
     : 'n/a';
   let html = q.label
-    + ' Â· n=' + fit.n
-    + ' Â· Â±' + pct + '% ('
-    + fit.ciLo.toFixed(1) + 'â€“' + fit.ciHi.toFixed(1) + ' mm)'
-    + ' Â· KS p=' + pTxt;
+    + ' · n=' + fit.n
+    + ' · ±' + pct + '% ('
+    + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm)'
+    + ' · KS p=' + pTxt;
   if (withInfoBtn) {
     html += ' <button type="button" class="fit-ks-info" id="fitKsInfoBtn"'
       + ' title="How confidence is classified" aria-label="How confidence is classified">i</button>';
@@ -10604,7 +10604,7 @@ function refreshFitSummary() {
   const fit = fitCurrent();
   if (elFitResult) elFitResult.classList.toggle('hidden', !fit);
   if (!fit) {
-    elFitSigma.textContent = 'â€”';
+    elFitSigma.textContent = '—';
     elFitQuality.textContent = '';
     elFitQuality.className = 'quality';
     if (elFitDetail) {
@@ -10613,7 +10613,7 @@ function refreshFitSummary() {
     }
   } else {
     const conf = formatFitConfidenceHtml(fit, true);
-    elFitSigma.textContent = 'Ïƒ = ' + fit.sigma.toFixed(1) + ' mm';
+    elFitSigma.textContent = 'σ = ' + fit.sigma.toFixed(1) + ' mm';
     elFitQuality.className = 'quality ' + conf.level;
     elFitQuality.innerHTML = conf.html;
     const ksBtn = document.getElementById('fitKsInfoBtn');
@@ -10648,7 +10648,7 @@ function parseThrowFields(rRaw, aim) {
   const r = parseFloat(rRaw);
   const maxR = (aim && aim !== 'bull') ? FIT_AIM_R_MAX : FIT_R_MAX;
   if (!Number.isFinite(r) || r < 0 || r > maxR)
-    return { ok: false, err: 'Distance must be 0â€“' + maxR + ' mm from aim' };
+    return { ok: false, err: 'Distance must be 0–' + maxR + ' mm from aim' };
   return { ok: true, r };
 }
 
@@ -10661,13 +10661,13 @@ function fitRecordPreview(rec) {
     const aim = (!t.aim || t.aim === 'bull') ? 'Bull' : t.aim;
     return aim + ' ' + Number(t.r).toFixed(1) + 'mm';
   });
-  const more = throws.length > 8 ? (' Â· +' + (throws.length - 8) + ' more') : '';
-  return parts.join(' Â· ') + more;
+  const more = throws.length > 8 ? (' · +' + (throws.length - 8) + ' more') : '';
+  return parts.join(' · ') + more;
 }
 
 function renderFitList() {
   if (!fitThrows.length) {
-    elFitList.innerHTML = '<div class="empty">No throws yet â€” tap a row later to edit</div>';
+    elFitList.innerHTML = '<div class="empty">No throws yet — tap a row later to edit</div>';
     return;
   }
   let html = '<div class="hdr" style="grid-template-columns:28px 52px 1fr 36px">'
@@ -10683,7 +10683,7 @@ function renderFitList() {
       + aimLab + '</span>'
       + '<input class="fit-r" type="number" inputmode="decimal" min="0" max="'
       + FIT_AIM_R_MAX + '" step="0.1" value="' + t.r + '">'
-      + '<button type="button" class="del" title="Delete" data-del="' + i + '">Ã—</button>'
+      + '<button type="button" class="del" title="Delete" data-del="' + i + '">×</button>'
       + '</div>';
   });
   elFitList.innerHTML = html;
@@ -10755,7 +10755,7 @@ function showFitError(msg) {
   elFitError.textContent = msg;
 }
 
-/** Unit direction from aim â†’ landing (defaults â€œupâ€ if on the aim). */
+/** Unit direction from aim → landing (defaults “up” if on the aim). */
 function fitLandingUnit(aim, x, y) {
   const [ax, ay] = fitAimXY(aim);
   const dx = (Number(x) || 0) - ax;
@@ -11047,7 +11047,7 @@ async function tryAdminPassword() {
   if (!pw) { elGateErr.textContent = 'Enter the admin password'; return; }
   const btn = document.getElementById('gateGo');
   const oldTxt = btn ? btn.textContent : '';
-  if (btn) { btn.disabled = true; btn.textContent = 'Checkingâ€¦'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
   try {
     const h = await sha256hex(pw);
     if (h !== ACCESS_HASH) {
@@ -11079,7 +11079,7 @@ async function continueGoogle() {
     return;
   }
   if (!window.__fbSignIn) {
-    elGateErr.textContent = 'Firebase still loading â€” try again in a second.';
+    elGateErr.textContent = 'Firebase still loading — try again in a second.';
     return;
   }
   try {
@@ -11118,7 +11118,7 @@ document.getElementById('btnAccount').addEventListener('click', async () => {
     signOutLocal();
     return;
   }
-  // From inside app â†’ show gate for sign-in
+  // From inside app → show gate for sign-in
   elMain.classList.add('locked');
   elGate.classList.remove('hidden');
 });
@@ -11127,7 +11127,7 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
 
 (async () => {
   const frees = freeSigmas().join(', ');
-  elGateHint.textContent = 'Free: score + aims at Ïƒ = ' + frees
+  elGateHint.textContent = 'Free: score + aims at σ = ' + frees
     + ' mm. Pro: your profile, aim-with-why, practice & progress. Admin Google always has Pro.';
   if (!firebaseConfigured()) {
     document.getElementById('gateGoogle').title = 'Configure Firebase in auth_config.json';
