@@ -570,6 +570,28 @@ const CameraScorer = (() => {
     drawProjectedCircle(R_INNER_TRIPLE);
     drawProjectedCircle(R_OUTER_BULL);
     drawProjectedCircle(R_BULL);
+    drawProjectedSectorWires();
+  }
+
+  function drawProjectedSectorWires() {
+    // Draw inferred spoke wires at sector boundaries.
+    overlayCtx.strokeStyle = 'rgba(255,210,63,0.35)';
+    overlayCtx.lineWidth = 1;
+    for (let k = 0; k < 20; k++) {
+      const a = (k + 0.5) * SECTOR_ANGLE;
+      const x = R_OUTER_DOUBLE * Math.sin(a);
+      const y = R_OUTER_DOUBLE * Math.cos(a);
+      drawProjectedLine([0, 0], [x, y]);
+    }
+  }
+
+  function drawProjectedLine(p0, p1) {
+    const a = applyH(calibration.Hinv, p0);
+    const b = applyH(calibration.Hinv, p1);
+    overlayCtx.beginPath();
+    overlayCtx.moveTo(a[0], a[1]);
+    overlayCtx.lineTo(b[0], b[1]);
+    overlayCtx.stroke();
   }
 
   function drawProjectedCircle(rMm) {
