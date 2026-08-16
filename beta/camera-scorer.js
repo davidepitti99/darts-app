@@ -25,11 +25,14 @@ const CameraScorer = (() => {
   let calibPoints = [];
 
   // Detection parameters
-  const DIFF_THRESHOLD = 35;   // pixel intensity difference to count as change
-  const MIN_BLOB_PIXELS = 30;  // minimum changed pixels to count as a dart
-  const COOLDOWN_MS = 1500;    // ignore detections for this long after scoring
+  const DIFF_THRESHOLD = 50;   // pixel intensity difference to count as change
+  const MIN_BLOB_PIXELS = 150; // minimum changed pixels to count as a dart
+  const MAX_BLOB_PIXELS = 8000; // above this = lighting shift, not a dart
+  const COOLDOWN_MS = 2000;    // ignore detections for this long after scoring
+  const CONFIRM_FRAMES = 3;    // blob must persist this many consecutive frames
   let lastScoreTime = 0;
   let commitFn = null;
+  let pendingDetection = null; // { x, y, pixels, confirmCount }
 
   function init(container, onCommit) {
     commitFn = onCommit;
@@ -173,8 +176,24 @@ const CameraScorer = (() => {
     if (now - lastScoreTime > COOLDOWN_MS) {
       const result = detectDart();
       if (result) {
-        lastScoreTime = now;
-        scoreDart(result);
+        // Require the blob to persist across CONFIRM_FRAMES before scoring
+        if (pendingDetection &&
+            Math.hypot(result.x - pendingDetection.x, result.y - pendingDetection.y) < 30) {
+          pendingDetection.confirmCount++;
+          pendingDetection.x = result.x;
+          pendingDetection.y = result.y;
+          pendingDetection.pixels = result.pixels;
+          if (pendingDetection.confirmCount >= CONFIRM_FRAMES) {
+            lastScoreTime = now;
+            scoreDart(pendingDetection);
+            pendingDetection = null;
+          }
+        } else {
+          pendingDetection = { x: result.x, y: result.y, pixels: result.pixels, confirmCount: 1 };
+        }
+      } else {
+        // No blob detected — reset pending (was transient noise)
+        pendingDetection = null;
       }
     }
     animFrameId = requestAnimationFrame(detectLoop);
@@ -215,6 +234,7 @@ const CameraScorer = (() => {
     }
 
     if (count < MIN_BLOB_PIXELS) return null;
+    if (count > MAX_BLOB_PIXELS) return null; // lighting shift, not a dart
 
     // Centroid of changed pixels = dart tip estimate
     const dartX = sumX / count;
