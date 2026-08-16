@@ -149,86 +149,156 @@ const CameraScorer = (() => {
   function autoDetectCalibration() {
     if (!video || video.videoWidth <= 0) {
       setStatus('Start camera first.');
-      return;
+    const detected = detectBoardEllipse(frame, canvas.width, canvas.height);
     }
 
     ctx.drawImage(video, 0, 0);
     const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const detected = detectBoardCircle(frame, canvas.width, canvas.height);
-    if (!detected) {
-      setStatus('Auto Detect failed. Use Manual Calib (4 taps).');
-      return;
-    }
-
-    const pts = [
+    const pts = ellipseCardinalPoints(detected);
       [detected.cx, detected.cy - detected.r],
       [detected.cx + detected.r, detected.cy],
       [detected.cx, detected.cy + detected.r],
       [detected.cx - detected.r, detected.cy]
-    ];
+    setStatus('Auto Detect done (tilt-aware). Set Reference with empty board.');
 
     calibration = buildCalibrationFromImagePoints(pts);
     saveCalibration();
-    document.getElementById('camRef').disabled = false;
-    setStatus('Auto Detect done. Set Reference with empty board.');
-    drawOverlay();
-  }
-
-  function detectBoardCircle(imageData, w, h) {
-    const gray = new Uint8Array(w * h);
+  function detectBoardEllipse(imageData, w, h) {
+    // Downsample for speed; this runs on mobile Safari.
+    const maxW = 320;
+    const scale = Math.min(1, maxW / w);
+    const sw = Math.max(80, Math.round(w * scale));
+    const sh = Math.max(80, Math.round(h * scale));
+    const sGray = new Uint8Array(sw * sh);
     const src = imageData.data;
-    for (let i = 0, p = 0; i < src.length; i += 4, p++) {
-      gray[p] = (src[i] * 0.299 + src[i + 1] * 0.587 + src[i + 2] * 0.114) | 0;
-    }
-
-    const edges = new Uint8Array(w * h);
-    for (let y = 1; y < h - 1; y++) {
-      for (let x = 1; x < w - 1; x++) {
-        const p = y * w + x;
-        const gx =
-          -gray[p - w - 1] + gray[p - w + 1] +
-          -2 * gray[p - 1] + 2 * gray[p + 1] +
-          -gray[p + w - 1] + gray[p + w + 1];
-        const gy =
-          -gray[p - w - 1] - 2 * gray[p - w] - gray[p - w + 1] +
-          gray[p + w - 1] + 2 * gray[p + w] + gray[p + w + 1];
-        const mag = Math.abs(gx) + Math.abs(gy);
-        edges[p] = mag > 120 ? 1 : 0;
+    for (let sy = 0; sy < sh; sy++) {
+      const y0 = Math.min(h - 1, Math.floor(sy / scale));
+      for (let sx = 0; sx < sw; sx++) {
+        const x0 = Math.min(w - 1, Math.floor(sx / scale));
+        const i = (y0 * w + x0) * 4;
+        sGray[sy * sw + sx] = (src[i] * 0.299 + src[i + 1] * 0.587 + src[i + 2] * 0.114) | 0;
       }
     }
 
-    const minDim = Math.min(w, h);
-    const rMin = Math.floor(minDim * 0.24);
-    const rMax = Math.floor(minDim * 0.48);
-    const cx0 = w * 0.5;
-    const cy0 = h * 0.5;
+    const edges = new Uint8Array(sw * sh);
+    for (let y = 1; y < sh - 1; y++) {
+      for (let x = 1; x < sw - 1; x++) {
+        const p = y * sw + x;
+        const gx =
+          -sGray[p - sw - 1] + sGray[p - sw + 1] +
+          -2 * sGray[p - 1] + 2 * sGray[p + 1] +
+          -sGray[p + sw - 1] + sGray[p + sw + 1];
+        const gy =
+          -sGray[p - sw - 1] - 2 * sGray[p - sw] - sGray[p - sw + 1] +
+          sGray[p + sw - 1] + 2 * sGray[p + sw] + sGray[p + sw + 1];
+        edges[p] = (Math.abs(gx) + Math.abs(gy)) > 130 ? 1 : 0;
+      }
+    }
 
+    const minDim = Math.min(sw, sh);
+    const rxMin = Math.floor(minDim * 0.22);
+    const rxMax = Math.floor(minDim * 0.48);
     let best = null;
-    for (let dy = -Math.floor(h * 0.12); dy <= Math.floor(h * 0.12); dy += 16) {
-      for (let dx = -Math.floor(w * 0.12); dx <= Math.floor(w * 0.12); dx += 16) {
-        const cx = Math.floor(cx0 + dx);
-        const cy = Math.floor(cy0 + dy);
-        if (cx < 20 || cy < 20 || cx > w - 20 || cy > h - 20) continue;
 
-        for (let r = rMin; r <= rMax; r += 6) {
-          let score = 0;
-          let samples = 0;
-          for (let a = 0; a < 360; a += 10) {
-            const rad = a * Math.PI / 180;
-            const x = Math.round(cx + r * Math.cos(rad));
-            const y = Math.round(cy + r * Math.sin(rad));
-            if (x < 1 || y < 1 || x >= w - 1 || y >= h - 1) continue;
-            samples++;
-            if (edges[y * w + x]) score++;
+    // Coarse search over center, major/minor radii, and ellipse rotation.
+    for (let cy = Math.floor(sh * 0.35); cy <= Math.floor(sh * 0.65); cy += 12) {
+      for (let cx = Math.floor(sw * 0.35); cx <= Math.floor(sw * 0.65); cx += 12) {
+        for (let rx = rxMin; rx <= rxMax; rx += 8) {
+          for (let ratio = 0.55; ratio <= 1.0; ratio += 0.1) {
+            const ry = Math.max(10, Math.round(rx * ratio));
+            for (let deg = -40; deg <= 40; deg += 10) {
+              const theta = deg * Math.PI / 180;
+              const c = Math.cos(theta), s = Math.sin(theta);
+              let hit = 0;
+              let samples = 0;
+              for (let a = 0; a < 360; a += 8) {
+                const t = a * Math.PI / 180;
+                const ex = rx * Math.cos(t);
+                const ey = ry * Math.sin(t);
+                const x = Math.round(cx + ex * c - ey * s);
+                const y = Math.round(cy + ex * s + ey * c);
+                if (x < 1 || y < 1 || x >= sw - 1 || y >= sh - 1) continue;
+                samples++;
+                if (edges[y * sw + x]) hit++;
+              }
+              if (samples < 30) continue;
+              const score = hit / samples;
+              if (!best || score > best.score) {
+                best = { cx, cy, rx, ry, theta, score };
+              }
+            }
           }
-          if (samples < 20) continue;
-          const ratio = score / samples;
-          if (!best || ratio > best.ratio) best = { cx, cy, r, ratio };
         }
       }
     }
 
-    if (!best || best.ratio < 0.28) return null;
+    if (!best || best.score < 0.26) return null;
+
+    // Refine locally around best for a sharper estimate.
+    best = refineEllipse(edges, sw, sh, best);
+    return {
+      cx: best.cx / scale,
+      cy: best.cy / scale,
+      rx: best.rx / scale,
+      ry: best.ry / scale,
+      theta: best.theta,
+      score: best.score
+    };
+  }
+
+  function refineEllipse(edges, w, h, seed) {
+    let best = seed;
+    for (let cy = Math.max(10, seed.cy - 10); cy <= Math.min(h - 11, seed.cy + 10); cy += 3) {
+      for (let cx = Math.max(10, seed.cx - 10); cx <= Math.min(w - 11, seed.cx + 10); cx += 3) {
+        for (let rx = Math.max(12, seed.rx - 8); rx <= seed.rx + 8; rx += 3) {
+          for (let ry = Math.max(10, seed.ry - 8); ry <= seed.ry + 8; ry += 3) {
+            for (let deg = -12; deg <= 12; deg += 3) {
+              const theta = seed.theta + (deg * Math.PI / 180);
+              const c = Math.cos(theta), s = Math.sin(theta);
+              let hit = 0;
+              let samples = 0;
+              for (let a = 0; a < 360; a += 6) {
+                const t = a * Math.PI / 180;
+                const ex = rx * Math.cos(t);
+                const ey = ry * Math.sin(t);
+                const x = Math.round(cx + ex * c - ey * s);
+                const y = Math.round(cy + ex * s + ey * c);
+                if (x < 1 || y < 1 || x >= w - 1 || y >= h - 1) continue;
+                samples++;
+                if (edges[y * w + x]) hit++;
+              }
+              if (samples < 40) continue;
+              const score = hit / samples;
+              if (score > best.score) best = { cx, cy, rx, ry, theta, score };
+            }
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  function ellipseCardinalPoints(el) {
+    // Intersections with the image up/right/down/left rays from center.
+    const dirs = [
+      [0, -1],
+      [1, 0],
+      [0, 1],
+      [-1, 0]
+    ];
+    const c = Math.cos(el.theta), s = Math.sin(el.theta);
+    const pts = [];
+    for (const [dx, dy] of dirs) {
+      // Ray length to ellipse boundary in direction (dx,dy).
+      const ux = dx * c + dy * s;
+      const uy = -dx * s + dy * c;
+      const denom = Math.sqrt((ux * ux) / (el.rx * el.rx) + (uy * uy) / (el.ry * el.ry));
+      const t = denom > 1e-9 ? (1 / denom) : 0;
+      pts.push([el.cx + dx * t, el.cy + dy * t]);
+    }
+    return pts;
+  }
     return best;
   }
 
