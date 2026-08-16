@@ -1366,7 +1366,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.160-beta / 2026-08-16 / 46ad67c</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.161-beta / 2026-08-16 / f49de80</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1854,16 +1854,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.160-beta / 2026-08-16 / 46ad67c</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.161-beta / 2026-08-16 / f49de80</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.160-beta / 2026-08-16 / 46ad67c';
+const APP_VERSION = '0.1.161-beta / 2026-08-16 / f49de80';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.160-beta-2026-08-16-46ad67c';
+const POLICY_CACHE_BUST = '0.1.161-beta-2026-08-16-f49de80';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -7195,7 +7195,9 @@ function autoScoreEntryMode() {
 
 /**
  * Keep entry mode in sync with the current player's remaining.
- * Skips dart→visit mid-visit so an in-progress dart visit is not cleared.
+ * Auto only upgrades Visit → By dart when rem hits Switch≤.
+ * Never auto-downgrades By dart → Visit (board open / render must not undo a
+ * manual By dart choice).
  */
 function syncAutoScoreEntryMode(opts) {
   const want = autoScoreEntryMode();
@@ -7207,8 +7209,7 @@ function syncAutoScoreEntryMode(opts) {
     syncEntryToggle();
     return;
   }
-  if (want === 'visit' && scoreEntryMode === 'dart'
-      && match.visitDarts && match.visitDarts.length)
+  if (want === 'visit' && scoreEntryMode === 'dart')
     return;
   const o = Object.assign({ render: false }, opts || {});
   setScoreEntryMode(want, o);
