@@ -1043,6 +1043,15 @@
   .fit-result .quality {
     font-size: 13px; font-weight: 700; margin-top: 8px; line-height: 1.35;
   }
+  .fit-result .quality .fit-ks-info {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; margin-left: 4px; padding: 0; vertical-align: middle;
+    border-radius: 50%; border: 1px solid currentColor; background: transparent;
+    color: inherit; font-size: 11px; font-weight: 800; line-height: 1; cursor: pointer;
+    opacity: 0.85;
+  }
+  .fit-result .quality .fit-ks-info:active { opacity: 1; background: rgba(255,255,255,0.08); }
+  .fit-aim-sigmas.hidden { display: none; }
   .fit-result .quality.low { color: #ff8a8a; }
   .fit-result .quality.fair { color: #ffb84d; }
   .fit-result .quality.good { color: #8fdf8f; }
@@ -1337,7 +1346,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.151-beta / 2026-08-16 / 46ad67c</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.152-beta / 2026-08-16 / 46ad67c</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1375,6 +1384,26 @@
       <button type="button" id="groupModalDelete" class="danger hidden">Delete</button>
       <button type="button" id="groupModalCancel">Cancel</button>
       <button type="button" id="groupModalSave" class="primary">Save group</button>
+    </div>
+  </div>
+</div>
+<div class="player-modal hidden" id="fitKsInfoModal" role="dialog" aria-modal="true" aria-label="Confidence classification">
+  <div class="player-box">
+    <h2>Fit confidence</h2>
+    <p>The colored line is the <b>worse</b> of two scores:</p>
+    <p><b>1. σ precision</b> — how tightly σ is known from sample size n<br>
+      Low: n &lt; 8<br>
+      Fair: n &lt; 40 or ±% wider than ~16%<br>
+      Good: n &lt; 100 or ±% wider than ~8%<br>
+      High: n ≥ 100 and a tight ±% band</p>
+    <p><b>2. Model fit (KS p)</b> — do distances look like a Rayleigh curve at this σ?<br>
+      KS p &lt; 0.01 → mismatch (caps at Low)<br>
+      KS p &lt; 0.05 → weak (caps at Fair)<br>
+      KS p &lt; 0.20 → acceptable<br>
+      KS p ≥ 0.20 → good model fit</p>
+    <p class="hint">±% and (lo–hi mm) are the 95% CI on σ. KS p is how surprising the curve mismatch would be if the model were true.</p>
+    <div class="player-actions" style="grid-template-columns:1fr">
+      <button type="button" id="fitKsInfoClose" class="primary">Close</button>
     </div>
   </div>
 </div>
@@ -1735,17 +1764,17 @@
     <div class="fit-measure-aim-row">
       <button type="button" id="fitMeasureAimBtn" aria-pressed="false">
         Aim · Bull
-        <span class="sub">Tap to choose aim on the board</span>
+        <span class="sub">Select by clicking on the dartboard</span>
       </button>
     </div>
     <div class="board-wrap fit-measure-board" id="fitMeasureBoardWrap">
       <canvas id="fitMeasureBoard" width="800" height="800"
               aria-label="Tap aim or dart landing on the board"></canvas>
-      <p class="hint" id="fitMeasureBoardHint">Tap Aim, then choose a target on the board</p>
+      <p class="hint" id="fitMeasureBoardHint" style="display:none"></p>
     </div>
     <div class="fit-entry" style="grid-template-columns:1fr auto">
       <input id="fitRadius" type="number" inputmode="decimal" min="0" max="340" step="0.1"
-             placeholder="Tap board first" readonly>
+             placeholder="Select by clicking on the dartboard" readonly>
       <button type="button" class="primary" id="fitAdd">Add</button>
     </div>
     </div><!-- /fitPanelMeasure -->
@@ -1755,7 +1784,7 @@
       <div class="big" id="fitSigma">—</div>
       <div class="quality" id="fitQuality"></div>
       <div class="sub" id="fitDetail">Add throws to estimate σ</div>
-      <div class="fit-aim-sigmas" id="fitAimSigmas"></div>
+      <div class="fit-aim-sigmas hidden" id="fitAimSigmas"></div>
     </div>
     <canvas id="fitChart" width="800" height="400"></canvas>
     <div class="fit-list" id="fitList"><div class="empty">No throws yet</div></div>
@@ -1799,16 +1828,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.151-beta / 2026-08-16 / 46ad67c</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.152-beta / 2026-08-16 / 46ad67c</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.151-beta / 2026-08-16 / 46ad67c';
+const APP_VERSION = '0.1.152-beta / 2026-08-16 / 46ad67c';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.151-beta-2026-08-16-46ad67c';
+const POLICY_CACHE_BUST = '0.1.152-beta-2026-08-16-46ad67c';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -8528,6 +8557,15 @@ if (elDartEntryToggle) {
     if (e.target === modal) close();
   });
 })();
+(function wireFitKsInfo() {
+  const modal = document.getElementById('fitKsInfoModal');
+  if (!modal) return;
+  const closeBtn = document.getElementById('fitKsInfoClose');
+  if (closeBtn) closeBtn.addEventListener('click', closeFitKsInfoModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeFitKsInfoModal();
+  });
+})();
 for (const el of [elSigma0, elSigma1, elSigma2]) {
   if (!el) continue;
   el.addEventListener('change', () => commitSigmaInput(el));
@@ -9924,13 +9962,15 @@ function syncFitSaveButton() {
 function renderFitAimSigmas() {
   if (!elFitAimSigmas) return;
   const rows = fitPerAimRows();
-  if (!rows.length) {
+  // Only show when ≥2 aims (otherwise it duplicates global σ).
+  if (rows.length < 2) {
     elFitAimSigmas.innerHTML = '';
+    elFitAimSigmas.classList.add('hidden');
     return;
   }
-  const multi = rows.length > 1;
+  elFitAimSigmas.classList.remove('hidden');
   let html = '<div class="row" style="grid-template-columns:1fr;color:var(--mute);font-size:11px;font-weight:700">'
-    + (multi ? 'Per-aim σ (vs global above)' : 'Aim σ')
+    + 'Per-aim σ'
     + '</div>';
   for (const r of rows) {
     const lab = r.aim === 'bull' ? 'Bull' : r.aim;
@@ -10078,6 +10118,7 @@ function drawFitMeasureBoard() {
     drawFitAimPickDim(c);
     const hint = document.getElementById('fitMeasureBoardHint');
     if (hint) {
+      hint.style.display = '';
       hint.textContent = 'Choose aim: tap Bull, a triple, or a double (grey = not an aim)';
     }
     return;
@@ -10100,12 +10141,14 @@ function drawFitMeasureBoard() {
   }
   const hint = document.getElementById('fitMeasureBoardHint');
   if (hint) {
-    const lab = aim === 'bull' ? 'Bull' : aim;
     if (fitMeasurePending) {
+      const lab = aim === 'bull' ? 'Bull' : aim;
       hint.textContent = 'Landing marked · ' + Number(fitMeasurePending.r).toFixed(1)
         + ' mm from ' + lab + ' — edit box or Add';
+      hint.style.display = '';
     } else {
-      hint.textContent = 'Aim ' + lab + ' (yellow) · tap where the dart landed';
+      hint.textContent = '';
+      hint.style.display = 'none';
     }
   }
 }
@@ -10162,9 +10205,9 @@ function syncMeasureAimChrome() {
   const maxR = onBull ? FIT_R_MAX : FIT_AIM_R_MAX;
   if (elFitRadius) {
     elFitRadius.max = String(maxR);
-    elFitRadius.placeholder = onBull
-      ? ('Distance from bull 0–' + FIT_R_MAX + ' mm')
-      : ('Distance from ' + aim + ' 0–' + FIT_AIM_R_MAX + ' mm');
+    elFitRadius.placeholder = fitMeasurePending
+      ? 'Distance (mm)'
+      : 'Select by clicking on the dartboard';
   }
   const aimLab = onBull ? 'Bull' : aim;
   const btn = document.getElementById('fitMeasureAimBtn');
@@ -10173,15 +10216,15 @@ function syncMeasureAimChrome() {
     btn.setAttribute('aria-pressed', fitMeasurePickAim ? 'true' : 'false');
     if (fitMeasurePickAim) {
       btn.innerHTML = 'Choosing aim…'
-        + '<span class="sub">Tap Bull / triple / double on the board</span>';
+        + '<span class="sub">Select by clicking on the dartboard</span>';
     } else {
       btn.innerHTML = 'Aim · ' + aimLab
-        + '<span class="sub">Tap to change aim on the board</span>';
+        + '<span class="sub">Select by clicking on the dartboard</span>';
     }
   }
   const help = document.getElementById('fitMeasureHelp');
   if (help) {
-    help.innerHTML = 'Tap <b>Aim</b> and pick Bull / T / D on the board (colored beds). '
+    help.innerHTML = 'Tap <b>Aim</b>, then select Bull / T / D by clicking on the dartboard. '
       + 'Then tap each <b>landing</b> on the board (required) — distance autofills; tweak mm if needed, then Add.';
   }
   if (fitMeasureBoardAim != null && fitMeasureBoardAim !== aim)
@@ -10525,20 +10568,41 @@ function refreshFitSummary() {
     const pct = Math.max(1, Math.round(q.pct || 0));
     let ks = '';
     if (gof.p != null && Number.isFinite(gof.p)) {
-      ks = ' · KS p=' + (gof.p < 0.001 ? gof.p.toExponential(1) : gof.p.toFixed(2));
+      const pTxt = gof.p < 0.001 ? gof.p.toExponential(1) : gof.p.toFixed(2);
+      ks = ' · KS p=' + pTxt
+        + ' <button type="button" class="fit-ks-info" id="fitKsInfoBtn"'
+        + ' title="How confidence is classified" aria-label="How confidence is classified">i</button>';
     }
     elFitSigma.textContent = 'σ = ' + fit.sigma.toFixed(1) + ' mm';
     elFitQuality.className = 'quality ' + q.level;
-    elFitQuality.textContent = q.label
+    elFitQuality.innerHTML = q.label
       + ' · ±' + pct + '% ('
       + fit.ciLo.toFixed(1) + '–' + fit.ciHi.toFixed(1) + ' mm)'
       + ks;
+    const ksBtn = document.getElementById('fitKsInfoBtn');
+    if (ksBtn) {
+      ksBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openFitKsInfoModal();
+      });
+    }
     elFitDetail.textContent = '';
     elFitDetail.style.display = 'none';
   }
   renderFitAimSigmas();
   drawFitChart(fit);
   syncFitSaveButton();
+}
+
+function openFitKsInfoModal() {
+  const modal = document.getElementById('fitKsInfoModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeFitKsInfoModal() {
+  const modal = document.getElementById('fitKsInfoModal');
+  if (modal) modal.classList.add('hidden');
 }
 
 function parseThrowFields(rRaw, aim) {
