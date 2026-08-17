@@ -39,12 +39,16 @@ const CameraScorer = (() => {
   let statusEl = null;
   let zoomWrap = null;
   let zoomInput = null;
+  let trainToolsEl = null;
+  let trainMetaEl = null;
 
   let stream = null;
   let videoTrack = null;
   let running = false;
   let rafId = null;
   let commitFn = null;
+  let runMode = 'autoscore';
+  const TRAINING_LOG_KEY = 'dartsTrainingLogV1';
 
   let calibration = null; // { H, Hinv, cx, cy, pxPerMm }
   let lastCalibTryAt = 0;
@@ -60,9 +64,10 @@ const CameraScorer = (() => {
   const REVALIDATE_INTERVAL_MS = 2000;
   const REVALIDATE_FAIL_MAX = 3;
 
-  function init(container, onCommit) {
+  function init(container, onCommit, options) {
     containerEl = container;
     commitFn = onCommit;
+    runMode = (options && options.mode === 'training') ? 'training' : 'autoscore';
     container.innerHTML = `
       <div class="cam-scorer">
         <div class="cam-view">
@@ -74,6 +79,11 @@ const CameraScorer = (() => {
           <label for="camZoomInput" style="font-size:12px;color:#bdbdbd">Zoom</label>
           <input id="camZoomInput" type="range" min="1" max="1" step="0.1" value="1" style="flex:1">
         </div>
+        <div class="cam-controls hidden" id="camTrainTools">
+          <button type="button" id="camTrainExport" class="cam-btn">Export labels</button>
+          <button type="button" id="camTrainClear" class="cam-btn">Clear labels</button>
+        </div>
+        <div class="cam-status" id="camTrainMeta"></div>
       </div>
     `;
 
@@ -85,6 +95,20 @@ const CameraScorer = (() => {
     statusEl = document.getElementById('camStatus');
     zoomWrap = document.getElementById('camZoomWrap');
     zoomInput = document.getElementById('camZoomInput');
+    trainToolsEl = document.getElementById('camTrainTools');
+    trainMetaEl = document.getElementById('camTrainMeta');
+
+    if (runMode === 'training') {
+      if (trainToolsEl) trainToolsEl.classList.remove('hidden');
+      const btnExport = document.getElementById('camTrainExport');
+      const btnClear = document.getElementById('camTrainClear');
+      if (btnExport) btnExport.addEventListener('click', exportTrainingLog);
+      if (btnClear) btnClear.addEventListener('click', clearTrainingLog);
+      renderTrainingMeta();
+    } else {
+      if (trainToolsEl) trainToolsEl.classList.add('hidden');
+      if (trainMetaEl) trainMetaEl.textContent = '';
+    }
 
     // Saved calibration is only a hint; re-validate on next enter().
     try {
@@ -103,7 +127,11 @@ const CameraScorer = (() => {
     running = true;
     await ensureCamera();
     if (!running) return;
-    setStatus(calibration ? 'Board lock restored. Autoscore active.' : 'Cannot find dartboard. Reposition camera until it autodetects.');
+    if (runMode === 'training') {
+      setStatus(calibration ? 'Board lock restored. Training capture active.' : 'Move closer — board must fill most of the frame.');
+    } else {
+      setStatus(calibration ? 'Board lock restored. Autoscore active.' : 'Move closer — board must fill most of the frame.');
+    }
     loop();
   }
 
@@ -324,23 +352,127 @@ const CameraScorer = (() => {
     if (angle < 0) angle += 2 * Math.PI;
 
     const label = scoreLabel(dist, angle);
-    if (label === 'Miss') {
-      setStatus('Motion outside board — ignored');
-      return;
+    if (runMode === 'training') {
+      captureTrainingSample(frameData, det, bx, by, label);
+    } else {
+      if (label === 'Miss') {
+        setStatus('Motion outside board — ignored');
+        return;
+      }
+      setStatus('Detected ' + label + ' (' + det.pixels + 'px)');
+      flash(det.x, det.y, label);
+
+      const payload = { x: bx, y: by, label: label, ts: new Date().toISOString() };
+      try {
+        window.dispatchEvent(new CustomEvent('darts-autoscore-detected', { detail: payload }));
+      } catch (_) {}
+
+      if (typeof commitFn === 'function') commitFn(label, { x: bx, y: by });
     }
-    setStatus('Detected ' + label + ' (' + det.pixels + 'px)');
-    flash(det.x, det.y, label);
-
-    const payload = { x: bx, y: by, label: label, ts: new Date().toISOString() };
-    try {
-      window.dispatchEvent(new CustomEvent('darts-autoscore-detected', { detail: payload }));
-    } catch (_) {}
-
-    if (typeof commitFn === 'function') commitFn(label, { x: bx, y: by });
 
     // Rebase background immediately so already-thrown darts do not retrigger.
     backgroundGray = frameToGray(frameData, hiddenCanvas.width, hiddenCanvas.height);
     lastScoreAt = Date.now();
+  }
+
+  function captureTrainingSample(frameData, det, bx, by, suggestedLabel) {
+    const ts = new Date().toISOString();
+    const guess = (suggestedLabel && suggestedLabel !== 'Miss') ? suggestedLabel : '';
+    const labelRaw = window.prompt('Training label (e.g. T20, S5, D16, Bull, 25, Miss):', guess);
+    if (labelRaw == null) {
+      setStatus('Training sample skipped');
+      return;
+    }
+    const label = String(labelRaw || '').trim();
+    if (!label) {
+      setStatus('Training sample skipped (empty label)');
+      return;
+    }
+
+    const snap = imageDataToJpeg(frameData, hiddenCanvas.width, hiddenCanvas.height, 0.86);
+    const clean = label.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'label';
+    downloadDataUrl(snap, 'dart_train_' + ts.replace(/[:.]/g, '-') + '_' + clean + '.jpg');
+
+    const row = {
+      ts: ts,
+      label: label,
+      guess: suggestedLabel,
+      boardXY: [round1(bx), round1(by)],
+      imgXY: [round1(det.x), round1(det.y)],
+      pixels: det.pixels | 0
+    };
+    appendTrainingLog(row);
+    setStatus('Saved training sample: ' + label);
+    renderTrainingMeta();
+  }
+
+  function round1(v) {
+    return Math.round((Number(v) || 0) * 10) / 10;
+  }
+
+  function imageDataToJpeg(frameData, w, h, quality) {
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const cctx = c.getContext('2d');
+    cctx.putImageData(new ImageData(frameData, w, h), 0, 0);
+    return c.toDataURL('image/jpeg', quality == null ? 0.86 : quality);
+  }
+
+  function downloadDataUrl(url, name) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  function loadTrainingLog() {
+    try {
+      const raw = localStorage.getItem(TRAINING_LOG_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveTrainingLog(rows) {
+    try {
+      localStorage.setItem(TRAINING_LOG_KEY, JSON.stringify((rows || []).slice(-2000)));
+    } catch (_) {}
+  }
+
+  function appendTrainingLog(row) {
+    const rows = loadTrainingLog();
+    rows.push(row);
+    saveTrainingLog(rows);
+  }
+
+  function clearTrainingLog() {
+    saveTrainingLog([]);
+    renderTrainingMeta();
+    setStatus('Training labels cleared');
+  }
+
+  function exportTrainingLog() {
+    const rows = loadTrainingLog();
+    if (!rows.length) {
+      setStatus('No training labels to export');
+      return;
+    }
+    const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    downloadDataUrl(url, 'dart_training_labels_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json');
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStatus('Exported training labels');
+  }
+
+  function renderTrainingMeta() {
+    if (!trainMetaEl || runMode !== 'training') return;
+    const rows = loadTrainingLog();
+    trainMetaEl.textContent = 'Training labels saved: ' + rows.length + ' (photos download immediately)';
   }
 
   function detectMotionBlob(frameData) {
