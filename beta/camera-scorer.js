@@ -22,6 +22,8 @@ const CameraScorer = (() => {
   // Edge detector usually finds surround/number ring, not double wire ring.
   // Double ring is ~82% of the detected outer edge radius.
   const DETECT_TO_DOUBLE_SCALE = 0.82;
+
+  const CALIB_BOARD_PTS = [
     [0, R_OUTER_DOUBLE],
     [R_OUTER_DOUBLE, 0],
     [0, -R_OUTER_DOUBLE],
