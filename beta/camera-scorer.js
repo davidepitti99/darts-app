@@ -54,7 +54,7 @@ const CameraScorer = (() => {
   let frameTicker = 0;
   let stableDetectCount = 0;
   let lastDetectCenter = null;
-  const STABLE_DETECTS_NEEDED = 3;
+  const STABLE_DETECTS_NEEDED = 2;
 
   function init(container, onCommit) {
     containerEl = container;
@@ -251,7 +251,7 @@ const CameraScorer = (() => {
 
   function tryAutoDetectBoard(frame) {
     const now = Date.now();
-    if (now - lastCalibTryAt < 800) return;
+    if (now - lastCalibTryAt < 500) return;
     lastCalibTryAt = now;
 
     const ellipse = detectBoardEllipse(frame, hiddenCanvas.width, hiddenCanvas.height);
@@ -264,7 +264,7 @@ const CameraScorer = (() => {
     // Require stable consecutive detections at roughly the same position.
     if (lastDetectCenter) {
       const drift = Math.hypot(ellipse.cx - lastDetectCenter[0], ellipse.cy - lastDetectCenter[1]);
-      if (drift > ellipse.rx * 0.25) {
+      if (drift > ellipse.rx * 0.5) {
         stableDetectCount = 1;
       } else {
         stableDetectCount += 1;
