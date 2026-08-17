@@ -11,11 +11,11 @@ const CameraScorer = (() => {
   const R_INNER_DOUBLE = 162;
   const R_OUTER_DOUBLE = 170;
 
-  const DIFF_THRESHOLD = 28;
-  const MIN_BLOB_PIXELS = 35;
-  const MAX_BLOB_PIXELS = 14000;
-  const CONFIRM_FRAMES = 2;
-  const COOLDOWN_MS = 1800;
+  const DIFF_THRESHOLD = 35;
+  const MIN_BLOB_PIXELS = 80;
+  const MAX_BLOB_PIXELS = 12000;
+  const CONFIRM_FRAMES = 4;
+  const COOLDOWN_MS = 2500;
 
   const CALIB_BOARD_PTS = [
     [0, R_OUTER_DOUBLE],
@@ -84,10 +84,14 @@ const CameraScorer = (() => {
     });
     document.getElementById('camManual').addEventListener('click', startManualCalibration);
 
+    // Saved calibration is only a hint; re-validate on next enter().
     try {
       const saved = localStorage.getItem('dartsCamCalibV5');
       if (saved) calibration = JSON.parse(saved);
     } catch (_) {}
+    // Clear stale locks from prior sessions — force re-detect on camera start.
+    calibration = null;
+    localStorage.removeItem('dartsCamCalibV5');
 
     setupZoomControl();
   }
@@ -297,6 +301,10 @@ const CameraScorer = (() => {
     if (angle < 0) angle += 2 * Math.PI;
 
     const label = scoreLabel(dist, angle);
+    if (label === 'Miss') {
+      setStatus('Motion outside board — ignored');
+      return;
+    }
     setStatus('Detected ' + label + ' (' + det.pixels + 'px)');
     flash(det.x, det.y, label);
 
@@ -424,8 +432,13 @@ const CameraScorer = (() => {
       }
     }
 
-    if (!best || best.score < 0.26) return null;
+    if (!best || best.score < 0.42) return null;
     best = refineEllipse(edges, sw, sh, best);
+    // Validate: a real dartboard has a concentric ring (triple) at ~60% radius.
+    const innerRx = Math.round(best.rx * 0.61);
+    const innerRy = Math.round(best.ry * 0.61);
+    const innerScore = ellipseScore(edges, sw, sh, best.cx, best.cy, innerRx, innerRy, best.theta, 8);
+    if (innerScore < 0.20) return null;
     return {
       cx: best.cx / scale,
       cy: best.cy / scale,
