@@ -55,6 +55,10 @@ const CameraScorer = (() => {
   let stableDetectCount = 0;
   let lastDetectCenter = null;
   const STABLE_DETECTS_NEEDED = 2;
+  let lastRevalidateAt = 0;
+  let revalidateFailCount = 0;
+  const REVALIDATE_INTERVAL_MS = 2000;
+  const REVALIDATE_FAIL_MAX = 3;
 
   function init(container, onCommit) {
     containerEl = container;
@@ -204,8 +208,31 @@ const CameraScorer = (() => {
       backgroundGray = frameToGray(frame.data, hiddenCanvas.width, hiddenCanvas.height);
       if (frameTicker % 30 === 0) setStatus('Board locked. Learning background…');
       drawOverlay();
+      lastRevalidateAt = Date.now();
+      revalidateFailCount = 0;
       rafId = requestAnimationFrame(loop);
       return;
+    }
+
+    // Periodically verify board is still in view.
+    const nowRv = Date.now();
+    if (nowRv - lastRevalidateAt > REVALIDATE_INTERVAL_MS && nowRv - lastScoreAt > COOLDOWN_MS) {
+      lastRevalidateAt = nowRv;
+      const rvEllipse = detectBoardEllipse(frame, hiddenCanvas.width, hiddenCanvas.height);
+      if (!rvEllipse) {
+        revalidateFailCount += 1;
+        if (revalidateFailCount >= REVALIDATE_FAIL_MAX) {
+          calibration = null;
+          backgroundGray = null;
+          pendingDetection = null;
+          clearOverlay();
+          setStatus('Board lost — reposition camera.');
+          rafId = requestAnimationFrame(loop);
+          return;
+        }
+      } else {
+        revalidateFailCount = 0;
+      }
     }
 
     const now = Date.now();
