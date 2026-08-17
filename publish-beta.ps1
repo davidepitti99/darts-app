@@ -66,6 +66,13 @@ $updated = [regex]::Replace(
   1
 )
 
+$updated = [regex]::Replace(
+  $updated,
+  '(?m)(<script src="camera-scorer\.js)(\?v=[^"]*)?("\></script>)',
+  ('${1}?v=' + $cacheBust + '${3}'),
+  1
+)
+
 if ($updated -ne $raw) {
   $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
   [System.IO.File]::WriteAllText($indexPath, $updated, $utf8NoBom)
