@@ -195,7 +195,7 @@ const CameraScorer = (() => {
 
     if (!calibration) {
       tryAutoDetectBoard(frame);
-      if (frameTicker % 45 === 0) setStatus('Cannot find dartboard. Reposition camera until it autodetects.');
+      if (frameTicker % 45 === 0) setStatus('Move closer — board must fill most of the frame.');
       rafId = requestAnimationFrame(loop);
       return;
     }
@@ -429,6 +429,8 @@ const CameraScorer = (() => {
 
     if (!best || best.score < 0.45) return null;
     best = refineEllipse(edges, sw, sh, best);
+    // Reject if board is too small in frame — need ≥60% of frame height.
+    if (best.ry * 2 < sh * 0.55) return null;
     // Concentric ring at ~60% radius (triple wire).
     const innerRx = Math.round(best.rx * 0.61);
     const innerRy = Math.round(best.ry * 0.61);
@@ -602,34 +604,13 @@ const CameraScorer = (() => {
     return 'S' + n;
   }
 
-  // Map video coordinate to overlay canvas coordinate (accounts for cover crop).
-  function vidToCanvas(vx, vy) {
-    const cw = overlayCanvas.width;
-    const ch = overlayCanvas.height;
-    const vw = video.videoWidth || cw;
-    const vh = video.videoHeight || ch;
-    const scale = Math.max(cw / vw, ch / vh);
-    const ox = (vw * scale - cw) / 2;
-    const oy = (vh * scale - ch) / 2;
-    return [vx * scale - ox, vy * scale - oy];
-  }
-
-  function syncOverlaySize() {
-    const el = overlayCanvas.parentElement;
-    if (!el) return;
-    const sz = Math.round(el.clientWidth * (window.devicePixelRatio || 1));
-    if (overlayCanvas.width !== sz || overlayCanvas.height !== sz) {
-      overlayCanvas.width = sz;
-      overlayCanvas.height = sz;
-    }
-  }
-
   function drawOverlay() {
-    syncOverlaySize();
+    overlayCanvas.width = video.videoWidth || 1280;
+    overlayCanvas.height = video.videoHeight || 720;
     clearOverlay();
     if (!calibration) return;
     overlayCtx.strokeStyle = 'rgba(255,210,63,0.45)';
-    overlayCtx.lineWidth = 1;
+    overlayCtx.lineWidth = 2;
     drawProjectedCircle(R_OUTER_DOUBLE);
     drawProjectedCircle(R_OUTER_TRIPLE);
     drawProjectedCircle(R_INNER_TRIPLE);
@@ -639,7 +620,6 @@ const CameraScorer = (() => {
   }
 
   function drawProjectedSectorWires() {
-    // Draw inferred spoke wires at sector boundaries.
     overlayCtx.strokeStyle = 'rgba(255,210,63,0.35)';
     overlayCtx.lineWidth = 1;
     for (let k = 0; k < 20; k++) {
@@ -651,8 +631,8 @@ const CameraScorer = (() => {
   }
 
   function drawProjectedLine(p0, p1) {
-    const a = vidToCanvas(...applyH(calibration.Hinv, p0));
-    const b = vidToCanvas(...applyH(calibration.Hinv, p1));
+    const a = applyH(calibration.Hinv, p0);
+    const b = applyH(calibration.Hinv, p1);
     overlayCtx.beginPath();
     overlayCtx.moveTo(a[0], a[1]);
     overlayCtx.lineTo(b[0], b[1]);
@@ -664,8 +644,7 @@ const CameraScorer = (() => {
     const steps = 52;
     for (let i = 0; i <= steps; i++) {
       const a = 2 * Math.PI * i / steps;
-      const raw = applyH(calibration.Hinv, [rMm * Math.cos(a), rMm * Math.sin(a)]);
-      const p = vidToCanvas(raw[0], raw[1]);
+      const p = applyH(calibration.Hinv, [rMm * Math.cos(a), rMm * Math.sin(a)]);
       if (i === 0) overlayCtx.moveTo(p[0], p[1]);
       else overlayCtx.lineTo(p[0], p[1]);
     }
@@ -674,18 +653,17 @@ const CameraScorer = (() => {
 
   function flash(x, y, label) {
     drawOverlay();
-    const [cx, cy] = vidToCanvas(x, y);
     overlayCtx.beginPath();
-    overlayCtx.arc(cx, cy, 12, 0, 2 * Math.PI);
+    overlayCtx.arc(x, y, 14, 0, 2 * Math.PI);
     overlayCtx.fillStyle = 'rgba(255,210,63,0.85)';
     overlayCtx.fill();
     overlayCtx.strokeStyle = '#fff';
     overlayCtx.lineWidth = 2;
     overlayCtx.stroke();
-    overlayCtx.font = 'bold 20px sans-serif';
+    overlayCtx.font = 'bold 22px sans-serif';
     overlayCtx.fillStyle = '#fff';
     overlayCtx.textAlign = 'center';
-    overlayCtx.fillText(label, cx, cy - 18);
+    overlayCtx.fillText(label, x, y - 20);
     setTimeout(drawOverlay, 900);
   }
 
