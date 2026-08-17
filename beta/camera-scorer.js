@@ -19,7 +19,9 @@ const CameraScorer = (() => {
   const CONFIRM_POS_TOLERANCE_PX = 70;
   const CONFIRM_MISS_GRACE_FRAMES = 2;
 
-  const CALIB_BOARD_PTS = [
+  // Edge detector usually finds surround/number ring, not double wire ring.
+  // Double ring is ~82% of the detected outer edge radius.
+  const DETECT_TO_DOUBLE_SCALE = 0.82;
     [0, R_OUTER_DOUBLE],
     [R_OUTER_DOUBLE, 0],
     [0, -R_OUTER_DOUBLE],
@@ -404,12 +406,12 @@ const CameraScorer = (() => {
     }
 
     const minDim = Math.min(sw, sh);
-    const rxMin = Math.floor(minDim * 0.22);
+    const rxMin = Math.floor(minDim * 0.12);
     const rxMax = Math.floor(minDim * 0.48);
     let best = null;
 
-    for (let cy = Math.floor(sh * 0.35); cy <= Math.floor(sh * 0.65); cy += 12) {
-      for (let cx = Math.floor(sw * 0.35); cx <= Math.floor(sw * 0.65); cx += 12) {
+    for (let cy = Math.floor(sh * 0.15); cy <= Math.floor(sh * 0.85); cy += 10) {
+      for (let cx = Math.floor(sw * 0.15); cx <= Math.floor(sw * 0.85); cx += 10) {
         for (let rx = rxMin; rx <= rxMax; rx += 8) {
           for (let ratio = 0.5; ratio <= 1.0; ratio += 0.1) {
             const ry = Math.max(10, Math.round(rx * ratio));
@@ -435,8 +437,8 @@ const CameraScorer = (() => {
     return {
       cx: best.cx / scale,
       cy: best.cy / scale,
-      rx: best.rx / scale,
-      ry: best.ry / scale,
+      rx: best.rx / scale * DETECT_TO_DOUBLE_SCALE,
+      ry: best.ry / scale * DETECT_TO_DOUBLE_SCALE,
       theta: best.theta,
       score: best.score
     };
