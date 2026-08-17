@@ -429,8 +429,8 @@ const CameraScorer = (() => {
 
     if (!best || best.score < 0.45) return null;
     best = refineEllipse(edges, sw, sh, best);
-    // Reject if board is too small in frame — need ≥60% of frame height.
-    if (best.ry * 2 < sh * 0.55) return null;
+    // Reject if board is too small in frame — need ≥30% of frame height.
+    if (best.ry * 2 < sh * 0.30) return null;
     // Concentric ring at ~60% radius (triple wire).
     const innerRx = Math.round(best.rx * 0.61);
     const innerRy = Math.round(best.ry * 0.61);
