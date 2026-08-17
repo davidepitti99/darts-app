@@ -952,7 +952,7 @@
   }
 
   .entry-toggle {
-    display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; margin: 0 0 10px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin: 0 0 10px;
     background: var(--panel); border-radius: 10px; padding: 4px;
   }
   .entry-toggle.hidden { display: none !important; }
@@ -1009,6 +1009,7 @@
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
   }
   .actions.has-ok { grid-template-columns: 1fr 1fr 1fr; }
+  .actions.has-training { grid-template-columns: 1fr 1fr 1fr; }
   .actions button, .pad button {
     background: var(--field); color: #fff; border: 1px solid #555;
     border-radius: 10px; padding: 12px 6px; font-size: 15px; font-weight: 600;
@@ -1418,7 +1419,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.281-beta / 2026-08-16 / ef18a96</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.282-beta / 2026-08-17 / e918de9</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1576,7 +1577,6 @@
     <button type="button" class="active" data-entry="visit">Visit total</button>
     <button type="button" data-entry="dart">By dart</button>
     <button type="button" data-entry="camera">Autoscore</button>
-    <button type="button" data-entry="training">Training</button>
   </div>
   <div class="hidden" id="cameraContainer"></div>
 
@@ -1665,6 +1665,7 @@
   <div class="actions" id="scoreActions">
     <button type="button" id="btnMatch" class="primary">New match</button>
     <button type="button" id="btnUndo">Undo</button>
+    <button type="button" id="btnTrainingCapture" class="hidden">Training capture</button>
     <button type="button" id="btnVisitOk" class="ok-btn hidden">OK</button>
   </div>
 
@@ -1914,16 +1915,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.281-beta / 2026-08-16 / ef18a96</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.282-beta / 2026-08-17 / e918de9</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.281-beta / 2026-08-16 / ef18a96';
+const APP_VERSION = '0.1.282-beta / 2026-08-17 / e918de9';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.281-beta-2026-08-16-ef18a96';
+const POLICY_CACHE_BUST = '0.1.282-beta-2026-08-17-e918de9';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -7346,38 +7347,40 @@ function syncEntryToggle() {
   box.classList.toggle('hidden', cricket);
   const proLocked = !isPro();
   const camBtn = box.querySelector('button[data-entry="camera"]');
-  const trainBtn = box.querySelector('button[data-entry="training"]');
   if (camBtn) {
     camBtn.disabled = proLocked;
     camBtn.title = proLocked ? 'Autoscore is Pro' : '';
   }
-  if (trainBtn) {
-    trainBtn.disabled = proLocked;
-    trainBtn.title = proLocked ? 'Training capture is Pro' : '';
-  }
   if (proLocked && (scoreEntryMode === 'camera' || scoreEntryMode === 'training')) {
     scoreEntryMode = 'visit';
   }
-  for (const b of box.querySelectorAll('button[data-entry]'))
-    b.classList.toggle('active', b.dataset.entry === scoreEntryMode);
+  for (const b of box.querySelectorAll('button[data-entry]')) {
+    const isActive = (scoreEntryMode === 'training' && b.dataset.entry === 'dart')
+      || b.dataset.entry === scoreEntryMode;
+    b.classList.toggle('active', isActive);
+  }
   syncScoreActionRow();
 }
 
 function syncScoreActionRow() {
   const actions = document.getElementById('scoreActions');
   const ok = document.getElementById('btnVisitOk');
-  if (!actions || !ok) return;
+  const train = document.getElementById('btnTrainingCapture');
+  if (!actions || !ok || !train) return;
   const cricket = !!(match && match.game === 'cricket') || isCricket();
   const showOk = !cricket && scoreEntryMode === 'visit';
+  const showTraining = !cricket && isPro() && scoreEntryMode === 'dart';
   ok.classList.toggle('hidden', !showOk);
+  train.classList.toggle('hidden', !showTraining);
   actions.classList.toggle('has-ok', showOk);
+  actions.classList.toggle('has-training', showTraining);
 }
 
 function buildPad() {
   elPad.innerHTML = '';
   const cricket = !!(match && match.game === 'cricket') || isCricket();
   syncEntryToggle();
-  if (scoreEntryMode === 'camera') {
+  if (scoreEntryMode === 'camera' || scoreEntryMode === 'training') {
     elPad.classList.add('hidden');
     return;
   }
@@ -8623,11 +8626,21 @@ if (elEntryToggle) {
   elEntryToggle.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-entry]');
     if (!btn) return;
-    if (!isPro() && (btn.dataset.entry === 'camera' || btn.dataset.entry === 'training')) {
+    if (!isPro() && btn.dataset.entry === 'camera') {
       showProBanner('Autoscore and Training capture are Pro features.');
       return;
     }
     setScoreEntryMode(btn.dataset.entry);
+  });
+}
+const elTrainingCapture = document.getElementById('btnTrainingCapture');
+if (elTrainingCapture) {
+  elTrainingCapture.addEventListener('click', () => {
+    if (!isPro()) {
+      showProBanner('Autoscore and Training capture are Pro features.');
+      return;
+    }
+    setScoreEntryMode('training');
   });
 }
 (function wirePlayBoardScoring() {
@@ -11319,6 +11332,6 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
   updateAccountBar();
 })();
 </script>
-<script src="camera-scorer.js?v=0.1.281-beta-2026-08-16-ef18a96"></script>
+<script src="camera-scorer.js?v=0.1.282-beta-2026-08-17-e918de9"></script>
 </body>
 </html>

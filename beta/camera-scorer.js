@@ -18,6 +18,11 @@ const CameraScorer = (() => {
   const COOLDOWN_MS = 2500;
   const CONFIRM_POS_TOLERANCE_PX = 70;
   const CONFIRM_MISS_GRACE_FRAMES = 2;
+  const TRAIN_DIFF_THRESHOLD = 32;
+  const TRAIN_MIN_BLOB_PIXELS = 140;
+  const TRAIN_MAX_BLOB_PIXELS = 26000;
+  const TRAIN_CONFIRM_FRAMES = 3;
+  const TRAIN_COOLDOWN_MS = 1400;
 
   // Edge detector usually finds surround/number ring, not double wire ring.
   // Double ring is ~82% of the detected outer edge radius.
@@ -49,6 +54,7 @@ const CameraScorer = (() => {
   let commitFn = null;
   let runMode = 'autoscore';
   const TRAINING_LOG_KEY = 'dartsTrainingLogV1';
+  let trainingArmed = false;
 
   let calibration = null; // { H, Hinv, cx, cy, pxPerMm }
   let lastCalibTryAt = 0;
@@ -80,6 +86,7 @@ const CameraScorer = (() => {
           <input id="camZoomInput" type="range" min="1" max="1" step="0.1" value="1" style="flex:1">
         </div>
         <div class="cam-controls hidden" id="camTrainTools">
+          <button type="button" id="camTrainStart" class="cam-btn primary">Start capture</button>
           <button type="button" id="camTrainExport" class="cam-btn">Export labels</button>
           <button type="button" id="camTrainClear" class="cam-btn">Clear labels</button>
         </div>
@@ -100,8 +107,10 @@ const CameraScorer = (() => {
 
     if (runMode === 'training') {
       if (trainToolsEl) trainToolsEl.classList.remove('hidden');
+      const btnStart = document.getElementById('camTrainStart');
       const btnExport = document.getElementById('camTrainExport');
       const btnClear = document.getElementById('camTrainClear');
+      if (btnStart) btnStart.addEventListener('click', armTrainingCapture);
       if (btnExport) btnExport.addEventListener('click', exportTrainingLog);
       if (btnClear) btnClear.addEventListener('click', clearTrainingLog);
       renderTrainingMeta();
@@ -128,7 +137,12 @@ const CameraScorer = (() => {
     await ensureCamera();
     if (!running) return;
     if (runMode === 'training') {
-      setStatus(calibration ? 'Board lock restored. Training capture active.' : 'Move closer — board must fill most of the frame.');
+      trainingArmed = false;
+      calibration = null;
+      backgroundGray = null;
+      pendingDetection = null;
+      clearOverlay();
+      setStatus('Place camera, then tap Start capture');
     } else {
       setStatus(calibration ? 'Board lock restored. Autoscore active.' : 'Move closer — board must fill most of the frame.');
     }
@@ -225,6 +239,12 @@ const CameraScorer = (() => {
     hiddenCtx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
     const frame = hiddenCtx.getImageData(0, 0, hiddenCanvas.width, hiddenCanvas.height);
 
+    if (runMode === 'training') {
+      loopTraining(frame);
+      rafId = requestAnimationFrame(loop);
+      return;
+    }
+
     if (!calibration) {
       tryAutoDetectBoard(frame);
       if (frameTicker % 45 === 0) setStatus('Move closer — board must fill most of the frame.');
@@ -302,6 +322,58 @@ const CameraScorer = (() => {
     }
 
     rafId = requestAnimationFrame(loop);
+  }
+
+  function armTrainingCapture() {
+    trainingArmed = true;
+    backgroundGray = null;
+    pendingDetection = null;
+    lastScoreAt = 0;
+    setStatus('Training armed. Hold steady and throw.');
+  }
+
+  function loopTraining(frame) {
+    if (!trainingArmed) return;
+
+    if (!backgroundGray) {
+      backgroundGray = frameToGray(frame.data, hiddenCanvas.width, hiddenCanvas.height);
+      if (frameTicker % 20 === 0) setStatus('Training armed. Waiting for dart…');
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastScoreAt < TRAIN_COOLDOWN_MS) {
+      updateTrainingBackground(frame.data, 0.015);
+      return;
+    }
+
+    const det = detectTrainingMotionBlob(frame.data);
+    if (!det) {
+      if (pendingDetection) {
+        pendingDetection.miss = (pendingDetection.miss || 0) + 1;
+        if (pendingDetection.miss > CONFIRM_MISS_GRACE_FRAMES) pendingDetection = null;
+      }
+      if (frameTicker % 30 === 0) setStatus('Training armed. Waiting for dart…');
+      updateTrainingBackground(frame.data, 0.03);
+      return;
+    }
+
+    if (pendingDetection && Math.hypot(det.x - pendingDetection.x, det.y - pendingDetection.y) < CONFIRM_POS_TOLERANCE_PX) {
+      pendingDetection.x = pendingDetection.x * 0.7 + det.x * 0.3;
+      pendingDetection.y = pendingDetection.y * 0.7 + det.y * 0.3;
+      pendingDetection.pixels = det.pixels;
+      pendingDetection.confirm = (pendingDetection.confirm || 1) + 1;
+      pendingDetection.miss = 0;
+      if (frameTicker % 5 === 0) setStatus('Training confirming… ' + pendingDetection.confirm + '/' + TRAIN_CONFIRM_FRAMES);
+      if (pendingDetection.confirm >= TRAIN_CONFIRM_FRAMES) {
+        captureTrainingSample(frame.data, pendingDetection, NaN, NaN, '');
+        pendingDetection = null;
+        backgroundGray = frameToGray(frame.data, hiddenCanvas.width, hiddenCanvas.height);
+        lastScoreAt = Date.now();
+      }
+    } else {
+      pendingDetection = { x: det.x, y: det.y, pixels: det.pixels, confirm: 1, miss: 0 };
+    }
   }
 
   function tryAutoDetectBoard(frame) {
