@@ -14,8 +14,10 @@ const CameraScorer = (() => {
   const DIFF_THRESHOLD = 35;
   const MIN_BLOB_PIXELS = 80;
   const MAX_BLOB_PIXELS = 12000;
-  const CONFIRM_FRAMES = 4;
+  const CONFIRM_FRAMES = 3;
   const COOLDOWN_MS = 2500;
+  const CONFIRM_POS_TOLERANCE_PX = 70;
+  const CONFIRM_MISS_GRACE_FRAMES = 2;
 
   const CALIB_BOARD_PTS = [
     [0, R_OUTER_DOUBLE],
@@ -215,25 +217,29 @@ const CameraScorer = (() => {
 
     const det = detectMotionBlob(frame.data);
     if (!det) {
-      pendingDetection = null;
+      if (pendingDetection) {
+        pendingDetection.miss = (pendingDetection.miss || 0) + 1;
+        if (pendingDetection.miss > CONFIRM_MISS_GRACE_FRAMES) pendingDetection = null;
+      }
       if (frameTicker % 30 === 0) setStatus('Watching for dart…');
       updateBackground(frame.data, 0.04);
       rafId = requestAnimationFrame(loop);
       return;
     }
 
-    if (pendingDetection && Math.hypot(det.x - pendingDetection.x, det.y - pendingDetection.y) < 40) {
-      pendingDetection.x = det.x;
-      pendingDetection.y = det.y;
+    if (pendingDetection && Math.hypot(det.x - pendingDetection.x, det.y - pendingDetection.y) < CONFIRM_POS_TOLERANCE_PX) {
+      pendingDetection.x = pendingDetection.x * 0.7 + det.x * 0.3;
+      pendingDetection.y = pendingDetection.y * 0.7 + det.y * 0.3;
       pendingDetection.pixels = det.pixels;
       pendingDetection.confirm = (pendingDetection.confirm || 1) + 1;
+      pendingDetection.miss = 0;
       if (frameTicker % 5 === 0) setStatus('Confirming dart… ' + pendingDetection.confirm + '/' + CONFIRM_FRAMES);
       if (pendingDetection.confirm >= CONFIRM_FRAMES) {
         scoreDetection(pendingDetection, frame.data);
         pendingDetection = null;
       }
     } else {
-      pendingDetection = { x: det.x, y: det.y, pixels: det.pixels, confirm: 1 };
+      pendingDetection = { x: det.x, y: det.y, pixels: det.pixels, confirm: 1, miss: 0 };
     }
 
     rafId = requestAnimationFrame(loop);
