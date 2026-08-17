@@ -403,7 +403,7 @@ const CameraScorer = (() => {
         const p = y * sw + x;
         const gx = -gray[p - sw - 1] + gray[p - sw + 1] - 2 * gray[p - 1] + 2 * gray[p + 1] - gray[p + sw - 1] + gray[p + sw + 1];
         const gy = -gray[p - sw - 1] - 2 * gray[p - sw] - gray[p - sw + 1] + gray[p + sw - 1] + 2 * gray[p + sw] + gray[p + sw + 1];
-        edges[p] = (Math.abs(gx) + Math.abs(gy)) > 130 ? 1 : 0;
+        edges[p] = (Math.abs(gx) + Math.abs(gy)) > 90 ? 1 : 0;
       }
     }
 
@@ -427,7 +427,7 @@ const CameraScorer = (() => {
       }
     }
 
-    if (!best || best.score < 0.45) return null;
+    if (!best || best.score < 0.35) return null;
     best = refineEllipse(edges, sw, sh, best);
     // Reject if board is too small in frame — need ≥30% of frame height.
     if (best.ry * 2 < sh * 0.30) return null;
@@ -435,7 +435,7 @@ const CameraScorer = (() => {
     const innerRx = Math.round(best.rx * 0.61);
     const innerRy = Math.round(best.ry * 0.61);
     const innerScore = ellipseScore(edges, sw, sh, best.cx, best.cy, innerRx, innerRy, best.theta, 8);
-    if (innerScore < 0.22) return null;
+    if (innerScore < 0.15) return null;
     // Alternating-sector check: a dartboard has ~20 dark/light transitions.
     if (!hasRadialAlternation(gray, sw, sh, best)) return null;
     return {
@@ -477,7 +477,7 @@ const CameraScorer = (() => {
         above = nowAbove;
       }
     }
-    return crossings >= 12;
+    return crossings >= 8;
   }
 
   function ellipseScore(edges, w, h, cx, cy, rx, ry, theta, stepDeg) {
