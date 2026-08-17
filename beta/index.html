@@ -91,8 +91,14 @@
       background: var(--panel); border-radius: 12px; padding: 10px 12px;
       margin-bottom: 8px;
     }
-    .fit-auto-tools .row {
-      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+    .fit-auto-tools button {
+      display: block; width: 100%;
+      background: var(--field); color: #fff; border: 1px solid #555;
+      border-radius: 10px; padding: 11px 8px; font-size: 14px; font-weight: 700;
+      cursor: pointer;
+    }
+    .fit-auto-tools button.active {
+      background: var(--accent); color: #1a1a1a; border-color: var(--accent);
     }
     .fit-auto-tools .meta {
       margin-top: 6px; font-size: 11px; color: var(--mute);
@@ -1828,13 +1834,10 @@
       Then tap each <b>landing</b> on the board and Add.
     </div>
     <div class="fit-auto-tools" id="fitAutoTools">
-      <div class="row">
-        <button type="button" id="fitAutoAddLast">Use last autoscore</button>
-        <button type="button" id="fitAutoAddAll">Import autoscore</button>
-        <button type="button" id="fitAutoClear">Clear autoscore</button>
-      </div>
-      <div class="meta" id="fitAutoMeta">Autoscore points: 0</div>
+      <button type="button" id="fitAutoscoreBtn" aria-pressed="false">Autoscore</button>
+      <div class="meta" id="fitAutoMeta">Autoscore off</div>
     </div>
+    <div class="hidden" id="fitCameraContainer"></div>
     <div class="fit-measure-aim-row">
       <button type="button" id="fitMeasureAimBtn" aria-pressed="false">
         Aim · Bull
@@ -2048,6 +2051,25 @@ let pendingMult = 'S';
  *  Auto uses each seat's saved Dart≤ threshold (default 170). */
 let scoreEntryMode = 'visit';
 let visitDigits = '';
+let fitAutoscoreActive = false;
+let cameraScorerHost = '';
+let cameraScorerContainer = null;
+let cameraScorerCommit = null;
+
+function ensureCameraScorer(host, container, onCommit) {
+  if (!container || typeof CameraScorer === 'undefined') return false;
+  const needsInit = cameraScorerHost !== host
+    || cameraScorerContainer !== container
+    || cameraScorerCommit !== onCommit
+    || !container.hasChildNodes();
+  if (!needsInit) return true;
+  if (typeof CameraScorer.exit === 'function') CameraScorer.exit();
+  CameraScorer.init(container, onCommit);
+  cameraScorerHost = host;
+  cameraScorerContainer = container;
+  cameraScorerCommit = onCommit;
+  return true;
+}
 /** Lineup size for 501 / 301 DI / Cricket: 2 or 3 (cricket 3p = cut-throat).
  *  Always defaults to 2; choosing 3 lasts for the session until changed. */
 let lineupPlayerCount = 2;
@@ -7208,6 +7230,8 @@ function setScoreEntryMode(mode, opts) {
     if (typeof CameraScorer !== 'undefined' && typeof CameraScorer.exit === 'function') CameraScorer.exit();
     const camBox = document.getElementById('cameraContainer');
     if (camBox) camBox.classList.add('hidden');
+    const fitCam = document.getElementById('fitCameraContainer');
+    if (fitCam) fitCam.classList.add('hidden');
   }
   // Switching away from a partial dart visit: clear those darts (with undo).
   if (match && match.game !== 'cricket' && match.winner === null
@@ -7240,10 +7264,12 @@ function setScoreEntryMode(mode, opts) {
     const camBox = document.getElementById('cameraContainer');
     if (camBox) {
       camBox.classList.remove('hidden');
-      if (!camBox.hasChildNodes() && typeof CameraScorer !== 'undefined') {
-        CameraScorer.init(camBox, commitLabel);
-      }
-      if (typeof CameraScorer !== 'undefined' && typeof CameraScorer.enter === 'function')
+      const fitCam = document.getElementById('fitCameraContainer');
+      if (fitCam) fitCam.classList.add('hidden');
+      ensureFitAutoscore(false);
+      if (ensureCameraScorer('score', camBox, commitLabel)
+          && typeof CameraScorer !== 'undefined'
+          && typeof CameraScorer.enter === 'function')
         CameraScorer.enter();
     }
   } else {
@@ -8910,6 +8936,7 @@ function showPage(id) {
     id = 'coach';
     openCoachTab = 'practice';
   }
+  if (id !== 'fit') ensureFitAutoscore(false);
   if (id === 'fit' && !isPro()) {
     showProBanner('Fit σ (accuracy calibration) is Pro — it builds your coach profile.');
     id = 'coach';
@@ -9753,53 +9780,87 @@ const fitCv = document.getElementById('fitChart');
 const fitCtx = fitCv.getContext('2d');
 const FIT_R_MAX = DOUBLE_OUTER;  // board outer radius (mm) — bull-from-centre
 const FIT_AIM_R_MAX = 340;       // distance from any aim point (mm)
-const AUTOSCORE_POINTS_KEY = 'dartsAutoscorePointsV1';
-const autoscorePoints = [];
-
-function loadAutoscorePoints() {
-  try {
-    const raw = localStorage.getItem(AUTOSCORE_POINTS_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    autoscorePoints.length = 0;
-    for (const p of (Array.isArray(arr) ? arr : [])) {
-      const x = Number(p && p.x), y = Number(p && p.y);
-      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-      autoscorePoints.push({
-        x: x,
-        y: y,
-        label: String((p && p.label) || ''),
-        ts: String((p && p.ts) || '')
-      });
-    }
-  } catch (_) {
-    autoscorePoints.length = 0;
-  }
-}
-
-function storeAutoscorePoints() {
-  try {
-    localStorage.setItem(AUTOSCORE_POINTS_KEY, JSON.stringify(autoscorePoints.slice(-500)));
-  } catch (_) {}
-}
 
 function renderFitAutoMeta() {
   const meta = document.getElementById('fitAutoMeta');
   if (!meta) return;
-  const n = autoscorePoints.length;
-  meta.textContent = 'Autoscore points: ' + n;
+  meta.textContent = fitAutoscoreActive
+    ? 'Autoscore on: detected darts are added to Fit rows'
+    : 'Autoscore off';
 }
 
-function pushAutoscorePointToFit(p) {
+function pushFitPointToThrows(x, y) {
   const aim = activeFitAimId();
   const [ax, ay] = fitAimXY(aim);
-  const dx = p.x - ax;
-  const dy = p.y - ay;
+  const dx = x - ax;
+  const dy = y - ay;
   const r = Math.hypot(dx, dy);
   const maxR = (aim && aim !== 'bull') ? FIT_AIM_R_MAX : FIT_R_MAX;
   if (!Number.isFinite(r) || r < 0 || r > maxR) return false;
-  const [ux, uy] = fitLandingUnit(aim, p.x, p.y);
-  fitThrows.push({ r: r, aim: aim, x: p.x, y: p.y, ux: ux, uy: uy });
+  const [ux, uy] = fitLandingUnit(aim, x, y);
+  fitThrows.push({ r: r, aim: aim, x: x, y: y, ux: ux, uy: uy });
   return true;
+}
+
+function onFitAutoscoreCommit(_label, opts) {
+  const x = Number(opts && opts.x);
+  const y = Number(opts && opts.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  if (!pushFitPointToThrows(x, y)) {
+    showFitError('Detected point is outside Fit range for current aim');
+    return;
+  }
+  fitMeasurePending = null;
+  if (elFitRadius) {
+    elFitRadius.value = '';
+    elFitRadius.readOnly = true;
+  }
+  showFitError('');
+  renderFit();
+}
+
+function ensureFitAutoscore(next) {
+  const want = !!next;
+  if (fitAutoscoreActive === want) {
+    const btn0 = document.getElementById('fitAutoscoreBtn');
+    if (btn0) {
+      btn0.classList.toggle('active', fitAutoscoreActive);
+      btn0.setAttribute('aria-pressed', fitAutoscoreActive ? 'true' : 'false');
+    }
+    renderFitAutoMeta();
+    return;
+  }
+  const fitCam = document.getElementById('fitCameraContainer');
+  if (!fitCam) return;
+  if (!want) {
+    fitAutoscoreActive = false;
+    if (typeof CameraScorer !== 'undefined' && typeof CameraScorer.exit === 'function') CameraScorer.exit();
+    fitCam.classList.add('hidden');
+    const btn1 = document.getElementById('fitAutoscoreBtn');
+    if (btn1) {
+      btn1.classList.remove('active');
+      btn1.setAttribute('aria-pressed', 'false');
+    }
+    renderFitAutoMeta();
+    return;
+  }
+
+  const scoreCam = document.getElementById('cameraContainer');
+  if (scoreCam) scoreCam.classList.add('hidden');
+  if (typeof CameraScorer !== 'undefined' && typeof CameraScorer.exit === 'function') CameraScorer.exit();
+  if (!ensureCameraScorer('fit', fitCam, onFitAutoscoreCommit)) return;
+
+  fitCam.classList.remove('hidden');
+  fitAutoscoreActive = true;
+  const btn2 = document.getElementById('fitAutoscoreBtn');
+  if (btn2) {
+    btn2.classList.add('active');
+    btn2.setAttribute('aria-pressed', 'true');
+  }
+  renderFitAutoMeta();
+  if (typeof CameraScorer !== 'undefined' && typeof CameraScorer.enter === 'function') {
+    CameraScorer.enter();
+  }
 }
 
 function loadFitHistory() {
@@ -10954,63 +11015,12 @@ document.getElementById('fitClear').addEventListener('click', () => {
   showFitError('');
   renderFit();
 });
-const elFitAutoAddLast = document.getElementById('fitAutoAddLast');
-if (elFitAutoAddLast) {
-  elFitAutoAddLast.addEventListener('click', () => {
-    if (!autoscorePoints.length) {
-      showFitError('No autoscore points yet');
-      return;
-    }
-    const p = autoscorePoints[autoscorePoints.length - 1];
-    if (!pushAutoscorePointToFit(p)) {
-      showFitError('Last autoscore point is out of range for current aim');
-      return;
-    }
-    showFitError('');
-    renderFit();
+const elFitAutoscoreBtn = document.getElementById('fitAutoscoreBtn');
+if (elFitAutoscoreBtn) {
+  elFitAutoscoreBtn.addEventListener('click', () => {
+    ensureFitAutoscore(!fitAutoscoreActive);
   });
 }
-const elFitAutoAddAll = document.getElementById('fitAutoAddAll');
-if (elFitAutoAddAll) {
-  elFitAutoAddAll.addEventListener('click', () => {
-    if (!autoscorePoints.length) {
-      showFitError('No autoscore points yet');
-      return;
-    }
-    let added = 0;
-    for (const p of autoscorePoints) {
-      if (pushAutoscorePointToFit(p)) added += 1;
-    }
-    if (!added) {
-      showFitError('No autoscore points matched current aim range');
-      return;
-    }
-    showFitError('Imported ' + added + ' autoscore point' + (added === 1 ? '' : 's'));
-    renderFit();
-  });
-}
-const elFitAutoClear = document.getElementById('fitAutoClear');
-if (elFitAutoClear) {
-  elFitAutoClear.addEventListener('click', () => {
-    autoscorePoints.length = 0;
-    storeAutoscorePoints();
-    renderFitAutoMeta();
-  });
-}
-window.addEventListener('darts-autoscore-detected', (ev) => {
-  const d = ev && ev.detail;
-  const x = Number(d && d.x), y = Number(d && d.y);
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-  autoscorePoints.push({
-    x: x,
-    y: y,
-    label: String((d && d.label) || ''),
-    ts: new Date().toISOString()
-  });
-  if (autoscorePoints.length > 500) autoscorePoints.splice(0, autoscorePoints.length - 500);
-  storeAutoscorePoints();
-  renderFitAutoMeta();
-});
 if (elFitSaveBottom) elFitSaveBottom.addEventListener('click', saveCurrentFit);
 if (elFitPlayerName) {
   elFitPlayerName.addEventListener('click', (e) => {
@@ -11023,7 +11033,6 @@ if (elFitPlayerName) {
     openPlayerModal(FIT_PLAYER_EDIT);
   });
 }
-loadAutoscorePoints();
 renderFitAutoMeta();
 renderFitSavedList();
 window.addEventListener('resize', () => {
