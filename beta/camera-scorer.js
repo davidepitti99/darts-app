@@ -58,16 +58,12 @@ const CameraScorer = (() => {
         <div class="cam-view">
           <video id="camVideo" playsinline muted autoplay></video>
           <canvas id="camOverlay"></canvas>
-        </div>
-        <div class="cam-controls">
-          <button type="button" id="camRecalib" class="cam-btn">Re-detect board</button>
-          <button type="button" id="camManual" class="cam-btn">Manual 4-point</button>
+          <div class="cam-status-overlay" id="camStatus">Preparing camera…</div>
         </div>
         <div class="cam-controls hidden" id="camZoomWrap">
           <label for="camZoomInput" style="font-size:12px;color:#bdbdbd">Zoom</label>
           <input id="camZoomInput" type="range" min="1" max="1" step="0.1" value="1" style="flex:1">
         </div>
-        <div class="cam-status" id="camStatus">Preparing camera…</div>
       </div>
     `;
 
@@ -79,13 +75,6 @@ const CameraScorer = (() => {
     statusEl = document.getElementById('camStatus');
     zoomWrap = document.getElementById('camZoomWrap');
     zoomInput = document.getElementById('camZoomInput');
-
-    document.getElementById('camRecalib').addEventListener('click', () => {
-      calibration = null;
-      pendingDetection = null;
-      setStatus('Searching for dartboard…');
-    });
-    document.getElementById('camManual').addEventListener('click', startManualCalibration);
 
     // Saved calibration is only a hint; re-validate on next enter().
     try {
@@ -288,37 +277,6 @@ const CameraScorer = (() => {
     lastDetectCenter = null;
     setStatus('Board locked. Autoscore active.');
     drawOverlay();
-  }
-
-  function startManualCalibration() {
-    if (!running) return;
-    const picks = [];
-    const hints = [
-      'Manual 1/4: tap TOP outer double (20)',
-      'Manual 2/4: tap RIGHT outer double (6)',
-      'Manual 3/4: tap BOTTOM outer double (3)',
-      'Manual 4/4: tap LEFT outer double (11)'
-    ];
-    setStatus(hints[0]);
-
-    const onClick = (e) => {
-      const rect = overlayCanvas.getBoundingClientRect();
-      const sx = overlayCanvas.width / rect.width;
-      const sy = overlayCanvas.height / rect.height;
-      picks.push([(e.clientX - rect.left) * sx, (e.clientY - rect.top) * sy]);
-      if (picks.length < 4) {
-        setStatus(hints[picks.length]);
-        return;
-      }
-      overlayCanvas.removeEventListener('click', onClick);
-      calibration = buildCalibrationFromImagePoints(picks);
-      saveCalibration();
-      backgroundGray = null;
-      setStatus('Manual calibration done. Autoscore active.');
-      drawOverlay();
-    };
-
-    overlayCanvas.addEventListener('click', onClick);
   }
 
   function scoreDetection(det, frameData) {
