@@ -455,17 +455,10 @@ const CameraScorer = (() => {
       }
     }
 
-    if (!best || best.score < 0.35) return null;
+    if (!best || best.score < 0.28) return null;
     best = refineEllipse(edges, sw, sh, best);
-    // Reject if board is too small in frame — need ≥30% of frame height.
-    if (best.ry * 2 < sh * 0.30) return null;
-    // Concentric ring at ~60% radius (triple wire).
-    const innerRx = Math.round(best.rx * 0.61);
-    const innerRy = Math.round(best.ry * 0.61);
-    const innerScore = ellipseScore(edges, sw, sh, best.cx, best.cy, innerRx, innerRy, best.theta, 8);
-    if (innerScore < 0.15) return null;
-    // Alternating-sector check: a dartboard has ~20 dark/light transitions.
-    if (!hasRadialAlternation(gray, sw, sh, best)) return null;
+    // Reject if board is too small in frame.
+    if (best.ry * 2 < sh * 0.25) return null;
     return {
       cx: best.cx / scale,
       cy: best.cy / scale,
