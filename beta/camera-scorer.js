@@ -258,6 +258,7 @@ const CameraScorer = (() => {
     if (!ellipse) {
       stableDetectCount = 0;
       lastDetectCenter = null;
+      setStatus('Move closer — board must fill most of the frame.');
       return;
     }
 
