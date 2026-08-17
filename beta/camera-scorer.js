@@ -18,9 +18,9 @@ const CameraScorer = (() => {
   const COOLDOWN_MS = 2500;
   const CONFIRM_POS_TOLERANCE_PX = 70;
   const CONFIRM_MISS_GRACE_FRAMES = 2;
-  const TRAIN_DIFF_THRESHOLD = 32;
-  const TRAIN_MIN_BLOB_PIXELS = 140;
-  const TRAIN_MAX_BLOB_PIXELS = 26000;
+  const TRAIN_DIFF_THRESHOLD = 24;
+  const TRAIN_MIN_BLOB_PIXELS = 70;
+  const TRAIN_MAX_BLOB_PIXELS = 150000;
   const TRAIN_CONFIRM_FRAMES = 3;
   const TRAIN_COOLDOWN_MS = 1400;
 
@@ -449,19 +449,17 @@ const CameraScorer = (() => {
 
   function captureTrainingSample(frameData, det, bx, by, suggestedLabel) {
     const ts = new Date().toISOString();
-    const guess = (suggestedLabel && suggestedLabel !== 'Miss') ? suggestedLabel : '';
-    const labelRaw = window.prompt('Training label (e.g. T20, S5, D16, Bull, 25, Miss):', guess);
-    if (labelRaw == null) {
-      setStatus('Training sample skipped');
-      return;
-    }
-    const label = String(labelRaw || '').trim();
-    if (!label) {
-      setStatus('Training sample skipped (empty label)');
-      return;
+    const snap = imageDataToJpeg(frameData, hiddenCanvas.width, hiddenCanvas.height, 0.86);
+    const guess = (suggestedLabel && suggestedLabel !== 'Miss') ? suggestedLabel : 'Unlabeled';
+    let label = guess;
+    try {
+      const labelRaw = window.prompt('Training label (e.g. T20, S5, D16, Bull, 25, Miss):', guess);
+      const typed = String(labelRaw || '').trim();
+      if (typed) label = typed;
+    } catch (_) {
+      // Some browsers may suppress prompt during background callbacks.
     }
 
-    const snap = imageDataToJpeg(frameData, hiddenCanvas.width, hiddenCanvas.height, 0.86);
     const clean = label.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'label';
     downloadDataUrl(snap, 'dart_train_' + ts.replace(/[:.]/g, '-') + '_' + clean + '.jpg');
 
@@ -580,6 +578,39 @@ const CameraScorer = (() => {
     return { x: sumX / count, y: sumY / count, pixels: count };
   }
 
+  function detectTrainingMotionBlob(frameData) {
+    if (!backgroundGray) return null;
+    const w = hiddenCanvas.width;
+    const h = hiddenCanvas.height;
+    const padX = Math.floor(w * 0.04);
+    const padY = Math.floor(h * 0.04);
+    const x0 = padX;
+    const x1 = Math.max(x0 + 1, w - padX);
+    const y0 = padY;
+    const y1 = Math.max(y0 + 1, h - padY);
+
+    let sumX = 0;
+    let sumY = 0;
+    let count = 0;
+    for (let y = y0; y < y1; y++) {
+      const row = y * w;
+      for (let x = x0; x < x1; x++) {
+        const p = row + x;
+        const i = p * 4;
+        const g = frameData[i] * 0.299 + frameData[i + 1] * 0.587 + frameData[i + 2] * 0.114;
+        const diff = Math.abs(g - backgroundGray[p]);
+        if (diff > TRAIN_DIFF_THRESHOLD) {
+          sumX += x;
+          sumY += y;
+          count += 1;
+        }
+      }
+    }
+
+    if (count < TRAIN_MIN_BLOB_PIXELS || count > TRAIN_MAX_BLOB_PIXELS) return null;
+    return { x: sumX / count, y: sumY / count, pixels: count };
+  }
+
   function updateBackground(frameData, alpha) {
     if (!backgroundGray) return;
     const w = hiddenCanvas.width;
@@ -599,6 +630,29 @@ const CameraScorer = (() => {
         const p = row + x;
         const i = p * 4;
         const g = (frameData[i] * 0.299 + frameData[i + 1] * 0.587 + frameData[i + 2] * 0.114);
+        backgroundGray[p] = backgroundGray[p] * inv + g * alpha;
+      }
+    }
+  }
+
+  function updateTrainingBackground(frameData, alpha) {
+    if (!backgroundGray) return;
+    const w = hiddenCanvas.width;
+    const h = hiddenCanvas.height;
+    const padX = Math.floor(w * 0.04);
+    const padY = Math.floor(h * 0.04);
+    const x0 = padX;
+    const x1 = Math.max(x0 + 1, w - padX);
+    const y0 = padY;
+    const y1 = Math.max(y0 + 1, h - padY);
+
+    const inv = 1 - alpha;
+    for (let y = y0; y < y1; y++) {
+      const row = y * w;
+      for (let x = x0; x < x1; x++) {
+        const p = row + x;
+        const i = p * 4;
+        const g = frameData[i] * 0.299 + frameData[i + 1] * 0.587 + frameData[i + 2] * 0.114;
         backgroundGray[p] = backgroundGray[p] * inv + g * alpha;
       }
     }
