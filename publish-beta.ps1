@@ -41,28 +41,28 @@ $updated = $raw
 $updated = [regex]::Replace(
   $updated,
   '(?m)(<div class="app-version" style="[^"]*">v)([^<]*)(</div>)',
-  ('$1' + $appVersion + '$3'),
+  ('${1}' + $appVersion + '${3}'),
   1
 )
 
 $updated = [regex]::Replace(
   $updated,
   '(?m)(<div class="app-version" id="appVersion">v<span>)([^<]*)(</span></div>)',
-  ('$1' + $appVersion + '$3'),
+  ('${1}' + $appVersion + '${3}'),
   1
 )
 
 $updated = [regex]::Replace(
   $updated,
   "(?m)(const APP_VERSION = ')([^']*)(';)",
-  ('$1' + $appVersion + '$3'),
+  ('${1}' + $appVersion + '${3}'),
   1
 )
 
 $updated = [regex]::Replace(
   $updated,
   "(?m)(const POLICY_CACHE_BUST = ')([^']*)(';)",
-  ('$1' + $cacheBust + '$3'),
+  ('${1}' + $cacheBust + '${3}'),
   1
 )
 
