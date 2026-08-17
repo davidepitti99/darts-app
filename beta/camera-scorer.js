@@ -46,6 +46,9 @@ const CameraScorer = (() => {
   let pendingDetection = null;
   let lastScoreAt = 0;
   let frameTicker = 0;
+  let stableDetectCount = 0;
+  let lastDetectCenter = null;
+  const STABLE_DETECTS_NEEDED = 3;
 
   function init(container, onCommit) {
     containerEl = container;
@@ -253,12 +256,36 @@ const CameraScorer = (() => {
     lastCalibTryAt = now;
 
     const ellipse = detectBoardEllipse(frame, hiddenCanvas.width, hiddenCanvas.height);
-    if (!ellipse) return;
+    if (!ellipse) {
+      stableDetectCount = 0;
+      lastDetectCenter = null;
+      return;
+    }
+
+    // Require stable consecutive detections at roughly the same position.
+    if (lastDetectCenter) {
+      const drift = Math.hypot(ellipse.cx - lastDetectCenter[0], ellipse.cy - lastDetectCenter[1]);
+      if (drift > ellipse.rx * 0.25) {
+        stableDetectCount = 1;
+      } else {
+        stableDetectCount += 1;
+      }
+    } else {
+      stableDetectCount = 1;
+    }
+    lastDetectCenter = [ellipse.cx, ellipse.cy];
+
+    if (stableDetectCount < STABLE_DETECTS_NEEDED) {
+      setStatus('Candidate board… confirming (' + stableDetectCount + '/' + STABLE_DETECTS_NEEDED + ')');
+      return;
+    }
 
     const pts = ellipseCardinalPoints(ellipse);
     calibration = buildCalibrationFromImagePoints(pts);
     saveCalibration();
     backgroundGray = null;
+    stableDetectCount = 0;
+    lastDetectCenter = null;
     setStatus('Board locked. Autoscore active.');
     drawOverlay();
   }
@@ -432,13 +459,15 @@ const CameraScorer = (() => {
       }
     }
 
-    if (!best || best.score < 0.42) return null;
+    if (!best || best.score < 0.45) return null;
     best = refineEllipse(edges, sw, sh, best);
-    // Validate: a real dartboard has a concentric ring (triple) at ~60% radius.
+    // Concentric ring at ~60% radius (triple wire).
     const innerRx = Math.round(best.rx * 0.61);
     const innerRy = Math.round(best.ry * 0.61);
     const innerScore = ellipseScore(edges, sw, sh, best.cx, best.cy, innerRx, innerRy, best.theta, 8);
-    if (innerScore < 0.20) return null;
+    if (innerScore < 0.22) return null;
+    // Alternating-sector check: a dartboard has ~20 dark/light transitions.
+    if (!hasRadialAlternation(gray, sw, sh, best)) return null;
     return {
       cx: best.cx / scale,
       cy: best.cy / scale,
@@ -447,6 +476,38 @@ const CameraScorer = (() => {
       theta: best.theta,
       score: best.score
     };
+  }
+
+  // Sample brightness at ~80% radius and count dark↔light transitions.
+  // A dartboard has ~20 sectors → ~16-24 crossings; a face has ≤6.
+  function hasRadialAlternation(gray, w, h, el) {
+    const c = Math.cos(el.theta);
+    const s = Math.sin(el.theta);
+    const sampRx = el.rx * 0.78;
+    const sampRy = el.ry * 0.78;
+    const values = [];
+    for (let a = 0; a < 360; a += 3) {
+      const t = a * Math.PI / 180;
+      const ex = sampRx * Math.cos(t);
+      const ey = sampRy * Math.sin(t);
+      const px = Math.round(el.cx + ex * c - ey * s);
+      const py = Math.round(el.cy + ex * s + ey * c);
+      if (px < 0 || py < 0 || px >= w || py >= h) continue;
+      values.push(gray[py * w + px]);
+    }
+    if (values.length < 60) return false;
+    const sorted = values.slice().sort((a, b) => a - b);
+    const median = sorted[sorted.length >> 1];
+    let crossings = 0;
+    let above = values[0] >= median;
+    for (let i = 1; i < values.length; i++) {
+      const nowAbove = values[i] >= median;
+      if (nowAbove !== above) {
+        crossings += 1;
+        above = nowAbove;
+      }
+    }
+    return crossings >= 12;
   }
 
   function ellipseScore(edges, w, h, cx, cy, rx, ry, theta, stepDeg) {
