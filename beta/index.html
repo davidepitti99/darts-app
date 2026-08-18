@@ -704,6 +704,19 @@
     font-size: 12px; color: var(--mute); margin: 6px 0 0; text-align: center;
   }
   .board-wrap .play-board-hint.hidden { display: none; }
+  .board-wrap .play-board-tools {
+    margin-top: 6px; display: flex; justify-content: center;
+  }
+  .board-wrap .play-board-tools.hidden { display: none; }
+  .tap-score-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(20,20,20,0.92); border: 1px solid #444;
+    border-radius: 999px; padding: 4px 10px;
+    font-size: 11px; color: #d8d8d8; user-select: none;
+  }
+  .tap-score-toggle input {
+    width: 14px; height: 14px; accent-color: var(--accent); margin: 0;
+  }
   canvas { display: block; border-radius: 12px; }
 
   .info {
@@ -1434,7 +1447,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.286-beta / 2026-08-18 / 22d7c11</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.287-beta / 2026-08-18 / f265ed7</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1689,6 +1702,12 @@
     <canvas id="board" width="800" height="800"
             aria-label="AI aim board — tap landing when scoring by dart"></canvas>
     <p class="play-board-hint hidden" id="playBoardHint">Tap where the dart landed</p>
+    <div class="play-board-tools hidden" id="playBoardTools">
+      <label class="tap-score-toggle" for="tapScoreToggle">
+        <input type="checkbox" id="tapScoreToggle">
+        <span>Score by tapping</span>
+      </label>
+    </div>
   </div>
 
   <div class="stats" id="stats"></div>
@@ -1934,16 +1953,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.286-beta / 2026-08-18 / 22d7c11</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.287-beta / 2026-08-18 / f265ed7</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.286-beta / 2026-08-18 / 22d7c11';
+const APP_VERSION = '0.1.287-beta / 2026-08-18 / f265ed7';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.286-beta-2026-08-18-22d7c11';
+const POLICY_CACHE_BUST = '0.1.287-beta-2026-08-18-f265ed7';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2078,6 +2097,7 @@ let pendingMult = 'S';
  *  Auto uses each seat's saved Dart≤ threshold (default 170). */
 let scoreEntryMode = 'visit';
 let visitDigits = '';
+let playBoardTapToScore = false;
 let fitAutoscoreActive = false;
 let cameraScorerHost = '';
 let cameraScorerContainer = null;
@@ -7453,7 +7473,7 @@ function playBoardWanted() {
 }
 
 function playBoardScoringActive() {
-  return !!(playBoardWanted() && scoreEntryMode === 'dart'
+  return !!(playBoardWanted() && scoreEntryMode === 'dart' && playBoardTapToScore
     && !(isBotTurn() && !botThrowInFlight));
 }
 
@@ -7910,22 +7930,31 @@ function finishRenderBotHooks() {
   if (isBotTurn()) scheduleBotThrow(700);
 }
 
-/** Aim dartboard while a leg is in progress — always on in By dart (for scoring). */
+/** Aim dartboard while a leg is in progress; scoring taps require opt-in toggle. */
 function syncPlayBoardChrome() {
   const wrap = document.getElementById('playBoardWrap');
   if (!wrap) return;
   const show = playBoardWanted();
   const scoring = playBoardScoringActive();
+  const byDart = scoreEntryMode === 'dart';
   const wasHidden = wrap.classList.contains('hidden');
   wrap.classList.toggle('hidden', !show);
   wrap.classList.toggle('scoring', scoring);
+  const tools = document.getElementById('playBoardTools');
+  const tapToggle = document.getElementById('tapScoreToggle');
+  if (tapToggle) tapToggle.checked = !!playBoardTapToScore;
+  if (tools) tools.classList.toggle('hidden', !(show && byDart));
   const hint = document.getElementById('playBoardHint');
   if (hint) {
-    if (scoring) {
+    if (show && byDart) {
       const left = match ? (match.dartsLeft | 0) : 3;
-      hint.textContent = left > 0
-        ? ('Tap where the dart landed · ' + left + ' left this visit')
-        : 'Visit complete';
+      if (scoring) {
+        hint.textContent = left > 0
+          ? ('Tap where the dart landed · ' + left + ' left this visit')
+          : 'Visit complete';
+      } else {
+        hint.textContent = 'Enable "Score by tapping" to score from board taps';
+      }
       hint.classList.remove('hidden');
     } else {
       hint.textContent = '';
@@ -8653,6 +8682,14 @@ if (elTrainingCapture) {
       return;
     }
     setScoreEntryMode('training');
+  });
+}
+const elTapScoreToggle = document.getElementById('tapScoreToggle');
+if (elTapScoreToggle) {
+  elTapScoreToggle.checked = false;
+  elTapScoreToggle.addEventListener('change', () => {
+    playBoardTapToScore = !!elTapScoreToggle.checked;
+    syncPlayBoardChrome();
   });
 }
 (function wirePlayBoardScoring() {
@@ -11350,6 +11387,6 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
   updateAccountBar();
 })();
 </script>
-<script src="camera-scorer.js?v=0.1.286-beta-2026-08-18-22d7c11"></script>
+<script src="camera-scorer.js?v=0.1.287-beta-2026-08-18-f265ed7"></script>
 </body>
 </html>
