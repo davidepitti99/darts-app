@@ -87,23 +87,6 @@
     background: var(--panel); border-radius: 12px; padding: 10px 12px;
     margin-bottom: 10px; font-size: 12px; color: #cfcfcf; line-height: 1.45;
   }
-    .fit-auto-tools {
-      background: var(--panel); border-radius: 12px; padding: 10px 12px;
-      margin-bottom: 8px;
-    }
-    .fit-auto-tools button {
-      display: block; width: 100%;
-      background: var(--field); color: #fff; border: 1px solid #555;
-      border-radius: 10px; padding: 11px 8px; font-size: 14px; font-weight: 700;
-      cursor: pointer;
-    }
-    .fit-auto-tools button.active {
-      background: var(--accent); color: #1a1a1a; border-color: var(--accent);
-    }
-    .fit-auto-tools .meta {
-      margin-top: 6px; font-size: 11px; color: var(--mute);
-      text-align: center;
-    }
   .cricket-help.hidden { display: none; }
   .cricket-mode .cricket-hide { display: none !important; }
   .cricket-hit {
@@ -952,7 +935,7 @@
   }
 
   .entry-toggle {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin: 0 0 10px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 0 0 10px;
     background: var(--panel); border-radius: 10px; padding: 4px;
   }
   .entry-toggle.hidden { display: none !important; }
@@ -963,41 +946,6 @@
   }
   .entry-toggle button.active {
     background: var(--field); color: var(--accent);
-  }
-  .cam-scorer { margin-top: 8px; }
-  .cam-view {
-    position: relative; width: 100%; border-radius: 12px; overflow: hidden;
-    background: #000; aspect-ratio: 1/1;
-  }
-  .cam-view video {
-    width: 100%; height: 100%; object-fit: cover; display: block;
-  }
-  .cam-view canvas {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; pointer-events: auto;
-  }
-  .cam-controls {
-    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
-    justify-content: center;
-  }
-  .cam-btn {
-    padding: 8px 12px; font-size: 13px; font-weight: 600;
-    border: 1px solid #555; border-radius: 8px;
-    background: var(--field); color: #eee; cursor: pointer;
-  }
-  .cam-btn:disabled { opacity: 0.4; pointer-events: none; }
-  .cam-btn:active { background: var(--accent); color: #1a1a1a; }
-  .cam-btn.primary { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
-  .cam-btn.miss { background: #3a1e1e; color: #ff8a8a; border-color: #5a2f2f; }
-  .cam-status {
-    margin-top: 8px; font-size: 12px; color: var(--mute);
-    text-align: center; min-height: 1.4em;
-  }
-  .cam-status-overlay {
-    position: absolute; bottom: 12px; left: 8px; right: 8px;
-    text-align: center; font-size: 13px; font-weight: 700;
-    color: #fff; background: rgba(0,0,0,0.55); border-radius: 8px;
-    padding: 6px 10px; pointer-events: none;
   }
   .visit-display {
     margin-top: 8px; text-align: center; font-size: 40px; font-weight: 800;
@@ -1181,6 +1129,20 @@
     max-height: 320px; overflow-y: auto; background: var(--panel);
     border-radius: 12px; padding: 8px; font-size: 13px; color: #cfcfcf;
     margin-top: 8px; font-variant-numeric: tabular-nums;
+  }
+  .fit-dataset {
+    background: var(--panel); border-radius: 12px; padding: 10px 12px;
+    margin-top: 10px;
+  }
+  .fit-dataset .hdr {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px; color: var(--mute); font-weight: 700;
+  }
+  .fit-dataset .hdr b {
+    color: #fff; font-size: 13px;
+  }
+  .fit-dataset .meta {
+    margin-top: 6px; font-size: 12px; color: #b9b9b9; line-height: 1.35;
   }
   .fit-chart-box {
     background: var(--panel); border-radius: 12px; padding: 14px;
@@ -1419,7 +1381,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.283-beta / 2026-08-17 / e19ff27</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.284-beta / 2026-08-18 / 1a0dd25</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1576,9 +1538,7 @@
   <div class="entry-toggle cricket-hide" id="entryToggle">
     <button type="button" class="active" data-entry="visit">Visit total</button>
     <button type="button" data-entry="dart">By dart</button>
-    <button type="button" data-entry="camera">Autoscore</button>
   </div>
-  <div class="hidden" id="cameraContainer"></div>
 
   <div class="scores" id="scoreCards">
     <div class="card" id="card0">
@@ -1841,11 +1801,6 @@
       Tap <b>Aim</b>, then select Bull / T / D by clicking on the dartboard.
       Then tap each <b>landing</b> on the board and Add.
     </div>
-    <div class="fit-auto-tools" id="fitAutoTools">
-      <button type="button" id="fitAutoscoreBtn" aria-pressed="false">Autoscore</button>
-      <div class="meta" id="fitAutoMeta">Autoscore off</div>
-    </div>
-    <div class="hidden" id="fitCameraContainer"></div>
     <div class="fit-measure-aim-row">
       <button type="button" id="fitMeasureAimBtn" aria-pressed="false">
         Aim · Bull
@@ -1873,6 +1828,10 @@
     </div>
     <div class="fit-chart-box hidden" id="fitChartBox">
       <canvas id="fitChart" width="800" height="400"></canvas>
+    </div>
+    <div class="fit-dataset" id="fitDatasetSection">
+      <div class="hdr"><b>Training dataset</b><span id="fitDatasetCount">0 throws</span></div>
+      <div class="meta">This is the throw set used to estimate your σ. Add, edit, or remove rows below.</div>
     </div>
     <div class="fit-list" id="fitList"><div class="empty">No throws yet</div></div>
     <div class="fit-actions" style="grid-template-columns:1fr 1fr">
@@ -1915,16 +1874,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.283-beta / 2026-08-17 / e19ff27</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.284-beta / 2026-08-18 / 1a0dd25</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.283-beta / 2026-08-17 / e19ff27';
+const APP_VERSION = '0.1.284-beta / 2026-08-18 / 1a0dd25';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.283-beta-2026-08-17-e19ff27';
+const POLICY_CACHE_BUST = '0.1.284-beta-2026-08-18-1a0dd25';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -1970,7 +1929,6 @@ function syncTierChrome() {
   if (navFit) {
     navFit.title = isPro() ? 'Fit throwing accuracy σ' : 'Fit σ is Pro';
   }
-  if (typeof syncEntryToggle === 'function') syncEntryToggle();
 }
 function refreshEntitlement() {
   if (AUTH.source === 'password') {
@@ -2060,30 +2018,6 @@ let pendingMult = 'S';
  *  Auto uses each seat's saved Dart≤ threshold (default 170). */
 let scoreEntryMode = 'visit';
 let visitDigits = '';
-let fitAutoscoreActive = false;
-let cameraScorerHost = '';
-let cameraScorerContainer = null;
-let cameraScorerCommit = null;
-let cameraScorerOptsKey = '';
-
-function ensureCameraScorer(host, container, onCommit, options) {
-  if (!container || typeof CameraScorer === 'undefined') return false;
-  const opts = options || {};
-  const optsKey = JSON.stringify(opts);
-  const needsInit = cameraScorerHost !== host
-    || cameraScorerContainer !== container
-    || cameraScorerCommit !== onCommit
-    || cameraScorerOptsKey !== optsKey
-    || !container.hasChildNodes();
-  if (!needsInit) return true;
-  if (typeof CameraScorer.exit === 'function') CameraScorer.exit();
-  CameraScorer.init(container, onCommit, opts);
-  cameraScorerHost = host;
-  cameraScorerContainer = container;
-  cameraScorerCommit = onCommit;
-  cameraScorerOptsKey = optsKey;
-  return true;
-}
 /** Lineup size for 501 / 301 DI / Cricket: 2 or 3 (cricket 3p = cut-throat).
  *  Always defaults to 2; choosing 3 lasts for the session until changed. */
 let lineupPlayerCount = 2;
@@ -7235,24 +7169,10 @@ function renderCricketBoard() {
 }
 
 function setScoreEntryMode(mode, opts) {
-  let next = (mode === 'camera') ? 'camera'
-    : (mode === 'training') ? 'training'
-    : (mode === 'visit') ? 'visit' : 'dart';
-  if ((next === 'camera' || next === 'training') && !isPro()) {
-    showProBanner('Autoscore and Training capture are Pro features.');
-    next = 'visit';
-  }
+  const next = (mode === 'visit') ? 'visit' : 'dart';
   if (next === scoreEntryMode && !(opts && opts.force)) {
     syncEntryToggle();
     return;
-  }
-  if ((scoreEntryMode === 'camera' || scoreEntryMode === 'training')
-      && next !== 'camera' && next !== 'training') {
-    if (typeof CameraScorer !== 'undefined' && typeof CameraScorer.exit === 'function') CameraScorer.exit();
-    const camBox = document.getElementById('cameraContainer');
-    if (camBox) camBox.classList.add('hidden');
-    const fitCam = document.getElementById('fitCameraContainer');
-    if (fitCam) fitCam.classList.add('hidden');
   }
   // Switching away from a partial dart visit: clear those darts (with undo).
   if (match && match.game !== 'cricket' && match.winner === null
@@ -7274,32 +7194,8 @@ function setScoreEntryMode(mode, opts) {
   }
   scoreEntryMode = next;
   visitDigits = '';
-  // By dart: show the aim board so landings can be tapped there.
-  if (next === 'dart' && match && matchUiActive && match.game !== 'cricket')
-    aimBoardVisible = true;
-  if ((next === 'camera' || next === 'training') && match && matchUiActive && match.game !== 'cricket')
-    aimBoardVisible = false;
   syncEntryToggle();
-  if (next === 'camera' || next === 'training') {
-    elPad.classList.add('hidden');
-    const camBox = document.getElementById('cameraContainer');
-    if (camBox) {
-      camBox.classList.remove('hidden');
-      const fitCam = document.getElementById('fitCameraContainer');
-      if (fitCam) fitCam.classList.add('hidden');
-      ensureFitAutoscore(false);
-      const commitHook = next === 'training' ? null : commitLabel;
-      const camOpts = { mode: next === 'training' ? 'training' : 'autoscore' };
-      if (ensureCameraScorer('score', camBox, commitHook, camOpts)
-          && typeof CameraScorer !== 'undefined'
-          && typeof CameraScorer.enter === 'function')
-        CameraScorer.enter();
-    }
-  } else {
-    const camBox = document.getElementById('cameraContainer');
-    if (camBox) camBox.classList.add('hidden');
-    buildPad();
-  }
+  buildPad();
   updatePending();
   if (opts && opts.render !== false) render();
 }
@@ -7321,10 +7217,6 @@ function autoScoreEntryMode() {
  * manual By dart choice).
  */
 function syncAutoScoreEntryMode(opts) {
-  if (scoreEntryMode === 'camera' || scoreEntryMode === 'training') {
-    syncEntryToggle();
-    return;
-  }
   const want = autoScoreEntryMode();
   if (!want) {
     syncEntryToggle();
@@ -7345,20 +7237,8 @@ function syncEntryToggle() {
   if (!box) return;
   const cricket = !!(match && match.game === 'cricket') || isCricket();
   box.classList.toggle('hidden', cricket);
-  const proLocked = !isPro();
-  const camBtn = box.querySelector('button[data-entry="camera"]');
-  if (camBtn) {
-    camBtn.disabled = proLocked;
-    camBtn.title = proLocked ? 'Autoscore is Pro' : '';
-  }
-  if (proLocked && (scoreEntryMode === 'camera' || scoreEntryMode === 'training')) {
-    scoreEntryMode = 'visit';
-  }
-  for (const b of box.querySelectorAll('button[data-entry]')) {
-    const isActive = (scoreEntryMode === 'training' && b.dataset.entry === 'dart')
-      || b.dataset.entry === scoreEntryMode;
-    b.classList.toggle('active', isActive);
-  }
+  for (const b of box.querySelectorAll('button[data-entry]'))
+    b.classList.toggle('active', b.dataset.entry === scoreEntryMode);
   syncScoreActionRow();
 }
 
@@ -7380,10 +7260,6 @@ function buildPad() {
   elPad.innerHTML = '';
   const cricket = !!(match && match.game === 'cricket') || isCricket();
   syncEntryToggle();
-  if (scoreEntryMode === 'camera' || scoreEntryMode === 'training') {
-    elPad.classList.add('hidden');
-    return;
-  }
   // Cricket: D / number / T are on the scoreboard — no pad.
   if (cricket) {
     elPad.classList.add('hidden');
@@ -7435,7 +7311,7 @@ function buildPad() {
 function playBoardWanted() {
   return !!(match && matchUiActive && match.winner === null
     && match.game !== 'cricket'
-    && (aimBoardVisible || scoreEntryMode === 'dart'));
+    && aimBoardVisible);
 }
 
 function playBoardScoringActive() {
@@ -7625,8 +7501,6 @@ function isThrowOnlyMessage(msg) {
 function aimBoardToggleHtml(source) {
   // Only for live x01 — cricket has no aim canvas.
   if (!match || !matchUiActive || match.game === 'cricket') return '';
-  // By dart always shows the board for scoring — no hide toggle needed.
-  if (scoreEntryMode === 'dart') return '';
   const src = source || 'primary';
   const open = !!(aimBoardVisible && aimBoardSource === src);
   return '<button type="button" class="aim-board-toggle'
@@ -8626,21 +8500,14 @@ if (elEntryToggle) {
   elEntryToggle.addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-entry]');
     if (!btn) return;
-    if (!isPro() && btn.dataset.entry === 'camera') {
-      showProBanner('Autoscore and Training capture are Pro features.');
-      return;
-    }
     setScoreEntryMode(btn.dataset.entry);
   });
 }
 const elTrainingCapture = document.getElementById('btnTrainingCapture');
 if (elTrainingCapture) {
   elTrainingCapture.addEventListener('click', () => {
-    if (!isPro()) {
-      showProBanner('Autoscore and Training capture are Pro features.');
-      return;
-    }
-    setScoreEntryMode('training');
+    showPage('fit');
+    showFitError('Training dataset: tap landing points on the board, then Add each dart.');
   });
 }
 (function wirePlayBoardScoring() {
@@ -8989,7 +8856,6 @@ function showPage(id) {
     id = 'coach';
     openCoachTab = 'practice';
   }
-  if (id !== 'fit') ensureFitAutoscore(false);
   if (id === 'fit' && !isPro()) {
     showProBanner('Fit σ (accuracy calibration) is Pro — it builds your coach profile.');
     id = 'coach';
@@ -9829,92 +9695,11 @@ const elFitAimSigmas = document.getElementById('fitAimSigmas');
 const elFitSavedList = document.getElementById('fitSavedList');
 const elFitResult = document.getElementById('fitResult');
 const elFitChartBox = document.getElementById('fitChartBox');
+const elFitDatasetCount = document.getElementById('fitDatasetCount');
 const fitCv = document.getElementById('fitChart');
 const fitCtx = fitCv.getContext('2d');
 const FIT_R_MAX = DOUBLE_OUTER;  // board outer radius (mm) — bull-from-centre
 const FIT_AIM_R_MAX = 340;       // distance from any aim point (mm)
-
-function renderFitAutoMeta() {
-  const meta = document.getElementById('fitAutoMeta');
-  if (!meta) return;
-  meta.textContent = fitAutoscoreActive
-    ? 'Autoscore on: detected darts are added to Fit rows'
-    : 'Autoscore off';
-}
-
-function pushFitPointToThrows(x, y) {
-  const aim = activeFitAimId();
-  const [ax, ay] = fitAimXY(aim);
-  const dx = x - ax;
-  const dy = y - ay;
-  const r = Math.round(Math.hypot(dx, dy) * 10) / 10;
-  const maxR = (aim && aim !== 'bull') ? FIT_AIM_R_MAX : FIT_R_MAX;
-  if (!Number.isFinite(r) || r < 0 || r > maxR) return false;
-  const [ux, uy] = fitLandingUnit(aim, x, y);
-  fitThrows.push({ r: r, aim: aim, x: x, y: y, ux: ux, uy: uy });
-  return true;
-}
-
-function onFitAutoscoreCommit(_label, opts) {
-  const x = Number(opts && opts.x);
-  const y = Number(opts && opts.y);
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-  if (!pushFitPointToThrows(x, y)) {
-    showFitError('Detected point is outside Fit range for current aim');
-    return;
-  }
-  fitMeasurePending = null;
-  if (elFitRadius) {
-    elFitRadius.value = '';
-    elFitRadius.readOnly = true;
-  }
-  showFitError('');
-  renderFit();
-}
-
-function ensureFitAutoscore(next) {
-  const want = !!next;
-  if (fitAutoscoreActive === want) {
-    const btn0 = document.getElementById('fitAutoscoreBtn');
-    if (btn0) {
-      btn0.classList.toggle('active', fitAutoscoreActive);
-      btn0.setAttribute('aria-pressed', fitAutoscoreActive ? 'true' : 'false');
-    }
-    renderFitAutoMeta();
-    return;
-  }
-  const fitCam = document.getElementById('fitCameraContainer');
-  if (!fitCam) return;
-  if (!want) {
-    fitAutoscoreActive = false;
-    if (typeof CameraScorer !== 'undefined' && typeof CameraScorer.exit === 'function') CameraScorer.exit();
-    fitCam.classList.add('hidden');
-    const btn1 = document.getElementById('fitAutoscoreBtn');
-    if (btn1) {
-      btn1.classList.remove('active');
-      btn1.setAttribute('aria-pressed', 'false');
-    }
-    renderFitAutoMeta();
-    return;
-  }
-
-  const scoreCam = document.getElementById('cameraContainer');
-  if (scoreCam) scoreCam.classList.add('hidden');
-  if (typeof CameraScorer !== 'undefined' && typeof CameraScorer.exit === 'function') CameraScorer.exit();
-  if (!ensureCameraScorer('fit', fitCam, onFitAutoscoreCommit)) return;
-
-  fitCam.classList.remove('hidden');
-  fitAutoscoreActive = true;
-  const btn2 = document.getElementById('fitAutoscoreBtn');
-  if (btn2) {
-    btn2.classList.add('active');
-    btn2.setAttribute('aria-pressed', 'true');
-  }
-  renderFitAutoMeta();
-  if (typeof CameraScorer !== 'undefined' && typeof CameraScorer.enter === 'function') {
-    CameraScorer.enter();
-  }
-}
 
 function loadFitHistory() {
   try {
@@ -10849,7 +10634,14 @@ function fitRecordPreview(rec) {
   return parts.join(' · ') + more;
 }
 
+function syncFitDatasetSummary() {
+  if (!elFitDatasetCount) return;
+  const n = fitThrows.length;
+  elFitDatasetCount.textContent = n + (n === 1 ? ' throw' : ' throws');
+}
+
 function renderFitList() {
+  syncFitDatasetSummary();
   if (!fitThrows.length) {
     elFitList.innerHTML = '<div class="empty">No throws yet — tap a row later to edit</div>';
     return;
@@ -10927,7 +10719,6 @@ function renderFit() {
   requestAnimationFrame(() => drawFitMeasureBoard());
   refreshFitSummary();
   renderFitList();
-  renderFitAutoMeta();
 }
 
 function showFitError(msg) {
@@ -11068,12 +10859,6 @@ document.getElementById('fitClear').addEventListener('click', () => {
   showFitError('');
   renderFit();
 });
-const elFitAutoscoreBtn = document.getElementById('fitAutoscoreBtn');
-if (elFitAutoscoreBtn) {
-  elFitAutoscoreBtn.addEventListener('click', () => {
-    ensureFitAutoscore(!fitAutoscoreActive);
-  });
-}
 if (elFitSaveBottom) elFitSaveBottom.addEventListener('click', saveCurrentFit);
 if (elFitPlayerName) {
   elFitPlayerName.addEventListener('click', (e) => {
@@ -11086,7 +10871,6 @@ if (elFitPlayerName) {
     openPlayerModal(FIT_PLAYER_EDIT);
   });
 }
-renderFitAutoMeta();
 renderFitSavedList();
 window.addEventListener('resize', () => {
   if (pageFit.classList.contains('active')) renderFit();
@@ -11332,6 +11116,5 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
   updateAccountBar();
 })();
 </script>
-<script src="camera-scorer.js?v=0.1.283-beta-2026-08-17-e19ff27"></script>
 </body>
 </html>
