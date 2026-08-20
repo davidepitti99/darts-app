@@ -736,7 +736,13 @@
   }
   .board-wrap .play-board-hint.hidden { display: none; }
   .board-wrap .play-board-tools {
-    margin-top: 6px; display: flex; justify-content: center;
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    margin: 0;
+    display: flex;
+    justify-content: flex-start;
+    z-index: 3;
   }
   .board-wrap .play-board-tools.hidden { display: none; }
   .tap-score-toggle {
@@ -1478,7 +1484,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.297-beta / 2026-08-19 / dd42459</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.298-beta / 2026-08-19 / 0b1d34c</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1892,7 +1898,7 @@
         <button type="button" data-darts="3">3 left</button>
         <button type="button" data-darts="2">2 left</button>
         <button type="button" data-darts="1">1 left</button>
-        <button type="button" id="checkoutExtended" class="checkout-extended-btn">Extended (≤200)</button>
+        <button type="button" id="checkoutExtended" class="checkout-extended-btn">Extended</button>
       </div>
       <div class="checkout-wrap">
         <table class="checkout-table">
@@ -1997,16 +2003,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.297-beta / 2026-08-19 / dd42459</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.298-beta / 2026-08-19 / 0b1d34c</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.297-beta / 2026-08-19 / dd42459';
+const APP_VERSION = '0.1.298-beta / 2026-08-19 / 0b1d34c';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.297-beta-2026-08-19-dd42459';
+const POLICY_CACHE_BUST = '0.1.298-beta-2026-08-19-0b1d34c';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -10468,8 +10474,7 @@ function renderCheckoutTable() {
   const sigEl = document.getElementById('checkoutSigma');
   const extBtn = document.getElementById('checkoutExtended');
   if (!body) return;
-  const scoreHi = checkoutScoreLimit > 170 ? 200 : 170;
-  const isExtended = scoreHi > 170;
+  const isExtended = checkoutScoreLimit > 170;
   if (extBtn) extBtn.classList.toggle('active', isExtended);
   let sigma = Math.round(parseFloat(sigEl && sigEl.value));
   if (!Number.isFinite(sigma)) sigma = 15;
@@ -10480,7 +10485,6 @@ function renderCheckoutTable() {
   const shape = { sigma: sigma };
   const resolved = resolvePolicy(modeKey, shape);
   const snap = resolved.snap || snapPolicyShape(shape);
-  const key = modeKey + '|' + snap.sigma + '|' + checkoutDartFilter + '|' + scoreHi;
   if (resolved.status === 'loading' || (!resolved.policy && resolved.status !== 'missing')) {
     hideCheckoutAimPreview();
     body.innerHTML = '<tr><td colspan="4" class="et">Loading aim table for σ = '
@@ -10501,6 +10505,51 @@ function renderCheckoutTable() {
   }
   const policy = resolved.policy;
   const wantD = checkoutDartFilter === 'all' ? null : parseInt(checkoutDartFilter, 10);
+  const policyScoreMax = (() => {
+    let hi = 170;
+    for (const k of Object.keys(policy)) {
+      const c = k.indexOf(',');
+      if (c < 1) continue;
+      const s = parseInt(k.slice(0, c), 10);
+      if (Number.isFinite(s) && s > hi) hi = s;
+    }
+    return hi;
+  })();
+  function entrySig(e) {
+    if (!e || !e[0]) return '';
+    const a0 = String(e[0]);
+    const a1 = Number.isFinite(+e[1]) ? (+e[1]).toFixed(1) : '';
+    const a2 = Number.isFinite(+e[2]) ? (+e[2]).toFixed(1) : '';
+    return a0 + '|' + a1 + '|' + a2;
+  }
+  function stableTailStart(d) {
+    let topSig = '';
+    let top = -1;
+    for (let s = policyScoreMax; s >= 2; s--) {
+      const sig = entrySig(policy[s + ',' + d]);
+      if (sig) {
+        top = s;
+        topSig = sig;
+        break;
+      }
+    }
+    if (top < 2 || !topSig) return 170;
+    let start = top;
+    for (let s = top - 1; s >= 2; s--) {
+      if (entrySig(policy[s + ',' + d]) !== topSig) break;
+      start = s;
+    }
+    return Math.max(170, start);
+  }
+  const ds = wantD == null ? [3, 2, 1] : [wantD];
+  let dynamicHi = 170;
+  for (const d of ds)
+    dynamicHi = Math.max(dynamicHi, stableTailStart(d));
+  const scoreHi = isExtended ? dynamicHi : 170;
+  if (extBtn) extBtn.textContent = isExtended
+    ? ('Extended (≤' + scoreHi + ')')
+    : 'Extended';
+  const key = modeKey + '|' + snap.sigma + '|' + checkoutDartFilter + '|' + scoreHi;
   const rows = [];
   for (let s = scoreHi; s >= 2; s--) {
     // 2 left → ≤110 (max T20+Bull); 1 left → ≤50 (doubles + bull).
@@ -10534,7 +10583,7 @@ function renderCheckoutTable() {
   checkoutLoadedKey = key;
   if (status) {
     let range = 'scores 2–170';
-    if (isExtended) range = 'scores 2–200 (extended)';
+    if (isExtended) range = 'scores 2–' + scoreHi + ' (extended, policy tail cutoff)';
     else if (wantD === 2) range = 'scores 2–110 (2 darts)';
     else if (wantD === 1) range = 'scores 2–50 (1 dart)';
     else if (wantD === 3) range = 'scores 2–170 (3 darts)';
@@ -10717,7 +10766,7 @@ function startDrillWarmup() {
     renderCheckoutTable();
   });
   bind('checkoutExtended', () => {
-    checkoutScoreLimit = checkoutScoreLimit > 170 ? 170 : 200;
+    checkoutScoreLimit = checkoutScoreLimit > 170 ? 170 : 999;
     if (coachTab === 'checkout') renderCheckoutTable();
   });
   const dartFilter = document.getElementById('checkoutDartFilter');
@@ -12325,6 +12374,6 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
   updateAccountBar();
 })();
 </script>
-<script src="camera-scorer.js?v=0.1.297-beta-2026-08-19-dd42459"></script>
+<script src="camera-scorer.js?v=0.1.298-beta-2026-08-19-0b1d34c"></script>
 </body>
 </html>
