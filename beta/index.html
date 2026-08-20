@@ -1507,7 +1507,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.184-beta / 2026-08-20 / 5ebbc7f</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.185-beta / 2026-08-20 / 5ebbc7f</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -2032,16 +2032,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.184-beta / 2026-08-20 / 5ebbc7f</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.185-beta / 2026-08-20 / 5ebbc7f</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.184-beta / 2026-08-20 / 5ebbc7f';
+const APP_VERSION = '0.1.185-beta / 2026-08-20 / 5ebbc7f';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.184-beta-2026-08-20-5ebbc7f';
+const POLICY_CACHE_BUST = '0.1.185-beta-2026-08-20-5ebbc7f';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -5288,6 +5288,194 @@ function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
   return null;
 }
 
+function isVisitByDart(v) {
+  if (!v) return false;
+  const darts = Array.isArray(v.darts) ? v.darts : [];
+  if (darts.length >= 2) return true;
+  const d0 = darts[0];
+  if (!d0 || !d0.label) return false;
+  const lab = String(d0.label).trim();
+  return !/^Visit\s+\d+$/i.test(lab) && !/^Bust$/i.test(lab);
+}
+
+function normalizeEditDartLabel(raw) {
+  let s = String(raw == null ? '' : raw).trim();
+  if (!s) return null;
+  s = s.toUpperCase().replace(/\s+/g, '');
+  if (s === 'M' || s === 'MISS' || s === '0') return 'Miss';
+  if (s === 'BULL' || s === 'DBULL' || s === 'DB' || s === 'D25' || s === '50') return 'Bull';
+  if (s === '25' || s === 'SBULL' || s === 'SB' || s === 'S25') return '25';
+  let m = s.match(/^([SDT])(\d{1,2})$/);
+  if (m) {
+    const n = parseInt(m[2], 10);
+    if (!Number.isFinite(n) || n < 1 || n > 20) return null;
+    return m[1] + String(n);
+  }
+  if (/^\d{1,2}$/.test(s)) {
+    const n = parseInt(s, 10);
+    if (n >= 1 && n <= 20) return 'S' + String(n);
+  }
+  return null;
+}
+
+function editPastVisitDarts(playerIdx, histIdx, labels, forceBust) {
+  if (!match || match.game === 'cricket') return 'Not available in Cricket';
+  if (!visitEditableInMatch(match))
+    return 'Can only edit visits while the leg is in progress';
+  const p = match.players[playerIdx];
+  if (!p || !p.visitHistory || !p.visitHistory[histIdx]) return 'Visit not found';
+  const v = p.visitHistory[histIdx];
+  if (((v.leg | 0) || 1) !== (match.legNumber | 0))
+    return 'Only visits in the current leg can be edited';
+
+  const before = remBeforePlayerVisit(match, playerIdx, histIdx);
+  const remBefore = before.remBefore | 0;
+  const inRule = inRuleOf(match);
+  const outRule = outRuleOf(match);
+  const src = Array.isArray(labels) ? labels : [];
+  const oldDc = Math.max(1, Math.min(3, visitRecDartCount(v)));
+  const wasCheckout = !!(v.darts && v.darts.some(d => d && d.outcome === 'checkout'));
+
+  const darts = [];
+  let opened = !!before.opened || !match.doubleIn;
+  let rem = remBefore;
+  let busted = !!forceBust;
+  let nowCheckout = false;
+  let score = 0;
+
+  for (let i = 0; i < oldDc; i++) {
+    if (busted || nowCheckout) break;
+    const canon = normalizeEditDartLabel(src[i]);
+    if (!canon)
+      return 'Dart ' + (i + 1) + ': use S1–S20, D1–D20, T1–T20, 25, Bull, or Miss';
+    const [pts, isDbl, isTpl] = aimPoints(canon);
+
+    if (!opened) {
+      if (matchesInRule(inRule, pts, isDbl, isTpl)) {
+        opened = true;
+        rem -= pts;
+        darts.push({
+          label: canon,
+          points: pts,
+          isDouble: !!isDbl,
+          outcome: 'ok',
+          remainingAfter: rem,
+          suggested: '',
+        });
+        score += pts;
+      } else {
+        darts.push({
+          label: canon,
+          points: 0,
+          isDouble: !!isDbl,
+          outcome: 'no_score',
+          remainingAfter: rem,
+          suggested: '',
+        });
+      }
+      continue;
+    }
+
+    const newRem = rem - pts;
+    const deadLeave = (outRule === 'double' && newRem === 1)
+      || (outRule === 'triple' && (newRem === 1 || newRem === 2));
+    if (newRem === 0 && matchesOutRule(outRule, pts, isDbl, isTpl)) {
+      rem = 0;
+      nowCheckout = true;
+      score += pts;
+      darts.push({
+        label: canon,
+        points: pts,
+        isDouble: !!isDbl,
+        outcome: 'checkout',
+        remainingAfter: 0,
+        suggested: '',
+      });
+      continue;
+    }
+    if (newRem < 0 || deadLeave || (newRem === 0 && !matchesOutRule(outRule, pts, isDbl, isTpl))) {
+      busted = true;
+      darts.push({
+        label: canon,
+        points: pts,
+        isDouble: !!isDbl,
+        outcome: 'bust',
+        remainingAfter: remBefore,
+        suggested: '',
+      });
+      score = 0;
+      continue;
+    }
+
+    rem = newRem;
+    score += pts;
+    darts.push({
+      label: canon,
+      points: pts,
+      isDouble: !!isDbl,
+      outcome: 'ok',
+      remainingAfter: rem,
+      suggested: '',
+    });
+  }
+
+  if (forceBust) {
+    darts.length = 0;
+    darts.push({
+      label: 'Bust',
+      points: 0,
+      isDouble: false,
+      outcome: 'bust',
+      remainingAfter: remBefore,
+      suggested: '',
+    });
+    busted = true;
+    nowCheckout = false;
+    score = 0;
+    rem = remBefore;
+  }
+
+  if (!busted && !nowCheckout && !opened && match.doubleIn && score > 0)
+    return '301 DI: open score between 2 and 170';
+
+  pushUndo(match);
+  v.score = busted ? 0 : score;
+  v.busted = busted;
+  v.dartCount = Math.max(1, Math.min(3, darts.length || oldDc));
+  v.darts = darts;
+  if (nowCheckout) v.checkoutFrom = remBefore;
+  else delete v.checkoutFrom;
+  if (p.visitScores && p.visitScores.length > histIdx)
+    p.visitScores[histIdx] = v.score | 0;
+
+  if (wasCheckout && !nowCheckout)
+    p.checkoutHits = Math.max(0, (p.checkoutHits | 0) - 1);
+  else if (!wasCheckout && nowCheckout)
+    p.checkoutHits = (p.checkoutHits | 0) + 1;
+
+  recomputePlayerVisitAggregates(p);
+  syncPlayerRemainingFromHistory(match, playerIdx);
+
+  if (match.winner === null && nowCheckout) {
+    if (!isX01PlayOn(match)) {
+      applyLegWin(match, playerIdx);
+    } else {
+      const fo = ensureFinishOrder(match);
+      if (fo.indexOf(playerIdx) < 0) fo.push(playerIdx);
+      if (fo.length >= 2) {
+        for (let i = 0; i < playerCount(match); i++) {
+          if (fo.indexOf(i) < 0) fo.push(i);
+        }
+        applyLegWin(match, fo[0]);
+      }
+    }
+  }
+
+  match.message = p.name + ': visit ' + (histIdx + 1) + ' darts updated';
+  match.messageIsError = false;
+  return null;
+}
+
 function renderVisitListHtml(idx) {
   if (!match || !match.players[idx]) {
     return '<div class="empty">No match</div>';
@@ -5344,16 +5532,35 @@ function renderVisitListHtml(idx) {
         + '<div class="v-score' + cls + '">' + (bust && sc === 0 ? '0' : sc) + '</div>';
       if (editing) {
         const before = remBeforePlayerVisit(match, idx, row.idx);
-        html += '<div class="v-edit">'
-          + '<div class="v-edit-row">'
-          + '<input type="number" inputmode="numeric" min="0" max="180" step="1" '
-          + 'id="visitEditScore" value="' + (bust ? '' : sc) + '" '
-          + 'placeholder="0–' + Math.min(180, before.remBefore) + '" '
-          + 'aria-label="Edit visit score">'
-          + '<button type="button" class="bust-btn" data-visit-bust>Bust</button>'
-          + '<button type="button" class="primary" data-visit-save>Save</button>'
-          + '</div>'
-          + '<div class="err" id="visitEditErr"></div>'
+        const byDart = isVisitByDart(v);
+        html += '<div class="v-edit">';
+        if (byDart) {
+          const dc = Math.max(1, Math.min(3, visitRecDartCount(v)));
+          for (let di = 0; di < dc; di++) {
+            const dv = (v.darts && v.darts[di]) ? (v.darts[di].label || '') : '';
+            html += '<div class="v-edit-row">'
+              + '<input type="text" maxlength="6" '
+              + 'data-visit-dart-edit="' + di + '" data-visit-enter-save '
+              + 'value="' + dv + '" '
+              + 'placeholder="S20 / D20 / T20 / 25 / Bull / Miss" '
+              + 'aria-label="Edit dart ' + (di + 1) + '">'
+              + '</div>';
+          }
+          html += '<div class="v-edit-row">'
+            + '<button type="button" class="bust-btn" data-visit-bust>Bust</button>'
+            + '<button type="button" class="primary" data-visit-save>Save</button>'
+            + '</div>';
+        } else {
+          html += '<div class="v-edit-row">'
+            + '<input type="number" inputmode="numeric" min="0" max="180" step="1" '
+            + 'id="visitEditScore" data-visit-enter-save value="' + (bust ? '' : sc) + '" '
+            + 'placeholder="0–' + Math.min(180, before.remBefore) + '" '
+            + 'aria-label="Edit visit score">'
+            + '<button type="button" class="bust-btn" data-visit-bust>Bust</button>'
+            + '<button type="button" class="primary" data-visit-save>Save</button>'
+            + '</div>';
+        }
+        html += '<div class="err" id="visitEditErr"></div>'
           + '<button type="button" data-visit-cancel>Cancel</button>'
           + '</div>';
       }
@@ -9869,11 +10076,22 @@ for (const idx of [0, 1, 2]) {
       return;
     }
     if ((save || bust) && visitListPlayerIdx != null && visitListEditIdx != null) {
-      const inp = document.getElementById('visitEditScore');
-      const raw = inp ? inp.value : '';
-      const sc = raw === '' ? 0 : parseInt(raw, 10);
-      const err = editPastVisitTotal(
-        visitListPlayerIdx, visitListEditIdx, sc, !!bust);
+      const p = match && match.players && match.players[visitListPlayerIdx];
+      const v = p && p.visitHistory && p.visitHistory[visitListEditIdx];
+      const byDart = isVisitByDart(v);
+      let err = null;
+      if (byDart) {
+        const dartInputs = [...body.querySelectorAll('[data-visit-dart-edit]')];
+        const labels = dartInputs.map(inp => inp && inp.value);
+        err = editPastVisitDarts(
+          visitListPlayerIdx, visitListEditIdx, labels, !!bust);
+      } else {
+        const inp = document.getElementById('visitEditScore');
+        const raw = inp ? inp.value : '';
+        const sc = raw === '' ? 0 : parseInt(raw, 10);
+        err = editPastVisitTotal(
+          visitListPlayerIdx, visitListEditIdx, sc, !!bust);
+      }
       const errEl = document.getElementById('visitEditErr');
       if (err) {
         if (errEl) errEl.textContent = err;
@@ -9902,7 +10120,7 @@ for (const idx of [0, 1, 2]) {
   });
   body.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
-    if (e.target && e.target.id === 'visitEditScore') {
+    if (e.target && e.target.matches && e.target.matches('[data-visit-enter-save]')) {
       e.preventDefault();
       const btn = body.querySelector('[data-visit-save]');
       if (btn) btn.click();
@@ -12530,6 +12748,6 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
   updateAccountBar();
 })();
 </script>
-<script src="camera-scorer.js?v=0.1.184-beta-2026-08-20-5ebbc7f"></script>
+<script src="camera-scorer.js?v=0.1.185-beta-2026-08-20-5ebbc7f"></script>
 </body>
 </html>
