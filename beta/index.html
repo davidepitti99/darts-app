@@ -1460,7 +1460,25 @@
     width: min(420px, 100%); max-height: min(92vh, 720px);
     overflow: auto; cursor: pointer; -webkit-tap-highlight-color: transparent;
   }
-  .checkout-aim-preview .board-wrap { margin-top: 8px; pointer-events: none; }
+  .checkout-aim-preview .board-wrap { margin-top: 8px; }
+  .checkout-aim-preview .board-wrap canvas { pointer-events: none; }
+  .checkout-aim-step-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    border: 1px solid #6a5a2a;
+    border-radius: 999px;
+    background: rgba(20, 18, 12, 0.92);
+    color: var(--accent);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+  }
   .checkout-aim-preview .hint-tap {
     margin: 8px 0 0; font-size: 11px; color: var(--mute); text-align: center;
   }
@@ -1507,7 +1525,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.308-beta / 2026-08-21 / 9817f90</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.309-beta / 2026-08-21 / 0611181</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1659,6 +1677,8 @@
     <div class="checkout-aim-meta" id="checkoutAimMeta"></div>
     <div class="board-wrap">
       <canvas id="checkoutBoard" width="800" height="800"></canvas>
+      <button type="button" id="checkoutAimStepBtn" class="checkout-aim-step-btn hidden"
+              aria-label="Next suggested aim">→</button>
     </div>
     <p class="hint-tap">Tap to close</p>
   </div>
@@ -1699,8 +1719,8 @@
       <div class="meta" id="meta0">Legs 0</div>
       <div class="sigma-row cricket-hide" id="simpleRow0">
         <label for="sigma0">σ</label>
-        <input id="sigma0" type="number" inputmode="numeric" min="1" max="50" step="1"
-               value="25" placeholder="1–50">
+         <input id="sigma0" type="number" inputmode="numeric" min="1" max="80" step="1"
+           value="25" placeholder="1–80">
         <button type="button" class="sigma-info" data-sigma-info
                 title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
@@ -1725,8 +1745,8 @@
       <div class="meta" id="meta1">Legs 0</div>
       <div class="sigma-row cricket-hide" id="simpleRow1">
         <label for="sigma1">σ</label>
-        <input id="sigma1" type="number" inputmode="numeric" min="1" max="50" step="1"
-               value="25" placeholder="1–50">
+         <input id="sigma1" type="number" inputmode="numeric" min="1" max="80" step="1"
+           value="25" placeholder="1–80">
         <button type="button" class="sigma-info" data-sigma-info
                 title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
@@ -1747,8 +1767,8 @@
       <div class="meta" id="meta2">Legs 0</div>
       <div class="sigma-row cricket-hide" id="simpleRow2">
         <label for="sigma2">σ</label>
-        <input id="sigma2" type="number" inputmode="numeric" min="1" max="50" step="1"
-               value="25" placeholder="1–50">
+         <input id="sigma2" type="number" inputmode="numeric" min="1" max="80" step="1"
+           value="25" placeholder="1–80">
         <button type="button" class="sigma-info" data-sigma-info
                 title="What is σ?" aria-label="What is sigma?">i</button>
       </div>
@@ -1918,7 +1938,7 @@
       <p class="promise">Pick σ — most likely visit path for every leave 2–170 (same for 501 and 301 once you are open). Tap a path to see the board aim for the first dart.</p>
       <div class="checkout-controls">
         <label>σ (mm)
-          <input id="checkoutSigma" type="number" inputmode="numeric" min="1" max="50" step="1" value="15">
+          <input id="checkoutSigma" type="number" inputmode="numeric" min="1" max="80" step="1" value="15">
         </label>
         <button type="button" id="checkoutLoad">Show</button>
       </div>
@@ -1932,7 +1952,7 @@
       <div class="checkout-wrap">
         <table class="checkout-table">
           <thead>
-            <tr><th>Score</th><th>Darts</th><th>Path</th><th>ET</th><th>E[darts]</th></tr>
+            <tr><th>Score</th><th>Darts</th><th>Path</th><th>ET</th><th>ED</th></tr>
           </thead>
           <tbody id="checkoutTableBody">
             <tr><td colspan="5" class="et">Tap Show to load the aim table for this σ.</td></tr>
@@ -2032,16 +2052,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.308-beta / 2026-08-21 / 9817f90</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.309-beta / 2026-08-21 / 0611181</span></div>
 </div>
 
 <script>
-const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.308-beta / 2026-08-21 / 9817f90';
+const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
+const APP_VERSION = '0.1.309-beta / 2026-08-21 / 0611181';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.308-beta-2026-08-21-9817f90';
+const POLICY_CACHE_BUST = '0.1.309-beta-2026-08-21-0611181';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -3823,7 +3843,7 @@ function matchFirst9Avg(p, legSheets, playerIdx) {
 
 /**
  * Infer σ (mm) from a 3-dart average using the pre-computed
- * optimal-aim expected-score curve (σ=1..50, step 1 mm).
+ * optimal-aim expected-score curve (σ=1..80, step 1 mm).
  * Returns null if avg is out of range or not finite.
  */
 const SIGMA_AVG_TABLE = [
@@ -3852,7 +3872,7 @@ function inferSigmaFromAvg(avg3Val) {
 
 // 301 DI fallback: infer sigma from entry-phase darts to first opening double.
 const DI_ENTRY_MC_SAMPLES = 220;
-let diEntryExpectedDartsBySigma = null; // index 1..50
+let diEntryExpectedDartsBySigma = null; // index 1..80
 
 function openingDoubleHitProb(modeKey, sigma, dartsLeft) {
   const resolved = resolvePolicy(modeKey, { sigma: sigma });
@@ -3873,9 +3893,9 @@ function openingDoubleHitProb(modeKey, sigma, dartsLeft) {
 
 function expectedDartsToOpenDoubleIn(modeKey, sigma) {
   modeKey = modeKey || '301di';
-  const s = Math.max(1, Math.min(50, sigma | 0));
+  const s = Math.max(1, Math.min(80, sigma | 0));
   if (!diEntryExpectedDartsBySigma)
-    diEntryExpectedDartsBySigma = new Array(51).fill(null);
+    diEntryExpectedDartsBySigma = new Array(81).fill(null);
   if (Number.isFinite(diEntryExpectedDartsBySigma[s]))
     return diEntryExpectedDartsBySigma[s];
 
@@ -3910,7 +3930,7 @@ function inferSigmaFromDoubleInEntry(p, opts) {
 
   let bestSigma = null;
   let bestErr = Infinity;
-  for (let s = 1; s <= 50; s++) {
+  for (let s = 1; s <= 80; s++) {
     const expDarts = expectedDartsToOpenDoubleIn(opts.modeKey || '301di', s);
     if (!Number.isFinite(expDarts)) continue;
     const err = Math.abs(expDarts - observed);
@@ -7779,13 +7799,13 @@ function shapeSigmaEq(shape) {
   return snapPolicyShape(shape || {}).sigma;
 }
 
-/** Snap to isotropic policy grid: clamp/round σ to 1..50 → sσ. */
+/** Snap to isotropic policy grid: clamp/round σ to 1..80 → sσ. */
 function snapPolicyShape(shape) {
   let s = Math.round(Number(
     shape && shape.sigma != null ? shape.sigma
       : (shape && shape.sigma != null ? shape.sigma : 25)));
   if (!Number.isFinite(s)) s = 25;
-  s = Math.max(1, Math.min(50, s));
+  s = Math.max(1, Math.min(80, s));
   return { sigma: s };
 }
 
@@ -7811,7 +7831,7 @@ function policyUrl(modeKey, s) {
 /** Return cached policy or null; kick off fetch if needed. */
 function resolvePolicy(modeKey, shape) {
   let snap = snapPolicyShape(shape);
-  // Free tier: free σ allow-list only (full 1–50 grid is Pro).
+  // Free tier: free σ allow-list only (full 1–80 grid is Pro).
   if (!isPro()) {
     const allowed = freeSigmas();
     let s = snap.sigma;
@@ -7822,7 +7842,7 @@ function resolvePolicy(modeKey, shape) {
         if (d < bestD) { best = a; bestD = d; }
       }
       s = best;
-      showProBanner('Full σ grid (1–50 mm) is Pro. Using free σ = ' + s + ' mm.');
+      showProBanner('Full σ grid (1–80 mm) is Pro. Using free σ = ' + s + ' mm.');
     }
     snap = { sigma: s };
   }
@@ -10870,7 +10890,7 @@ function showCheckoutAimPreview(score, darts, opts) {
   const sigEl = document.getElementById('checkoutSigma');
   let sigma = Math.round(parseFloat(sigEl && sigEl.value));
   if (!Number.isFinite(sigma)) sigma = 15;
-  sigma = Math.max(1, Math.min(50, sigma));
+  sigma = Math.max(1, Math.min(80, sigma));
   const resolved = resolvePolicy('501', { sigma: sigma });
   const policy = resolved.policy;
   if (!policy) {
@@ -10924,11 +10944,12 @@ function showCheckoutAimPreview(score, darts, opts) {
     html += '<span class="next"> ' + aims[i] + '</span>';
   html += '</div>';
   if (why) html += '<div class="why">' + why + '</div>';
+  html += '<div class="row"><span class="k" id="checkoutAimStepMeta"></span></div>';
   if (et != null && Number.isFinite(+et)) {
     const etNum = Number(et);
     const edNum = Number(eDarts);
     html += '<div class="row"><span class="k">ET:</span> '
-      + etNum.toFixed(3) + ' <span class="k">· E[darts]:</span> '
+      + etNum.toFixed(2) + ' <span class="k">· ED:</span> '
       + (Number.isFinite(edNum) ? edNum.toFixed(2) : '—') + '</div>';
   }
 
@@ -10954,12 +10975,6 @@ function showCheckoutAimPreview(score, darts, opts) {
       });
     }
   }
-  if (checkoutPreviewAims.length > 1) {
-    html += '<div class="row"><button type="button" id="checkoutAimStepBtn"'
-      + ' aria-label="Next suggested aim">→</button> '
-      + '<span class="k" id="checkoutAimStepMeta"></span></div>';
-  }
-
   if (meta) meta.innerHTML = html;
   preview.classList.remove('hidden');
 
@@ -10968,8 +10983,12 @@ function showCheckoutAimPreview(score, darts, opts) {
     if (!step) return;
     const metaEl = document.getElementById('checkoutAimStepMeta');
     if (metaEl) {
-      metaEl.textContent = 'Aim ' + (checkoutPreviewStep + 1) + '/'
-        + checkoutPreviewAims.length + ': ' + step.label;
+      if (checkoutPreviewAims.length > 1) {
+        metaEl.textContent = 'Aim ' + (checkoutPreviewStep + 1) + '/'
+          + checkoutPreviewAims.length + ': ' + step.label;
+      } else {
+        metaEl.textContent = 'Aim: ' + step.label;
+      }
     }
     requestAnimationFrame(() => {
       sizeCheckoutBoard();
@@ -10980,12 +10999,14 @@ function showCheckoutAimPreview(score, darts, opts) {
 
   const stepBtn = document.getElementById('checkoutAimStepBtn');
   if (stepBtn) {
-    stepBtn.addEventListener('click', (e) => {
+    const canStep = checkoutPreviewAims.length > 1;
+    stepBtn.classList.toggle('hidden', !canStep);
+    stepBtn.onclick = canStep ? (e) => {
       e.preventDefault();
       e.stopPropagation();
       checkoutPreviewStep = (checkoutPreviewStep + 1) % checkoutPreviewAims.length;
       paintPreviewStep();
-    });
+    } : null;
   }
   paintPreviewStep();
 }
@@ -10999,12 +11020,12 @@ function renderCheckoutTable() {
   let isExtended = checkoutScoreLimit > 170;
   if (extBtn) {
     extBtn.classList.toggle('active', isExtended);
-    extBtn.textContent = isExtended ? 'Reduced' : 'Extended';
+    extBtn.textContent = 'Extended';
     extBtn.style.display = '';
   }
   let sigma = Math.round(parseFloat(sigEl && sigEl.value));
   if (!Number.isFinite(sigma)) sigma = 15;
-  sigma = Math.max(1, Math.min(50, sigma));
+  sigma = Math.max(1, Math.min(80, sigma));
   if (sigEl) sigEl.value = String(sigma);
   // Leaves 2–170 are identical for 501 / 301 DI — always load 501.
   const modeKey = '501';
@@ -11098,7 +11119,7 @@ function renderCheckoutTable() {
   const scoreHi = isExtended ? dynamicHi : 170;
   if (extBtn) {
     extBtn.classList.toggle('active', isExtended);
-    extBtn.textContent = isExtended ? 'Reduced' : 'Extended';
+    extBtn.textContent = 'Extended';
     extBtn.style.display = canExtend ? '' : 'none';
   }
   const key = modeKey + '|' + snap.sigma + '|' + checkoutDartFilter + '|' + scoreHi;
@@ -11125,7 +11146,7 @@ function renderCheckoutTable() {
         + '<td class="' + (possible ? '' : 'score-impossible') + '">' + s + '</td>'
         + '<td>' + d + '</td><td class="path">'
         + path + '</td><td class="et">'
-        + (et != null && Number.isFinite(+et) ? Number(et).toFixed(3) : '—')
+        + (et != null && Number.isFinite(+et) ? Number(et).toFixed(2) : '—')
         + '</td><td class="et">'
         + expDarts
         + '</td></tr>');
@@ -12928,6 +12949,6 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
   updateAccountBar();
 })();
 </script>
-<script src="camera-scorer.js?v=0.1.308-beta-2026-08-21-9817f90"></script>
+<script src="camera-scorer.js?v=0.1.309-beta-2026-08-21-0611181"></script>
 </body>
 </html>
