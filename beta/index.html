@@ -1507,7 +1507,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.187-beta / 2026-08-20 / 3a30b96</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.308-beta / 2026-08-21 / 9817f90</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1923,7 +1923,7 @@
         <button type="button" id="checkoutLoad">Show</button>
       </div>
       <div class="checkout-filters" id="checkoutDartFilter">
-        <button type="button" class="active" data-darts="all">All darts</button>
+        <button type="button" class="active" data-darts="all">All</button>
         <button type="button" data-darts="3">3 left</button>
         <button type="button" data-darts="2">2 left</button>
         <button type="button" data-darts="1">1 left</button>
@@ -1932,10 +1932,10 @@
       <div class="checkout-wrap">
         <table class="checkout-table">
           <thead>
-            <tr><th>Score</th><th>Darts</th><th>Path</th><th>E[turns]</th></tr>
+            <tr><th>Score</th><th>Darts</th><th>Path</th><th>ET</th><th>E[darts]</th></tr>
           </thead>
           <tbody id="checkoutTableBody">
-            <tr><td colspan="4" class="et">Tap Show to load the aim table for this σ.</td></tr>
+            <tr><td colspan="5" class="et">Tap Show to load the aim table for this σ.</td></tr>
           </tbody>
         </table>
       </div>
@@ -2032,16 +2032,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.187-beta / 2026-08-20 / 3a30b96</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.308-beta / 2026-08-21 / 9817f90</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.187-beta / 2026-08-20 / 3a30b96';
+const APP_VERSION = '0.1.308-beta / 2026-08-21 / 9817f90';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.187-beta-2026-08-20-3a30b96';
+const POLICY_CACHE_BUST = '0.1.308-beta-2026-08-21-9817f90';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2531,13 +2531,15 @@ function drawLandingMark(x, y) {
 function prettyAimLabel(label) {
   let lab = String(label || '').replace(/\*+$/, '').trim();
   lab = lab.replace(/^([STD]\d+)[io]$/i, '$1');
+  if (lab === 'Bull') return 'IB';
+  if (lab === '25') return 'OB';
   return lab;
 }
 
 function displayAim(label, x, y) {
   const lab = prettyAimLabel(label);
   if (lab === 'Miss' || lab === 'M' || lab === 'Bounce')
-    return nearestScoringLabel(x, y) + (lab === 'Bounce' ? '' : ' (miss)');
+    return prettyAimLabel(nearestScoringLabel(x, y)) + (lab === 'Bounce' ? '' : ' (miss)');
   return lab;
 }
 
@@ -2641,6 +2643,8 @@ function applySuggestedAim(result, suggested) {
 function aimPoints(label) {
   const lab = prettyAimLabel(label);
   if (lab === 'Miss' || lab === 'M' || lab === 'Bounce') return [0, false, false];
+  if (lab === 'IB') return [50, true, false];
+  if (lab === 'OB') return [25, false, false];
   if (lab.startsWith('Bull')) {
     if (lab.indexOf('25') >= 0) return [25, false, false];
     return [50, true, false];
@@ -10348,6 +10352,8 @@ let checkoutScoreLimit = 170;
 let checkoutLoadedKey = '';
 /** Last checkout-table row shown on the board preview: {score, darts} or null. */
 let checkoutPreviewSel = null;
+let checkoutPreviewStep = 0;
+let checkoutPreviewAims = [];
 
 buildModeToggle();
 populateSigmas();
@@ -10833,6 +10839,8 @@ function shareCoachProfile() {
 
 function hideCheckoutAimPreview() {
   checkoutPreviewSel = null;
+  checkoutPreviewStep = 0;
+  checkoutPreviewAims = [];
   const wrap = document.getElementById('checkoutAimPreview');
   if (wrap) wrap.classList.add('hidden');
   const meta = document.getElementById('checkoutAimMeta');
@@ -10895,7 +10903,7 @@ function showCheckoutAimPreview(score, darts, opts) {
     preview.classList.remove('hidden');
     return;
   }
-  const [aim, x, y, et] = entry;
+  const [aim, x, y, et, eDarts] = entry;
   const snap = resolved.snap || { sigma: sigma };
   const steps = hitContinuation(policy, score, darts);
   const aims = formatHitPath(policy, steps);
@@ -10916,17 +10924,70 @@ function showCheckoutAimPreview(score, darts, opts) {
     html += '<span class="next"> ' + aims[i] + '</span>';
   html += '</div>';
   if (why) html += '<div class="why">' + why + '</div>';
-  if (et != null && Number.isFinite(+et))
-    html += '<div class="row"><span class="k">Expected turns:</span> '
-      + Number(et).toFixed(3) + '</div>';
+  if (et != null && Number.isFinite(+et)) {
+    const etNum = Number(et);
+    const edNum = Number(eDarts);
+    html += '<div class="row"><span class="k">ET:</span> '
+      + etNum.toFixed(3) + ' <span class="k">· E[darts]:</span> '
+      + (Number.isFinite(edNum) ? edNum.toFixed(2) : '—') + '</div>';
+  }
+
+  checkoutPreviewStep = 0;
+  checkoutPreviewAims = [{
+    score: score,
+    darts: darts,
+    label: first,
+    x: Number(x),
+    y: Number(y),
+  }];
+  if (steps.length > 1) {
+    const s2 = steps[1][0];
+    const d2 = steps[1][1];
+    const e2 = policy[s2 + ',' + d2];
+    if (e2 && Number.isFinite(+e2[1]) && Number.isFinite(+e2[2])) {
+      checkoutPreviewAims.push({
+        score: s2,
+        darts: d2,
+        label: displayAim(e2[0], e2[1], e2[2]),
+        x: Number(e2[1]),
+        y: Number(e2[2]),
+      });
+    }
+  }
+  if (checkoutPreviewAims.length > 1) {
+    html += '<div class="row"><button type="button" id="checkoutAimStepBtn"'
+      + ' aria-label="Next suggested aim">→</button> '
+      + '<span class="k" id="checkoutAimStepMeta"></span></div>';
+  }
+
   if (meta) meta.innerHTML = html;
   preview.classList.remove('hidden');
-  // Size after show so clientWidth is non-zero, then paint board + cross.
-  requestAnimationFrame(() => {
-    sizeCheckoutBoard();
-    drawBoardOn(board);
-    drawAimOn(board, x, y, snap);
-  });
+
+  function paintPreviewStep() {
+    const step = checkoutPreviewAims[checkoutPreviewStep] || checkoutPreviewAims[0];
+    if (!step) return;
+    const metaEl = document.getElementById('checkoutAimStepMeta');
+    if (metaEl) {
+      metaEl.textContent = 'Aim ' + (checkoutPreviewStep + 1) + '/'
+        + checkoutPreviewAims.length + ': ' + step.label;
+    }
+    requestAnimationFrame(() => {
+      sizeCheckoutBoard();
+      drawBoardOn(board);
+      drawAimOn(board, step.x, step.y, snap);
+    });
+  }
+
+  const stepBtn = document.getElementById('checkoutAimStepBtn');
+  if (stepBtn) {
+    stepBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      checkoutPreviewStep = (checkoutPreviewStep + 1) % checkoutPreviewAims.length;
+      paintPreviewStep();
+    });
+  }
+  paintPreviewStep();
 }
 
 function renderCheckoutTable() {
@@ -10935,8 +10996,12 @@ function renderCheckoutTable() {
   const sigEl = document.getElementById('checkoutSigma');
   const extBtn = document.getElementById('checkoutExtended');
   if (!body) return;
-  const isExtended = checkoutScoreLimit > 170;
-  if (extBtn) extBtn.classList.toggle('active', isExtended);
+  let isExtended = checkoutScoreLimit > 170;
+  if (extBtn) {
+    extBtn.classList.toggle('active', isExtended);
+    extBtn.textContent = isExtended ? 'Reduced' : 'Extended';
+    extBtn.style.display = '';
+  }
   let sigma = Math.round(parseFloat(sigEl && sigEl.value));
   if (!Number.isFinite(sigma)) sigma = 15;
   sigma = Math.max(1, Math.min(50, sigma));
@@ -10948,7 +11013,7 @@ function renderCheckoutTable() {
   const snap = resolved.snap || snapPolicyShape(shape);
   if (resolved.status === 'loading' || (!resolved.policy && resolved.status !== 'missing')) {
     hideCheckoutAimPreview();
-    body.innerHTML = '<tr><td colspan="4" class="et">Loading aim table for σ = '
+    body.innerHTML = '<tr><td colspan="5" class="et">Loading aim table for σ = '
       + snap.sigma + ' mm…</td></tr>';
     if (status) status.textContent = 'Fetching policy…';
     // Re-render when fetch completes (resolvePolicy → render also fires).
@@ -10959,7 +11024,7 @@ function renderCheckoutTable() {
   }
   if (!resolved.policy) {
     hideCheckoutAimPreview();
-    body.innerHTML = '<tr><td colspan="4" class="et">No aim table for σ = '
+    body.innerHTML = '<tr><td colspan="5" class="et">No aim table for σ = '
       + snap.sigma + ' mm yet.</td></tr>';
     if (status) status.textContent = 'Missing policy JSON for this σ.';
     return;
@@ -11006,23 +11071,49 @@ function renderCheckoutTable() {
   let dynamicHi = 170;
   for (const d of ds)
     dynamicHi = Math.max(dynamicHi, stableTailStart(d));
+  function includeCheckoutRow(s, d, extendedMode) {
+    if (wantD != null && d !== wantD) return false;
+    const hi = extendedMode ? dynamicHi : 170;
+    if (s < 2 || s > hi) return false;
+    if (!extendedMode && d === 2 && s > 110) return false;
+    if (!extendedMode && d === 1 && s > 50) return false;
+    return true;
+  }
+  function hasExtendedDelta() {
+    for (let s = 2; s <= dynamicHi; s++) {
+      for (const d of [3, 2, 1]) {
+        const entry = policy[s + ',' + d];
+        if (!entry || !entry[0]) continue;
+        if (includeCheckoutRow(s, d, true) !== includeCheckoutRow(s, d, false))
+          return true;
+      }
+    }
+    return false;
+  }
+  const canExtend = hasExtendedDelta();
+  if (!canExtend) {
+    checkoutScoreLimit = 170;
+    isExtended = false;
+  }
   const scoreHi = isExtended ? dynamicHi : 170;
-  if (extBtn) extBtn.textContent = isExtended
-    ? ('Extended (≤' + scoreHi + ')')
-    : 'Extended';
+  if (extBtn) {
+    extBtn.classList.toggle('active', isExtended);
+    extBtn.textContent = isExtended ? 'Reduced' : 'Extended';
+    extBtn.style.display = canExtend ? '' : 'none';
+  }
   const key = modeKey + '|' + snap.sigma + '|' + checkoutDartFilter + '|' + scoreHi;
   const rows = [];
   for (let s = scoreHi; s >= 2; s--) {
-    // 2 left → ≤110 (max T20+Bull); 1 left → ≤50 (doubles + bull).
-    if (!isExtended && wantD === 2 && s > 110) continue;
-    if (!isExtended && wantD === 1 && s > 50) continue;
     for (const d of [3, 2, 1]) {
-      if (wantD != null && d !== wantD) continue;
+      if (!includeCheckoutRow(s, d, isExtended)) continue;
       const entry = policy[s + ',' + d];
       if (!entry || !entry[0]) continue;
       const steps = hitContinuation(policy, s, d);
       const path = formatHitPath(policy, steps).join(' → ');
       const et = entry[3];
+      const ed = entry[4];
+      const edNum = Number(ed);
+      const expDarts = Number.isFinite(edNum) ? edNum.toFixed(2) : '—';
       const sel = checkoutPreviewSel
         && checkoutPreviewSel.score === s
         && checkoutPreviewSel.darts === d;
@@ -11035,12 +11126,14 @@ function renderCheckoutTable() {
         + '<td>' + d + '</td><td class="path">'
         + path + '</td><td class="et">'
         + (et != null && Number.isFinite(+et) ? Number(et).toFixed(3) : '—')
+        + '</td><td class="et">'
+        + expDarts
         + '</td></tr>');
     }
   }
   body.innerHTML = rows.length
     ? rows.join('')
-    : '<tr><td colspan="4" class="et">No checkout leaves in this table.</td></tr>';
+    : '<tr><td colspan="5" class="et">No checkout leaves in this table.</td></tr>';
   checkoutLoadedKey = key;
   if (status) {
     let range = 'scores 2–170';
@@ -12835,6 +12928,6 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
   updateAccountBar();
 })();
 </script>
-<script src="camera-scorer.js?v=0.1.187-beta-2026-08-20-3a30b96"></script>
+<script src="camera-scorer.js?v=0.1.308-beta-2026-08-21-9817f90"></script>
 </body>
 </html>
