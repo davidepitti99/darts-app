@@ -1507,7 +1507,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.186-beta / 2026-08-20 / 3a30b96</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.187-beta / 2026-08-20 / 3a30b96</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -2032,16 +2032,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.186-beta / 2026-08-20 / 3a30b96</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.187-beta / 2026-08-20 / 3a30b96</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.186-beta / 2026-08-20 / 3a30b96';
+const APP_VERSION = '0.1.187-beta / 2026-08-20 / 3a30b96';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.186-beta-2026-08-20-3a30b96';
+const POLICY_CACHE_BUST = '0.1.187-beta-2026-08-20-3a30b96';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -3844,6 +3844,86 @@ function inferSigmaFromAvg(avg3Val) {
     }
   }
   return null;
+}
+
+// 301 DI fallback: infer sigma from entry-phase darts to first opening double.
+const DI_ENTRY_MC_SAMPLES = 220;
+let diEntryExpectedDartsBySigma = null; // index 1..50
+
+function openingDoubleHitProb(modeKey, sigma, dartsLeft) {
+  const resolved = resolvePolicy(modeKey, { sigma: sigma });
+  const policy = resolved.policy || null;
+  if (!policy) return null;
+  const entry = policy['301,' + (dartsLeft | 0)];
+  if (!entry || !Number.isFinite(entry[1]) || !Number.isFinite(entry[2])) return null;
+  const ax = entry[1], ay = entry[2];
+  const shape = { sigma: sigma };
+  let hits = 0;
+  for (let i = 0; i < DI_ENTRY_MC_SAMPLES; i++) {
+    const xy = sampleGaussianLanding(ax, ay, shape);
+    const scored = aimPoints(scoreLabelFromXY(xy[0], xy[1]));
+    if (scored[1] && scored[0] > 0) hits += 1;
+  }
+  return hits / DI_ENTRY_MC_SAMPLES;
+}
+
+function expectedDartsToOpenDoubleIn(modeKey, sigma) {
+  modeKey = modeKey || '301di';
+  const s = Math.max(1, Math.min(50, sigma | 0));
+  if (!diEntryExpectedDartsBySigma)
+    diEntryExpectedDartsBySigma = new Array(51).fill(null);
+  if (Number.isFinite(diEntryExpectedDartsBySigma[s]))
+    return diEntryExpectedDartsBySigma[s];
+
+  const p3 = openingDoubleHitProb(modeKey, s, 3);
+  const p2 = openingDoubleHitProb(modeKey, s, 2);
+  const p1 = openingDoubleHitProb(modeKey, s, 1);
+  if (!Number.isFinite(p3) || !Number.isFinite(p2) || !Number.isFinite(p1)
+      || p3 <= 0 || p2 <= 0 || p1 <= 0) {
+    diEntryExpectedDartsBySigma[s] = null;
+    return null;
+  }
+  const q = (1 - p3) * (1 - p2) * (1 - p1);
+  const den = 1 - q;
+  if (den <= 1e-9) {
+    diEntryExpectedDartsBySigma[s] = null;
+    return null;
+  }
+  // Start-of-turn expectation (state 301 with 3 darts left).
+  const expDarts = (1 + (1 - p3) * (2 - p2)) / den;
+  diEntryExpectedDartsBySigma[s] = expDarts;
+  return expDarts;
+}
+
+function inferSigmaFromDoubleInEntry(p, opts) {
+  opts = opts || {};
+  if (!p || !opts.doubleIn) return null;
+  const misses = Math.max(0, p.entryDarts | 0);
+  const opened = !!p.opened;
+  if (!opened && misses <= 0) return null;
+  // If not opened yet, treat progress as "at least misses+1" darts.
+  const observed = opened ? (misses + 1) : (misses + 1);
+
+  let bestSigma = null;
+  let bestErr = Infinity;
+  for (let s = 1; s <= 50; s++) {
+    const expDarts = expectedDartsToOpenDoubleIn(opts.modeKey || '301di', s);
+    if (!Number.isFinite(expDarts)) continue;
+    const err = Math.abs(expDarts - observed);
+    if (err < bestErr) {
+      bestErr = err;
+      bestSigma = s;
+    }
+  }
+  return bestSigma;
+}
+
+function inferSigmaForPlayer(p, opts) {
+  opts = opts || {};
+  const a = avg3ForSigma(p, { doubleIn: !!opts.doubleIn });
+  const byAvg = inferSigmaFromAvg(a);
+  if (byAvg != null) return byAvg;
+  return inferSigmaFromDoubleInEntry(p, opts);
 }
 /** Cricket marks per round (3-dart visit equivalent). */
 function cricketMpr(p) {
@@ -8669,11 +8749,6 @@ function statsRowsForPlayers(ps, game, opts) {
     ['3-dart avg', ...ps.map(p => fmt(p.avg3 != null ? p.avg3 : avg3(p), 1))],
     ['First 9', ...ps.map((p, i) => fmt(
       legSheets ? matchFirst9Avg(p, legSheets, i) : (p.avgFirst9 != null ? p.avgFirst9 : avgFirst9(p)), 1))],
-    ['Inferred σ', ...ps.map(p => {
-      const a = avg3ForSigma(p, { doubleIn: useDoubleIn });
-      const s = inferSigmaFromAvg(a);
-      return s != null ? s + ' mm' : '—';
-    })],
     ['Darts', ...ps.map(p => p.dartsThrown | 0)],
     ['Visits 100–139', ...ps.map(p => p.scores100 | 0)],
     ['Visits 140–179', ...ps.map(p => p.scores140 | 0)],
@@ -8689,6 +8764,13 @@ function statsRowsForPlayers(ps, game, opts) {
     ['Busts', ...ps.map(p => p.busts | 0)],
   ];
   if (includeLegs) rows.push(['Legs', ...ps.map(p => p.legsWon | 0)]);
+  rows.push(['Inferred σ', ...ps.map(p => {
+    const s = inferSigmaForPlayer(p, {
+      doubleIn: useDoubleIn,
+      modeKey: useDoubleIn ? '301di' : null,
+    });
+    return s != null ? s + ' mm' : '—';
+  })]);
   return rows;
 }
 
@@ -9074,7 +9156,10 @@ function render() {
 
     let inferredRow = null;
     const curPlayer = match.players[match.current];
-    const inferredSig = inferSigmaFromAvg(avg3ForSigma(curPlayer, { doubleIn: !!match.doubleIn }));
+    const inferredSig = inferSigmaForPlayer(curPlayer, {
+      doubleIn: !!match.doubleIn,
+      modeKey: (m && m.key) || (match.doubleIn ? '301di' : '501'),
+    });
     if (inferredSig != null && curPlayer.dartsThrown >= 3
         && Math.round(inferredSig) !== resolved.snap.sigma) {
       const infResolved = resolvePolicy(m.key, { sigma: inferredSig });
@@ -12750,6 +12835,6 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
   updateAccountBar();
 })();
 </script>
-<script src="camera-scorer.js?v=0.1.186-beta-2026-08-20-3a30b96"></script>
+<script src="camera-scorer.js?v=0.1.187-beta-2026-08-20-3a30b96"></script>
 </body>
 </html>
