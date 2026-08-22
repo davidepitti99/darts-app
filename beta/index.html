@@ -15,6 +15,91 @@
   body.light-theme {
     --bg:#f3efe6; --panel:#fffaf0; --field:#f0e8d8; --accent:#b8860b;
     --ok:#2f8a2f; --bad:#b64a4a; --mute:#6d6658; --text:#2a261f;
+    --panel-2:#f7f1e4; --panel-3:#efe6d2;
+    --border:#cabfa8; --border-soft:#ddd4c2;
+    --text-soft:#4e493f; --text-strong:#1f1a12;
+    --overlay:rgba(40,30,16,0.28);
+  }
+  body.light-theme .player-modal { background: var(--overlay); }
+  body.light-theme .player-box,
+  body.light-theme .player-list,
+  body.light-theme .hist-detail,
+  body.light-theme .hist-summary .cell,
+  body.light-theme .hist-list button,
+  body.light-theme .hist-lifetime,
+  body.light-theme .fit-list,
+  body.light-theme .fit-saved,
+  body.light-theme .visit-list,
+  body.light-theme .checkout-table,
+  body.light-theme .account-bar,
+  body.light-theme .auth-card {
+    background: var(--panel-2);
+    border-color: var(--border);
+  }
+  body.light-theme .lt-grid .h,
+  body.light-theme .lt-grid .k,
+  body.light-theme .lt-grid .v,
+  body.light-theme .player-tabs,
+  body.light-theme .drill-card,
+  body.light-theme .group-match-log,
+  body.light-theme .fit-aim-sigmas,
+  body.light-theme .fit-saved .fit-save-row {
+    background: var(--panel-3);
+    border-color: var(--border-soft);
+  }
+  body.light-theme .nav button,
+  body.light-theme .segmented button,
+  body.light-theme .coach-card .promise,
+  body.light-theme .cricket-help,
+  body.light-theme .info .turn,
+  body.light-theme .info .row,
+  body.light-theme .stats .row,
+  body.light-theme .k {
+    color: var(--text-soft);
+  }
+  body.light-theme .coach-card h2,
+  body.light-theme .drill-card h3,
+  body.light-theme .cricket-board td.num,
+  body.light-theme .hist-summary .v,
+  body.light-theme .hist-detail .d-throws .th-score,
+  body.light-theme .fit-aim-sigmas .aim,
+  body.light-theme .visit-list .v-score {
+    color: var(--text-strong);
+  }
+  body.light-theme .player-actions button,
+  body.light-theme .coach-actions button,
+  body.light-theme .drill-card button,
+  body.light-theme .actions button,
+  body.light-theme .settings-theme button,
+  body.light-theme .fit-auto-tools button,
+  body.light-theme .cam-btn,
+  body.light-theme .stats .stats-more,
+  body.light-theme .swap-sides,
+  body.light-theme .cricket-hit .n,
+  body.light-theme .cricket-hit .m,
+  body.light-theme .cricket-miss,
+  body.light-theme .seat-count-btn,
+  body.light-theme .visit-list .v-idx {
+    background: var(--field);
+    border-color: var(--border);
+    color: var(--text-strong);
+  }
+  body.light-theme .player-list .player-row,
+  body.light-theme .player-list button,
+  body.light-theme .hist-list button,
+  body.light-theme .checkout-table td,
+  body.light-theme .checkout-table th,
+  body.light-theme .cricket-board th,
+  body.light-theme .cricket-board td,
+  body.light-theme .fit-saved .fit-save-row,
+  body.light-theme .visit-list .v-row {
+    border-color: var(--border-soft);
+  }
+  body.light-theme .player-list .player-row button.pick,
+  body.light-theme .player-list button,
+  body.light-theme .hist-list button,
+  body.light-theme .visit-list .v-row {
+    color: var(--text);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -76,6 +161,16 @@
   }
   .settings-theme button.active {
     background: var(--accent); color: #1a1a1a; border-color: var(--accent);
+  }
+  .settings-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-top: 8px;
+  }
+  .settings-toggle-row .label {
+    font-size: 13px; color: var(--text);
+  }
+  .settings-toggle-row input[type="checkbox"] {
+    width: 20px; height: 20px; accent-color: var(--accent); cursor: pointer;
   }
 
   .cricket-board {
@@ -1570,7 +1665,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.316-beta / 2026-08-22 / f76d5fb</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.317-beta / 2026-08-22 / eb8444d</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -2107,9 +2202,6 @@
                  placeholder="Your player name" autocomplete="off" spellcheck="false">
           <button type="button" class="primary" id="settingsSaveProfilePlayer">Set</button>
         </div>
-        <div class="coach-actions">
-          <button type="button" class="primary" id="settingsOpenCoachProfile">Open Coach profile</button>
-        </div>
       </div>
     </div>
 
@@ -2128,8 +2220,10 @@
       <div class="coach-card">
         <h2>Game</h2>
         <p class="promise">Toggle whether Play aim suggestions use your latest fitted σ.</p>
-        <div class="settings-theme" id="settingsGamePicks">
-          <button type="button" id="settingsUseFitSigma" aria-pressed="true"></button>
+        <div class="settings-toggle-row" id="settingsGamePicks">
+          <span class="label">Use fitted sigma for aim suggestions</span>
+          <input type="checkbox" id="settingsUseFitSigma"
+                 aria-label="Use fitted sigma for aim suggestions">
         </div>
       </div>
     </div>
@@ -2142,16 +2236,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.316-beta / 2026-08-22 / f76d5fb</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.317-beta / 2026-08-22 / eb8444d</span></div>
 </div>
 
 <script>
 const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.316-beta / 2026-08-22 / f76d5fb';
+const APP_VERSION = '0.1.317-beta / 2026-08-22 / eb8444d';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.316-beta-2026-08-22-f76d5fb';
+const POLICY_CACHE_BUST = '0.1.317-beta-2026-08-22-eb8444d';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -10534,11 +10628,9 @@ function loadAimUseFitSigmaPref() {
 }
 
 function renderGameSettingsPick() {
-  const btn = document.getElementById('settingsUseFitSigma');
-  if (!btn) return;
-  btn.textContent = 'Use fitted sigma for aim suggestions: ' + (aimUseFitSigma ? 'On' : 'Off');
-  btn.classList.toggle('active', aimUseFitSigma);
-  btn.setAttribute('aria-pressed', aimUseFitSigma ? 'true' : 'false');
+  const box = document.getElementById('settingsUseFitSigma');
+  if (!box) return;
+  box.checked = !!aimUseFitSigma;
 }
 
 function setAimUseFitSigmaPref(on, opts) {
@@ -10765,13 +10857,6 @@ for (const b of pageNav.children)
       btn.addEventListener('click', () => setSettingsTab(btn.dataset.settingsTab));
     });
   }
-  const openProfile = document.getElementById('settingsOpenCoachProfile');
-  if (openProfile) {
-    openProfile.addEventListener('click', () => {
-      showPage('coach');
-      setCoachTab('profile');
-    });
-  }
   const profileNameIn = document.getElementById('settingsProfilePlayerName');
   if (profileNameIn) {
     profileNameIn.value = loadProfilePlayerName();
@@ -10792,9 +10877,11 @@ for (const b of pageNav.children)
       btn.addEventListener('click', () => setThemeTemplate(btn.dataset.theme));
     });
   }
-  const fitSigmaBtn = document.getElementById('settingsUseFitSigma');
-  if (fitSigmaBtn) {
-    fitSigmaBtn.addEventListener('click', () => setAimUseFitSigmaPref(!aimUseFitSigma));
+  const fitSigmaBox = document.getElementById('settingsUseFitSigma');
+  if (fitSigmaBox) {
+    fitSigmaBox.addEventListener('change', () => {
+      setAimUseFitSigmaPref(!!fitSigmaBox.checked);
+    });
   }
   applyThemeTemplate(loadThemeTemplate());
   renderGameSettingsPick();
@@ -13263,6 +13350,6 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
   updateAccountBar();
 })();
 </script>
-<script src="camera-scorer.js?v=0.1.316-beta-2026-08-22-f76d5fb"></script>
+<script src="camera-scorer.js?v=0.1.317-beta-2026-08-22-eb8444d"></script>
 </body>
 </html>
