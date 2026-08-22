@@ -212,6 +212,16 @@
   #pageScore.prematch #btnVisitOk {
     display: none !important;
   }
+  #pageScore.prematch .scores {
+    display: none !important;
+  }
+  #pageScore.prematch.lineup-needed .scores {
+    display: grid !important;
+  }
+  #pageScore.prematch .scores .rem,
+  #pageScore.prematch .scores .meta {
+    display: none !important;
+  }
   #pageScore.prematch .actions,
   #pageScore.prematch .actions.has-ok {
     grid-template-columns: 1fr;
@@ -517,6 +527,50 @@
   .bestof-picks button.active {
     background: var(--accent); color: #1a1a1a; border-color: var(--accent);
   }
+  .newgame-row {
+    margin: 0 0 10px;
+  }
+  .newgame-row .lbl {
+    font-size: 12px; color: var(--mute); font-weight: 700;
+    margin: 0 0 6px;
+  }
+  .newgame-grid {
+    display: grid; gap: 8px;
+  }
+  .newgame-grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
+  .newgame-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .newgame-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .newgame-grid button {
+    background: var(--field); color: #eee; border: 1px solid #555;
+    border-radius: 10px; padding: 10px 8px; font-size: 14px; font-weight: 700;
+    cursor: pointer;
+  }
+  .newgame-grid button.active {
+    background: var(--accent); color: #1a1a1a; border-color: var(--accent);
+  }
+  .newgame-list {
+    display: grid;
+    gap: 8px;
+    max-height: 260px;
+    overflow: auto;
+  }
+  .newgame-list button {
+    width: 100%;
+    text-align: left;
+    background: var(--field);
+    color: #eee;
+    border: 1px solid #555;
+    border-radius: 10px;
+    padding: 11px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .newgame-list button.active {
+    background: var(--accent);
+    color: #1a1a1a;
+    border-color: var(--accent);
+  }
   .bestof-first {
     text-align: center; font-size: 13px; color: var(--mute); margin: 0;
   }
@@ -745,7 +799,13 @@
   }
   .board-wrap .play-board-hint.hidden { display: none; }
   .board-wrap .play-board-tools {
-    margin-top: 6px; display: flex; justify-content: center;
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    margin: 0;
+    display: flex;
+    justify-content: flex-start;
+    z-index: 3;
   }
   .board-wrap .play-board-tools.hidden { display: none; }
   .tap-score-toggle {
@@ -1510,7 +1570,7 @@
     </div>
     <div class="err" id="gateErr"></div>
     <div class="hint" id="gateHint">Free: score + aims at a few σ. Pro: your profile, personal aims with why, practice, and progress.</div>
-    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.315-beta / 2026-08-22 / dbb0dd8</div>
+    <div class="app-version" style="margin-top:12px;opacity:0.5;font-size:11px">v0.1.316-beta / 2026-08-22 / f76d5fb</div>
   </div>
 </div>
 <div class="player-modal hidden" id="playerModal">
@@ -1599,21 +1659,39 @@
 </div>
 <div class="player-modal hidden" id="bestOfModal" role="dialog" aria-modal="true" aria-label="New match">
   <div class="player-box">
-    <h2>New match</h2>
-    <p class="hint">Best of how many legs?</p>
-    <div class="bestof-picks" id="bestOfPicks"></div>
-    <p class="bestof-first" id="bestOfFirst">First to <b>2</b></p>
-    <div class="bestof-legs" id="bestOfLegsBox">
-      <label class="bestof-legs-toggle">
-        <input type="checkbox" id="bestOfLegsEnable">
-        Already started — set legs score
-      </label>
-      <div class="bestof-legs-row hidden" id="bestOfLegsRow"></div>
-      <p class="bestof-legs-hint hidden" id="bestOfLegsHint">Optional. Leave at 0–0 to start fresh.</p>
+    <h2>New game</h2>
+    <p class="hint" id="newGameStepHint">Choose game.</p>
+    <div class="newgame-row" id="newGameGameRow">
+      <div class="lbl">Game</div>
+      <div class="newgame-list" id="newGameScorePicks"></div>
     </div>
-    <div class="player-actions">
+    <div id="newGameRulesStep" class="hidden">
+      <div class="newgame-row" id="newGameInRow">
+        <div class="lbl">In</div>
+        <div class="newgame-grid cols-3" id="newGameInPicks"></div>
+      </div>
+      <div class="newgame-row" id="newGameOutRow">
+        <div class="lbl">Out</div>
+        <div class="newgame-grid cols-3" id="newGameOutPicks"></div>
+      </div>
+    </div>
+    <div id="newGameBestOfStep" class="hidden">
+      <p class="hint">Best of how many legs?</p>
+      <div class="bestof-picks" id="bestOfPicks"></div>
+      <p class="bestof-first" id="bestOfFirst">First to <b>2</b></p>
+      <div class="bestof-legs" id="bestOfLegsBox">
+        <label class="bestof-legs-toggle">
+          <input type="checkbox" id="bestOfLegsEnable">
+          Already started — set legs score
+        </label>
+        <div class="bestof-legs-row hidden" id="bestOfLegsRow"></div>
+        <p class="bestof-legs-hint hidden" id="bestOfLegsHint">Optional. Leave at 0–0 to start fresh.</p>
+      </div>
+    </div>
+    <div class="player-actions" id="bestOfActions">
       <button type="button" id="bestOfCancel">Cancel</button>
-      <button type="button" class="primary" id="bestOfStart">Start match</button>
+      <button type="button" id="bestOfBack" class="hidden">Back</button>
+      <button type="button" class="primary" id="bestOfStart">Next</button>
     </div>
   </div>
 </div>
@@ -1757,7 +1835,8 @@
 
   <div class="lineup-msg hidden" id="lineupMsg" role="alert"></div>
   <div class="actions" id="scoreActions">
-    <button type="button" id="btnMatch" class="primary">New match</button>
+    <button type="button" id="btnMatch" class="primary">New game</button>
+    <button type="button" id="btnMatchBack" class="hidden">Back</button>
     <button type="button" id="btnUndo">Undo</button>
     <button type="button" id="btnTrainingCapture" class="hidden">Training capture</button>
     <button type="button" id="btnVisitOk" class="ok-btn hidden">OK</button>
@@ -1914,7 +1993,7 @@
         <button type="button" data-darts="3">3 left</button>
         <button type="button" data-darts="2">2 left</button>
         <button type="button" data-darts="1">1 left</button>
-        <button type="button" id="checkoutExtended" class="checkout-extended-btn">Extended (≤200)</button>
+        <button type="button" id="checkoutExtended" class="checkout-extended-btn">Extended</button>
       </div>
       <div class="checkout-wrap">
         <table class="checkout-table">
@@ -2063,16 +2142,16 @@
       <button type="button" id="btnAccount">Sign in</button>
     </div>
   </div>
-  <div class="app-version" id="appVersion">v<span>0.1.315-beta / 2026-08-22 / dbb0dd8</span></div>
+  <div class="app-version" id="appVersion">v<span>0.1.316-beta / 2026-08-22 / f76d5fb</span></div>
 </div>
 
 <script>
-const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
-const APP_VERSION = '0.1.315-beta / 2026-08-22 / dbb0dd8';
+const DATA = {"modes":[{"key":"501","label":"501","start_score":501,"double_in":false,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]},{"key":"301di","label":"301 DI","start_score":301,"double_in":true,"game":"x01","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]},{"key":"cricket","label":"Cricket","start_score":0,"double_in":false,"game":"cricket","sigmas":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]}],"policies":{},"default_mode":"501","auth":{"adminEmails":["davidepitti99@gmail.com"],"vipEmails":[],"freeSigmas":[5,15,25,35],"shareAppUrl":"https://davidepitti99.github.io/darts-app/beta/","firebase":{"apiKey":"","authDomain":"","projectId":"","appId":"","messagingSenderId":"","storageBucket":""},"stripe":{"enabled":false,"checkoutUrl":""}},"channel":"beta"};
+const APP_VERSION = '0.1.316-beta / 2026-08-22 / f76d5fb';
 const APP_CHANNEL = 'beta';
 const POLICY_BASE = '../';
 /** Cache-bust query for policy JSON (rebuild changes this). */
-const POLICY_CACHE_BUST = '0.1.315-beta-2026-08-22-dbb0dd8';
+const POLICY_CACHE_BUST = '0.1.316-beta-2026-08-22-f76d5fb';
 const AUTH_CONFIG = DATA.auth || {
   adminEmails: ['davidepitti99@gmail.com'],
   vipEmails: [],
@@ -2208,11 +2287,25 @@ let pendingMult = 'S';
 let scoreEntryMode = 'visit';
 let visitDigits = '';
 let playBoardTapToScore = false;
+let playBoardTapFlashDot = null;
+let playBoardTapFlashToken = 0;
 let fitAutoscoreActive = false;
 let cameraScorerHost = '';
 let cameraScorerContainer = null;
 let cameraScorerCommit = null;
 let cameraScorerOptsKey = '';
+
+function flashPlayBoardTapDot(x, y, holdMs) {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  const token = ++playBoardTapFlashToken;
+  playBoardTapFlashDot = { x: +x, y: +y };
+  const ms = Math.max(0, holdMs | 0);
+  setTimeout(() => {
+    if (token !== playBoardTapFlashToken) return;
+    playBoardTapFlashDot = null;
+    render();
+  }, ms);
+}
 
 function ensureCameraScorer(host, container, onCommit, options) {
   if (!container || typeof CameraScorer === 'undefined') return false;
@@ -2630,8 +2723,7 @@ function suggestedAimForMatch(m) {
     };
   }
 
-  const mdef = (typeof mode === 'function') ? mode() : null;
-  const modeKey = mdef ? mdef.key : (m.doubleIn ? '301di' : '501');
+  const modeKey = policyModeKeyForGame(m.startScore | 0, inRuleOf(m), outRuleOf(m));
   const resolved = resolvePolicy(modeKey, snap);
   const policy = resolved.policy;
   if (!policy) {
@@ -2665,20 +2757,46 @@ function applySuggestedAim(result, suggested) {
 
 function aimPoints(label) {
   const lab = prettyAimLabel(label);
-  if (lab === 'Miss' || lab === 'M' || lab === 'Bounce') return [0, false];
-  if (lab === 'IB') return [50, true];
-  if (lab === 'OB') return [25, false];
+  if (lab === 'Miss' || lab === 'M' || lab === 'Bounce') return [0, false, false];
+  if (lab === 'IB') return [50, true, false];
+  if (lab === 'OB') return [25, false, false];
   if (lab.startsWith('Bull')) {
-    if (lab.indexOf('25') >= 0) return [25, false];
-    return [50, true];
+    if (lab.indexOf('25') >= 0) return [25, false, false];
+    return [50, true, false];
   }
-  if (lab === '25') return [25, false];
+  if (lab === '25') return [25, false, false];
   const kind = lab.charAt(0), n = parseInt(lab.slice(1), 10);
-  if (!Number.isFinite(n)) return [0, false];
-  if (kind === 'T') return [n * 3, false];
-  if (kind === 'D') return [n * 2, true];
-  if (kind === 'S') return [n, false];
-  return [0, false];
+  if (!Number.isFinite(n)) return [0, false, false];
+  if (kind === 'T') return [n * 3, false, true];
+  if (kind === 'D') return [n * 2, true, false];
+  if (kind === 'S') return [n, false, false];
+  return [0, false, false];
+}
+
+function inRuleOf(m) {
+  if (m && (m.inRule === 'single' || m.inRule === 'double' || m.inRule === 'triple'))
+    return m.inRule;
+  return (m && m.doubleIn) ? 'double' : 'single';
+}
+
+function outRuleOf(m) {
+  if (m && (m.outRule === 'single' || m.outRule === 'double' || m.outRule === 'triple'))
+    return m.outRule;
+  return 'double';
+}
+
+function matchesInRule(rule, pts, isDbl, isTpl) {
+  rule = normRule(rule, 'single');
+  if (rule === 'double') return !!(isDbl && pts > 0);
+  if (rule === 'triple') return !!(isTpl && pts > 0);
+  return pts > 0;
+}
+
+function matchesOutRule(rule, pts, isDbl, isTpl) {
+  rule = normRule(rule, 'double');
+  if (rule === 'double') return !!(isDbl && pts > 0);
+  if (rule === 'triple') return !!(isTpl && pts > 0);
+  return pts > 0;
 }
 
 function hitContinuation(policy, score, dartsLeft) {
@@ -2998,7 +3116,7 @@ function buildMatchShareText(m) {
   const ps = m.players || [];
   const modeName = (typeof modeLabel === 'function')
     ? modeLabel({ game: m.game, mode: (typeof currentModeKey !== 'undefined' ? currentModeKey : ''), doubleIn: m.doubleIn, startScore: m.startScore })
-    : (m.game === 'cricket' ? 'Cricket' : String(m.startScore || '501'));
+    : ((m.game && m.game !== 'x01') ? String(m.game) : String(m.startScore || '501'));
   const when = formatHistWhen(m.archiveId || new Date().toISOString());
   const winner = m.players[m.winner];
   const losers = matchLosers(m);
@@ -3106,6 +3224,14 @@ function renderMatchReviewExtrasHtml() {
 
 // ── Match engine ─────────────────────────────────────────────────────────
 const CRICKET_KEYS = [20, 19, 18, 17, 16, 15, 'Bull'];
+const HALFIT_TARGETS = [20, 19, 18, 17, 16, 15, 'Bull'];
+const BOBS27_TARGETS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+  'Bull',
+];
+const SIMPLE_POINTS_ROUNDS = 10;
+const SHANGHAI_ROUNDS = 7;
 
 function emptyCricketMarks() {
   const m = {};
@@ -3113,9 +3239,9 @@ function emptyCricketMarks() {
   return m;
 }
 
-function makePlayer(name, start, doubleIn, game) {
+function makePlayer(name, start, inRule, game) {
   const p = {
-    name, remaining: start, opened: !doubleIn,
+    name, remaining: start, opened: inRule === 'single',
     dartsThrown: 0, pointsScored: 0, visitScores: [],
     entryDarts: 0, // x01 DI darts thrown before opening (excluded from σ inference avg)
     visitHistory: [],  // per-player copy of finished visits (labels + outcomes)
@@ -3135,6 +3261,35 @@ function makePlayer(name, start, doubleIn, game) {
     p.marks9 = 0;
     p.whiteHorses = 0;
     p.bullHits = 0;
+  } else if (game === 'countup') {
+    p.remaining = 0;
+    p.opened = true;
+  } else if (game === 'aroundclock') {
+    p.remaining = 0;
+    p.opened = true;
+    p.clockIndex = 0;
+  } else if (game === 'shanghai') {
+    p.remaining = 0;
+    p.opened = true;
+    p.shRound = 1;
+    p.shMaskVisit = 0;
+  } else if (game === 'halfit') {
+    p.remaining = 0;
+    p.opened = true;
+    p.halfRound = 0;
+  } else if (game === 'bobs27') {
+    p.remaining = 27;
+    p.opened = true;
+    p.bobsRound = 0;
+    p.eliminated = false;
+  } else if (game === 'jdc') {
+    p.remaining = 0;
+    p.opened = true;
+    p.jdcIndex = 0;
+  } else if (game === 'singles' || game === 'doubles') {
+    p.remaining = 0;
+    p.opened = true;
+    p.simpleRounds = 0;
   }
   return p;
 }
@@ -3193,7 +3348,7 @@ function applyLegWin(m, seat) {
 /** 3-player 501/301: others keep playing after the first checkout. */
 function isX01PlayOn(m) {
   m = m || match;
-  return !!(m && m.game !== 'cricket' && playerCount(m) >= 3);
+  return !!(m && m.game === 'x01' && playerCount(m) >= 3);
 }
 
 function ensureFinishOrder(m) {
@@ -3308,32 +3463,35 @@ function lineupLocked(m) {
 /** 3+ player cricket: points go to opponents who have not closed the number. */
 function isCutThroat(m) {
   m = m || match;
-  return !!(m && m.game === 'cricket' && playerCount(m) >= 3);
+  return !!(m && m.game === 'cricket' && ((m.forceCutThroat === true) || playerCount(m) >= 3));
 }
 
 function cricketScoreline(m) {
   return (m.players || []).map(p => p.points | 0).join('–');
 }
 
-function newMatch(startScore, doubleIn, namesArr, game, bestOf) {
+function newMatch(startScore, doubleIn, namesArr, game, bestOf, inRule, outRule) {
   game = game || 'x01';
+  inRule = normRule(inRule, doubleIn ? 'double' : 'single');
+  outRule = normRule(outRule, 'double');
   const bo = normalizeBestOf(bestOf != null ? bestOf : loadSavedBestOf());
   const ns = (namesArr && namesArr.length) ? namesArr : ['', ''];
-  // 501 / 301 DI / Cricket: 2 or 3 seats (cricket 3p = cut-throat scoring).
+  // 501 / 301 / Cricket / practice games: 2 or 3 seats.
   let count = Math.min(3, Math.max(2, ns.length));
   if (typeof lineupPlayerCount === 'number')
     count = lineupPlayerCount >= 3 ? 3 : 2;
   const players = [];
   for (let i = 0; i < count; i++) {
     const nm = (ns[i] || '').trim();
-    players.push(makePlayer(nm, startScore, doubleIn, game));
+    players.push(makePlayer(nm, startScore, inRule, game));
   }
   return {
-    startScore, doubleIn, game,
+    startScore, doubleIn: inRule === 'double', inRule, outRule, game,
     bestOf: bo,
     legsToWin: legsToWinFromBestOf(bo),
     players,
-    current: 0, legStarter: 0, legNumber: 1, dartsLeft: 3, turnStart: startScore,
+    current: 0, legStarter: 0, legNumber: 1, dartsLeft: 3,
+    turnStart: game === 'x01' ? startScore : ((players[0] && players[0].remaining) | 0),
     visitDarts: [], visitPoints: 0, visitCheckoutCounted: false,
     visitCheckoutAttemptsAdded: 0,
     visitLog: [],  // chronological visits (darts) for archive / history
@@ -3472,6 +3630,12 @@ function syncBotUi() {
 function runBotThrow() {
   botThrowTimer = null;
   if (botPaused || !isBotTurn() || botThrowInFlight) return;
+  if (match && match.game !== 'x01' && match.game !== 'cricket') {
+    botPaused = true;
+    match.message = 'Bot is unavailable for this game mode';
+    render();
+    return;
+  }
   const idx = match.current;
   const m = mode();
   if (!m) return;
@@ -3586,6 +3750,7 @@ function throwCricketDart(m, label, opts) {
   pushUndo(m);
   const p = m.players[m.current];
   const cutThroat = isCutThroat(m);
+  const noScore = !!m.noScoreCricket;
   p.dartsThrown += 1;
   const t = cricketTarget(label);
   let scored = 0;
@@ -3602,7 +3767,9 @@ function throwCricketDart(m, label, opts) {
     marksThisDart = used;
     if (left > 0) {
       const face = left * t.value;
-      if (cutThroat) {
+      if (noScore) {
+        note = label + ' (no-score)';
+      } else if (cutThroat) {
         // Cut-throat: points are added to each opponent who has not closed.
         let dealt = 0;
         let hitOpen = 0;
@@ -3684,6 +3851,13 @@ function throwCricketDart(m, label, opts) {
   m.message = p.name + ': ' + note;
 
   if (cricketClosed(p)) {
+    if (noScore) {
+      finishVisit(m, false);
+      const matchOver = applyLegWin(m, m.current);
+      if (!matchOver)
+        m.message = p.name + ' wins No Score Cricket!';
+      return result;
+    }
     if (cutThroat) {
       const myPts = p.points | 0;
       const isLowest = m.players.every((o, i) =>
@@ -3884,24 +4058,24 @@ function cricketFirst9Mpr(p) {
 function checkoutPct(p) {
   return p.checkoutAttempts ? (100 * p.checkoutHits / p.checkoutAttempts) : null;
 }
-/**
- * True if rem can be finished double-out in ≤3 darts.
- * Excludes bogeys (159, 162, 163, 165, 166, 168, 169) and >170.
- */
-function isCheckoutChance(rem) {
+/** True if rem can be finished with the selected out-rule in ≤3 darts. */
+function isCheckoutChance(rem, outRule) {
   rem = rem | 0;
-  if (rem < 2 || rem > 170) return false;
-  // Can leave a finishing double (D1–D20 / bull) with at most 2 setup darts.
-  return isFinite(minDartsToOneDartFinish(rem, 2));
+  outRule = normRule(outRule, 'double');
+  if (rem <= 0 || rem > 180) return false;
+  if (outRule === 'double' && rem > 170) return false;
+  return isFinite(minDartsToOneDartFinish(rem, 2, outRule));
 }
 
-/** True if rem can be checked out double-out with at most maxDarts (1–3). */
-function canCheckoutWithDarts(rem, maxDarts) {
+/** True if rem can be checked out with at most maxDarts (1–3) for out-rule. */
+function canCheckoutWithDarts(rem, maxDarts, outRule) {
   rem = rem | 0;
   maxDarts = maxDarts | 0;
-  if (rem < 2 || rem > 170 || maxDarts < 1) return false;
-  if (maxDarts >= 3) return isCheckoutChance(rem);
-  return isFinite(minDartsToOneDartFinish(rem, maxDarts - 1));
+  outRule = normRule(outRule, 'double');
+  if (rem <= 0 || rem > 180 || maxDarts < 1) return false;
+  if (outRule === 'double' && rem > 170) return false;
+  if (maxDarts >= 3) return isCheckoutChance(rem, outRule);
+  return isFinite(minDartsToOneDartFinish(rem, maxDarts - 1, outRule));
 }
 
 /** True if n is a legal double score (D1–D20 or bull). */
@@ -3912,8 +4086,20 @@ function isValidOpeningDoubleScore(n) {
   return (n % 2) === 0;
 }
 
-/** Remaining that can be finished with one dart on a double (D1–D20 or bull). */
-function isOneDartFinish(rem) {
+/** True if n is a legal triple score (T1–T20). */
+function isValidOpeningTripleScore(n) {
+  n = n | 0;
+  if (n < 3 || n > 60) return false;
+  return (n % 3) === 0;
+}
+
+/** Remaining that can be finished with one dart under the selected out-rule. */
+function isOneDartFinish(rem, outRule) {
+  outRule = normRule(outRule, 'double');
+  if (outRule === 'single')
+    return !!(rem > 0 && ONE_DART_SCORE_SET[rem]);
+  if (outRule === 'triple')
+    return isValidOpeningTripleScore(rem);
   return isValidOpeningDoubleScore(rem);
 }
 
@@ -3939,23 +4125,30 @@ const TWO_DART_SCORE_SET = (function () {
 })();
 
 /**
- * 301 DI visit-total: positive score is legal if it can be
- * (opening double) + up to two more darts after opening.
- * e.g. Bull + 9 = 59; max Bull + T20 + T20 = 170.
+ * Visit-total opening validator for x01 in-rules.
+ * A positive score is legal if it can be
+ * (opening dart matching in-rule) + up to two more darts.
  */
-function isValidOpeningVisitScore(n) {
+function isValidOpeningVisitScore(n, inRule) {
   n = n | 0;
+  inRule = normRule(inRule, 'double');
   if (n <= 0 || n > 170) return false;
-  if (isValidOpeningDoubleScore(n)) return true;
-  for (let d = 2; d <= 40; d += 2) {
-    const rest = n - d;
+  if (inRule === 'single') return true;
+  if (inRule === 'double' && isValidOpeningDoubleScore(n)) return true;
+  if (inRule === 'triple' && isValidOpeningTripleScore(n)) return true;
+
+  const openingScores = [];
+  if (inRule === 'double') {
+    for (let d = 2; d <= 40; d += 2) openingScores.push(d);
+    openingScores.push(50);
+  } else {
+    for (let t = 3; t <= 60; t += 3) openingScores.push(t);
+  }
+  for (let i = 0; i < openingScores.length; i++) {
+    const rest = n - openingScores[i];
     if (rest < 0) continue;
     if (ONE_DART_SCORE_SET[rest] || TWO_DART_SCORE_SET[rest]) return true;
   }
-  const restBull = n - 50;
-  if (restBull >= 0
-      && (ONE_DART_SCORE_SET[restBull] || TWO_DART_SCORE_SET[restBull]))
-    return true;
   return false;
 }
 
@@ -3963,10 +4156,11 @@ function isValidOpeningVisitScore(n) {
  * Fewest darts needed to leave a one-dart finish (0 if already there).
  * Infinity if impossible within maxSetup darts.
  */
-function minDartsToOneDartFinish(leave, maxSetup) {
+function minDartsToOneDartFinish(leave, maxSetup, outRule) {
   leave = leave | 0;
   maxSetup = maxSetup == null ? 2 : (maxSetup | 0);
-  if (isOneDartFinish(leave)) return 0;
+  outRule = normRule(outRule, 'double');
+  if (isOneDartFinish(leave, outRule)) return 0;
   let frontier = [leave];
   const seen = new Set([leave]);
   for (let d = 1; d <= maxSetup; d++) {
@@ -3977,8 +4171,8 @@ function minDartsToOneDartFinish(leave, maxSetup) {
         const sc = ONE_DART_SCORES[j];
         if (sc <= 0 || sc >= from) continue;
         const rem = from - sc;
-        if (rem === 1) continue;
-        if (isOneDartFinish(rem)) return d;
+        if (outRule === 'double' && rem === 1) continue;
+        if (isOneDartFinish(rem, outRule)) return d;
         if (!seen.has(rem)) {
           seen.add(rem);
           next.push(rem);
@@ -3994,11 +4188,12 @@ function minDartsToOneDartFinish(leave, maxSetup) {
  * Max darts that can aim at a finishing double in a visit from this leave
  * (setup darts that only reduce the score do not count).
  */
-function maxClosingDoubleAttempts(leave, maxDarts) {
+function maxClosingDoubleAttempts(leave, maxDarts, outRule) {
   leave = leave | 0;
   maxDarts = maxDarts == null ? 3 : (maxDarts | 0);
-  if (!isCheckoutChance(leave) || maxDarts < 1) return 0;
-  const setup = minDartsToOneDartFinish(leave, maxDarts - 1);
+  outRule = normRule(outRule, 'double');
+  if (!isCheckoutChance(leave, outRule) || maxDarts < 1) return 0;
+  const setup = minDartsToOneDartFinish(leave, maxDarts - 1, outRule);
   if (!isFinite(setup)) return 0;
   const n = maxDarts - setup;
   return n < 0 ? 0 : n;
@@ -4012,8 +4207,9 @@ function countCheckoutAttemptIfNeeded(m, p) {
 /** Add N checkout attempts for this visit (capped by leave). No-op if already counted. */
 function addCheckoutAttempts(m, p, n) {
   if (m.visitCheckoutCounted) return;
-  if (!isCheckoutChance(m.turnStart)) return;
-  const maxK = maxClosingDoubleAttempts(m.turnStart, 3);
+  const outRule = outRuleOf(m);
+  if (!isCheckoutChance(m.turnStart, outRule)) return;
+  const maxK = maxClosingDoubleAttempts(m.turnStart, 3, outRule);
   let k = (n == null) ? 1 : (n | 0);
   if (k < 0) k = 0;
   if (k > maxK) k = maxK;
@@ -4086,10 +4282,10 @@ function undoMatch(m) {
 }
 
 /** Start a fresh match in place; pushUndo first so Undo restores prior scores. */
-function resetMatch(m, startScore, doubleIn, names, game, bestOf) {
+function resetMatch(m, startScore, doubleIn, names, game, bestOf, inRule, outRule) {
   pushUndo(m);
   const stack = m.undo;
-  const fresh = newMatch(startScore, doubleIn, names, game, bestOf);
+  const fresh = newMatch(startScore, doubleIn, names, game, bestOf, inRule, outRule);
   Object.assign(m, fresh);
   m.undo = stack;
 }
@@ -4177,16 +4373,408 @@ function afterDart(m) {
   }
 }
 
+function throwCountUpDart(m, label, opts) {
+  opts = opts || {};
+  if (m.winner !== null) throw new Error('Leg already finished');
+  const [pts, isDbl] = aimPoints(label);
+  pushUndo(m);
+  const p = m.players[m.current];
+  p.dartsThrown += 1;
+  const result = { label, points: pts, isDouble: isDbl, outcome: 'ok', remainingAfter: (p.remaining | 0) + pts };
+  if (Number.isFinite(opts.x) && Number.isFinite(opts.y)) {
+    result.x = +opts.x;
+    result.y = +opts.y;
+  }
+  applySuggestedAim(result, null);
+  m.visitDarts.push(result);
+  m.visitPoints += pts;
+  p.pointsScored += pts;
+  p.remaining = (p.remaining | 0) + pts;
+  m.message = p.name + ': ' + label + ' → ' + p.remaining;
+  m.dartsLeft -= 1;
+  if (m.dartsLeft <= 0) {
+    finishVisit(m, false);
+    nextPlayer(m);
+  }
+  return result;
+}
+
+function throwCountUpVisitTotal(m, score, opts) {
+  opts = opts || {};
+  if (m.winner !== null) throw new Error('Leg already finished');
+  score = score | 0;
+  if (score < 0 || score > 180) throw new Error('Visit score must be 0–180');
+  pushUndo(m);
+  const p = m.players[m.current];
+  m.visitDarts = [];
+  m.visitPoints = score;
+  m.dartsLeft = 3;
+  m.visitCheckoutCounted = false;
+  m.visitCheckoutAttemptsAdded = 0;
+  m.visitForcedDartCount = 3;
+  p.dartsThrown += 3;
+  p.pointsScored += score;
+  p.remaining = (p.remaining | 0) + score;
+  const result = {
+    label: 'Visit ' + score,
+    points: score,
+    isDouble: false,
+    outcome: 'ok',
+    remainingAfter: p.remaining,
+  };
+  applySuggestedAim(result, null);
+  m.visitDarts.push(result);
+  finishVisit(m, false);
+  m.message = p.name + ': visit ' + score + ' → ' + p.remaining;
+  nextPlayer(m);
+  return result;
+}
+
+function matchLabelKey(label) {
+  if (!label) return '';
+  const s = String(label);
+  if (s === 'Bull') return 'Bull';
+  if (s === '25') return '25';
+  const mm = s.match(/^([SDT])(\d+)$/i);
+  if (!mm) return '';
+  return mm[1].toUpperCase() + String(parseInt(mm[2], 10));
+}
+
+function allPlayersReachedRound(m, field, rounds) {
+  const n = playerCount(m);
+  for (let i = 0; i < n; i++) {
+    if (((m.players[i] && m.players[i][field]) | 0) < rounds) return false;
+  }
+  return true;
+}
+
+function finishHighestScoreRoundGame(m, title) {
+  let best = -Infinity;
+  let winSeat = 0;
+  for (let i = 0; i < playerCount(m); i++) {
+    const sc = (m.players[i].remaining | 0);
+    if (sc > best) {
+      best = sc;
+      winSeat = i;
+    }
+  }
+  finishVisit(m, false);
+  const matchOver = applyLegWin(m, winSeat);
+  if (!matchOver)
+    m.message = m.players[winSeat].name + ' wins ' + title + ' (' + best + ')!';
+}
+
+function throwAroundClockDart(m, label, opts) {
+  opts = opts || {};
+  if (m.winner !== null) throw new Error('Leg already finished');
+  pushUndo(m);
+  const p = m.players[m.current];
+  const idx = p.clockIndex | 0;
+  const target = idx < 20 ? (idx + 1) : 'Bull';
+  const key = matchLabelKey(label);
+  const hit = (target === 'Bull')
+    ? (key === '25' || key === 'Bull')
+    : (key === ('S' + target) || key === ('D' + target) || key === ('T' + target));
+  p.dartsThrown += 1;
+  let gained = 0;
+  if (hit) {
+    p.clockIndex = idx + 1;
+    p.remaining = p.clockIndex | 0;
+    p.pointsScored += 1;
+    gained = 1;
+  }
+  const result = {
+    label: label,
+    points: gained,
+    isDouble: key.startsWith('D') || key === 'Bull',
+    outcome: hit ? 'ok' : 'no_score',
+    remainingAfter: p.remaining | 0,
+  };
+  if (Number.isFinite(opts.x) && Number.isFinite(opts.y)) {
+    result.x = +opts.x;
+    result.y = +opts.y;
+  }
+  applySuggestedAim(result, null);
+  m.visitDarts.push(result);
+  m.visitPoints += gained;
+  m.message = p.name + ': target ' + target + (hit ? ' hit' : ' missed');
+  if ((p.clockIndex | 0) >= 21) {
+    finishVisit(m, false);
+    const over = applyLegWin(m, m.current);
+    if (!over) m.message = p.name + ' finishes Around the Clock!';
+    return result;
+  }
+  afterDart(m);
+  return result;
+}
+
+function throwShanghaiDart(m, label, opts) {
+  opts = opts || {};
+  if (m.winner !== null) throw new Error('Leg already finished');
+  pushUndo(m);
+  const p = m.players[m.current];
+  const round = Math.max(1, p.shRound | 0);
+  const key = matchLabelKey(label);
+  p.dartsThrown += 1;
+  let pts = 0;
+  let bit = 0;
+  const mm = key.match(/^([SDT])(\d+)$/);
+  if (mm && parseInt(mm[2], 10) === round) {
+    if (mm[1] === 'S') bit = 1;
+    else if (mm[1] === 'D') bit = 2;
+    else if (mm[1] === 'T') bit = 4;
+    pts = mm[1] === 'S' ? round : (mm[1] === 'D' ? round * 2 : round * 3);
+  }
+  p.shMaskVisit = (p.shMaskVisit | 0) | bit;
+  p.remaining = (p.remaining | 0) + pts;
+  p.pointsScored += pts;
+  const result = {
+    label: label,
+    points: pts,
+    isDouble: bit === 2,
+    outcome: pts > 0 ? 'ok' : 'no_score',
+    remainingAfter: p.remaining | 0,
+  };
+  if (Number.isFinite(opts.x) && Number.isFinite(opts.y)) {
+    result.x = +opts.x;
+    result.y = +opts.y;
+  }
+  applySuggestedAim(result, null);
+  m.visitDarts.push(result);
+  m.visitPoints += pts;
+  if ((p.shMaskVisit | 0) === 7) {
+    finishVisit(m, false);
+    const over = applyLegWin(m, m.current);
+    if (!over) m.message = p.name + ' hits a Shanghai on ' + round + '!';
+    return result;
+  }
+  m.dartsLeft -= 1;
+  m.message = p.name + ': round ' + round + ' · ' + (pts > 0 ? ('+' + pts) : 'miss');
+  if (m.dartsLeft <= 0) {
+    finishVisit(m, false);
+    p.shRound = round + 1;
+    p.shMaskVisit = 0;
+    if (allPlayersReachedRound(m, 'shRound', SHANGHAI_ROUNDS + 1)) {
+      finishHighestScoreRoundGame(m, 'Shanghai');
+      return result;
+    }
+    nextPlayer(m);
+  }
+  return result;
+}
+
+function throwHalfItDart(m, label, opts) {
+  opts = opts || {};
+  if (m.winner !== null) throw new Error('Leg already finished');
+  pushUndo(m);
+  const p = m.players[m.current];
+  const ridx = p.halfRound | 0;
+  const target = HALFIT_TARGETS[Math.max(0, Math.min(HALFIT_TARGETS.length - 1, ridx))];
+  const key = matchLabelKey(label);
+  const [pts, isDbl] = aimPoints(label);
+  let hit = false;
+  if (target === 'Bull') hit = (key === '25' || key === 'Bull');
+  else {
+    const n = target | 0;
+    hit = key === ('S' + n) || key === ('D' + n) || key === ('T' + n);
+  }
+  const gained = hit ? pts : 0;
+  p.dartsThrown += 1;
+  p.remaining = (p.remaining | 0) + gained;
+  p.pointsScored += gained;
+  const result = {
+    label: label,
+    points: gained,
+    isDouble: !!isDbl,
+    outcome: hit ? 'ok' : 'no_score',
+    remainingAfter: p.remaining | 0,
+  };
+  if (Number.isFinite(opts.x) && Number.isFinite(opts.y)) {
+    result.x = +opts.x;
+    result.y = +opts.y;
+  }
+  applySuggestedAim(result, null);
+  m.visitDarts.push(result);
+  m.visitPoints += gained;
+  m.dartsLeft -= 1;
+  m.message = p.name + ': target ' + target + (hit ? (' +' + gained) : ' missed');
+  if (m.dartsLeft <= 0) {
+    if ((m.visitPoints | 0) <= 0) {
+      const before = p.remaining | 0;
+      p.remaining = Math.floor(before / 2);
+      m.message = p.name + ': missed ' + target + ' — halved to ' + p.remaining;
+    }
+    finishVisit(m, false);
+    p.halfRound = ridx + 1;
+    if (allPlayersReachedRound(m, 'halfRound', HALFIT_TARGETS.length)) {
+      finishHighestScoreRoundGame(m, 'Half It');
+      return result;
+    }
+    nextPlayer(m);
+  }
+  return result;
+}
+
+function throwBobs27Dart(m, label, opts) {
+  opts = opts || {};
+  if (m.winner !== null) throw new Error('Leg already finished');
+  pushUndo(m);
+  const p = m.players[m.current];
+  const ridx = p.bobsRound | 0;
+  const target = BOBS27_TARGETS[Math.max(0, Math.min(BOBS27_TARGETS.length - 1, ridx))];
+  const key = matchLabelKey(label);
+  const val = target === 'Bull' ? 50 : ((target | 0) * 2);
+  const hit = target === 'Bull' ? (key === 'Bull') : (key === ('D' + (target | 0)));
+  const delta = hit ? val : -val;
+  p.dartsThrown += 1;
+  p.remaining = (p.remaining | 0) + delta;
+  p.pointsScored += Math.max(0, delta);
+  if ((p.remaining | 0) < 0) p.eliminated = true;
+  const result = {
+    label: label,
+    points: delta,
+    isDouble: true,
+    outcome: hit ? 'ok' : 'no_score',
+    remainingAfter: p.remaining | 0,
+  };
+  if (Number.isFinite(opts.x) && Number.isFinite(opts.y)) {
+    result.x = +opts.x;
+    result.y = +opts.y;
+  }
+  applySuggestedAim(result, null);
+  m.visitDarts.push(result);
+  m.visitPoints += delta;
+  m.dartsLeft -= 1;
+  m.message = p.name + ': D' + target + (hit ? (' +' + val) : (' -' + val));
+  if (m.dartsLeft <= 0) {
+    finishVisit(m, false);
+    p.bobsRound = ridx + 1;
+    const alive = m.players
+      .map((sp, i) => ({ i: i, out: !!sp.eliminated }))
+      .filter(x => !x.out);
+    if (alive.length === 1) {
+      const over = applyLegWin(m, alive[0].i);
+      if (!over) m.message = m.players[alive[0].i].name + ' survives Bob\'s 27!';
+      return result;
+    }
+    if (allPlayersReachedRound(m, 'bobsRound', BOBS27_TARGETS.length)) {
+      finishHighestScoreRoundGame(m, "Bob's 27");
+      return result;
+    }
+    nextPlayer(m);
+  }
+  return result;
+}
+
+function throwJdcDart(m, label, opts) {
+  opts = opts || {};
+  if (m.winner !== null) throw new Error('Leg already finished');
+  pushUndo(m);
+  const p = m.players[m.current];
+  const idx = p.jdcIndex | 0;
+  const target = idx < 20 ? (idx + 1) : 'Bull';
+  const key = matchLabelKey(label);
+  let hit = false;
+  let pts = 0;
+  if (target === 'Bull') {
+    hit = key === 'Bull';
+    pts = hit ? 50 : 0;
+  } else {
+    hit = key === ('D' + target);
+    pts = hit ? (target * 2) : 0;
+  }
+  p.dartsThrown += 1;
+  if (hit) {
+    p.jdcIndex = idx + 1;
+    p.remaining = (p.remaining | 0) + pts;
+    p.pointsScored += pts;
+  }
+  const result = {
+    label: label,
+    points: pts,
+    isDouble: true,
+    outcome: hit ? 'ok' : 'no_score',
+    remainingAfter: p.remaining | 0,
+  };
+  if (Number.isFinite(opts.x) && Number.isFinite(opts.y)) {
+    result.x = +opts.x;
+    result.y = +opts.y;
+  }
+  applySuggestedAim(result, null);
+  m.visitDarts.push(result);
+  m.visitPoints += pts;
+  m.message = p.name + ': target D' + target + (hit ? ' hit' : ' missed');
+  if ((p.jdcIndex | 0) >= 21) {
+    finishVisit(m, false);
+    const over = applyLegWin(m, m.current);
+    if (!over) m.message = p.name + ' completes JDC doubles ladder!';
+    return result;
+  }
+  afterDart(m);
+  return result;
+}
+
+function throwSinglesDoublesDart(m, label, opts) {
+  opts = opts || {};
+  if (m.winner !== null) throw new Error('Leg already finished');
+  pushUndo(m);
+  const p = m.players[m.current];
+  const [pts, isDbl, isTpl] = aimPoints(label);
+  const allowSingles = m.game === 'singles';
+  const scored = allowSingles
+    ? ((pts > 0 && !isDbl && !isTpl) ? pts : 0)
+    : (isDbl ? pts : 0);
+  p.dartsThrown += 1;
+  p.remaining = (p.remaining | 0) + scored;
+  p.pointsScored += scored;
+  const result = {
+    label: label,
+    points: scored,
+    isDouble: !!isDbl,
+    outcome: scored > 0 ? 'ok' : 'no_score',
+    remainingAfter: p.remaining | 0,
+  };
+  if (Number.isFinite(opts.x) && Number.isFinite(opts.y)) {
+    result.x = +opts.x;
+    result.y = +opts.y;
+  }
+  applySuggestedAim(result, null);
+  m.visitDarts.push(result);
+  m.visitPoints += scored;
+  m.message = p.name + ': ' + label + (scored > 0 ? (' +' + scored) : ' no score');
+  m.dartsLeft -= 1;
+  if (m.dartsLeft <= 0) {
+    finishVisit(m, false);
+    p.simpleRounds = (p.simpleRounds | 0) + 1;
+    if (allPlayersReachedRound(m, 'simpleRounds', SIMPLE_POINTS_ROUNDS)) {
+      finishHighestScoreRoundGame(m, allowSingles ? 'Singles' : 'Doubles');
+      return result;
+    }
+    nextPlayer(m);
+  }
+  return result;
+}
+
 function throwDart(m, label, opts) {
   opts = opts || {};
+  if (m.game === 'countup') return throwCountUpDart(m, label, opts);
+  if (m.game === 'aroundclock') return throwAroundClockDart(m, label, opts);
+  if (m.game === 'shanghai') return throwShanghaiDart(m, label, opts);
+  if (m.game === 'halfit') return throwHalfItDart(m, label, opts);
+  if (m.game === 'bobs27') return throwBobs27Dart(m, label, opts);
+  if (m.game === 'jdc') return throwJdcDart(m, label, opts);
+  if (m.game === 'singles' || m.game === 'doubles')
+    return throwSinglesDoublesDart(m, label, opts);
   if (m.game === 'cricket') return throwCricketDart(m, label, opts);
   if (m.winner !== null) throw new Error('Leg already finished');
   if (playerOutOfLeg(m, m.current)) throw new Error('Player already finished');
-  const [pts, isDbl] = aimPoints(label);
+  const [pts, isDbl, isTpl] = aimPoints(label);
   const suggested = suggestedAimForMatch(m);
   pushUndo(m);
   const p = m.players[m.current];
   const remBefore = p.remaining;
+  const inRule = inRuleOf(m);
+  const outRule = outRuleOf(m);
 
   function countDart() {
     p.dartsThrown += 1;
@@ -4209,9 +4797,9 @@ function throwDart(m, label, opts) {
     }
   }
 
-  if (m.doubleIn && !p.opened) {
+  if (!p.opened) {
     countDart();
-    if (isDbl && pts > 0) {
+    if (matchesInRule(inRule, pts, isDbl, isTpl)) {
       p.opened = true;
       p.remaining = remBefore - pts;
       const result = { label, points: pts, isDouble: isDbl, outcome: 'ok', remainingAfter: p.remaining };
@@ -4223,13 +4811,13 @@ function throwDart(m, label, opts) {
     p.entryDarts = (p.entryDarts | 0) + 1;
     const result = { label, points: 0, isDouble: isDbl, outcome: 'no_score', remainingAfter: remBefore };
     record(result);
-    m.message = p.name + ' needs a double to start';
+    m.message = p.name + ' needs a ' + inRule + ' to start';
     afterDart(m);
     return result;
   }
 
   const newRem = remBefore - pts;
-  if (newRem === 0 && isDbl) {
+  if (newRem === 0 && matchesOutRule(outRule, pts, isDbl, isTpl)) {
     countDart();
     p.remaining = 0;
     p.checkoutHits += 1;
@@ -4241,7 +4829,9 @@ function throwDart(m, label, opts) {
     return result;
   }
 
-  if (newRem < 0 || newRem === 1 || (newRem === 0 && !isDbl)) {
+  const deadLeave = (outRule === 'double' && newRem === 1)
+    || (outRule === 'triple' && (newRem === 1 || newRem === 2));
+  if (newRem < 0 || deadLeave || (newRem === 0 && !matchesOutRule(outRule, pts, isDbl, isTpl))) {
     countDart();
     p.remaining = m.turnStart;
     p.busts += 1;
@@ -4268,6 +4858,9 @@ function throwDart(m, label, opts) {
  */
 function throwVisitTotal(m, score, opts) {
   opts = opts || {};
+  if (m.game === 'countup') return throwCountUpVisitTotal(m, score, opts);
+  if (m.game !== 'x01')
+    throw new Error('Visit total is only for X01 and Count Up');
   if (m.game === 'cricket')
     throw new Error('Visit total is for 501 / 301 only');
   if (m.winner !== null) throw new Error('Leg already finished');
@@ -4279,11 +4872,13 @@ function throwVisitTotal(m, score, opts) {
 
   const pCheck = m.players[m.current];
   const remCheck = pCheck.remaining;
+  const inRule = inRuleOf(m);
+  const outRule = outRuleOf(m);
   // Validate before mutating / undo so OK can refuse cleanly.
-  if (m.doubleIn && !pCheck.opened && !forceBust && score > 0
-      && !isValidOpeningVisitScore(score))
-    throw new Error('301 DI: open score between 2 and 170');
-  if (!forceBust && score === remCheck && !isCheckoutChance(remCheck))
+  if (!pCheck.opened && !forceBust && score > 0
+      && !isValidOpeningVisitScore(score, inRule))
+    throw new Error('Open score not possible for ' + inRule + '-in');
+  if (!forceBust && score === remCheck && !isCheckoutChance(remCheck, outRule))
     throw new Error('Cannot check out ' + remCheck);
 
   pushUndo(m);
@@ -4314,7 +4909,7 @@ function throwVisitTotal(m, score, opts) {
     return result;
   }
 
-  if (m.doubleIn && !p.opened) {
+  if (!p.opened) {
     if (forceBust || score === 0) {
       countVisitDarts(3);
       p.entryDarts = (p.entryDarts | 0) + 3;
@@ -4323,14 +4918,17 @@ function throwVisitTotal(m, score, opts) {
         outcome: 'no_score', remainingAfter: remBefore,
       });
       finishVisit(m, false);
-      m.message = p.name + ' needs a double to start';
+      m.message = p.name + ' needs a ' + inRule + ' to start';
       nextPlayer(m);
       return result;
     }
     p.opened = true;
   }
 
-  if (forceBust || score > remBefore || (remBefore - score) === 1) {
+  const leaveAfter = remBefore - score;
+  const deadVisitLeave = (outRule === 'double' && leaveAfter === 1)
+    || (outRule === 'triple' && (leaveAfter === 1 || leaveAfter === 2));
+  if (forceBust || score > remBefore || deadVisitLeave) {
     countVisitDarts(3);
     p.remaining = m.turnStart;
     p.busts += 1;
@@ -4395,16 +4993,45 @@ function newLeg(m, opts) {
       p.remaining = 0;
       p.points = 0;
       p.marks = emptyCricketMarks();
+    } else if (m.game === 'countup') {
+      p.remaining = 0;
+      p.opened = true;
+    } else if (m.game === 'aroundclock') {
+      p.remaining = 0;
+      p.opened = true;
+      p.clockIndex = 0;
+    } else if (m.game === 'shanghai') {
+      p.remaining = 0;
+      p.opened = true;
+      p.shRound = 1;
+      p.shMaskVisit = 0;
+    } else if (m.game === 'halfit') {
+      p.remaining = 0;
+      p.opened = true;
+      p.halfRound = 0;
+    } else if (m.game === 'bobs27') {
+      p.remaining = 27;
+      p.opened = true;
+      p.bobsRound = 0;
+      p.eliminated = false;
+    } else if (m.game === 'jdc') {
+      p.remaining = 0;
+      p.opened = true;
+      p.jdcIndex = 0;
+    } else if (m.game === 'singles' || m.game === 'doubles') {
+      p.remaining = 0;
+      p.opened = true;
+      p.simpleRounds = 0;
     } else {
       p.remaining = m.startScore;
-      p.opened = !m.doubleIn;
+      p.opened = inRuleOf(m) === 'single';
     }
   }
   m.legNumber = legNo;
   m.current = starter;
   m.legStarter = starter;
   m.dartsLeft = 3;
-  m.turnStart = m.game === 'cricket' ? 0 : m.startScore;
+  m.turnStart = m.game === 'x01' ? m.startScore : ((m.players[starter] && m.players[starter].remaining) | 0);
   m.visitDarts = [];
   m.visitPoints = 0;
   m.visitCheckoutCounted = false;
@@ -4867,6 +5494,194 @@ function editPastVisitTotal(playerIdx, histIdx, newScore, bust) {
   return null;
 }
 
+function isVisitByDart(v) {
+  if (!v) return false;
+  const darts = Array.isArray(v.darts) ? v.darts : [];
+  if (darts.length >= 2) return true;
+  const d0 = darts[0];
+  if (!d0 || !d0.label) return false;
+  const lab = String(d0.label).trim();
+  return !/^Visit\s+\d+$/i.test(lab) && !/^Bust$/i.test(lab);
+}
+
+function normalizeEditDartLabel(raw) {
+  let s = String(raw == null ? '' : raw).trim();
+  if (!s) return null;
+  s = s.toUpperCase().replace(/\s+/g, '');
+  if (s === 'M' || s === 'MISS' || s === '0') return 'Miss';
+  if (s === 'BULL' || s === 'DBULL' || s === 'DB' || s === 'D25' || s === '50') return 'Bull';
+  if (s === '25' || s === 'SBULL' || s === 'SB' || s === 'S25') return '25';
+  let m = s.match(/^([SDT])(\d{1,2})$/);
+  if (m) {
+    const n = parseInt(m[2], 10);
+    if (!Number.isFinite(n) || n < 1 || n > 20) return null;
+    return m[1] + String(n);
+  }
+  if (/^\d{1,2}$/.test(s)) {
+    const n = parseInt(s, 10);
+    if (n >= 1 && n <= 20) return 'S' + String(n);
+  }
+  return null;
+}
+
+function editPastVisitDarts(playerIdx, histIdx, labels, forceBust) {
+  if (!match || match.game === 'cricket') return 'Not available in Cricket';
+  if (!visitEditableInMatch(match))
+    return 'Can only edit visits while the leg is in progress';
+  const p = match.players[playerIdx];
+  if (!p || !p.visitHistory || !p.visitHistory[histIdx]) return 'Visit not found';
+  const v = p.visitHistory[histIdx];
+  if (((v.leg | 0) || 1) !== (match.legNumber | 0))
+    return 'Only visits in the current leg can be edited';
+
+  const before = remBeforePlayerVisit(match, playerIdx, histIdx);
+  const remBefore = before.remBefore | 0;
+  const inRule = inRuleOf(match);
+  const outRule = outRuleOf(match);
+  const src = Array.isArray(labels) ? labels : [];
+  const oldDc = Math.max(1, Math.min(3, visitRecDartCount(v)));
+  const wasCheckout = !!(v.darts && v.darts.some(d => d && d.outcome === 'checkout'));
+
+  const darts = [];
+  let opened = !!before.opened || !match.doubleIn;
+  let rem = remBefore;
+  let busted = !!forceBust;
+  let nowCheckout = false;
+  let score = 0;
+
+  for (let i = 0; i < oldDc; i++) {
+    if (busted || nowCheckout) break;
+    const canon = normalizeEditDartLabel(src[i]);
+    if (!canon)
+      return 'Dart ' + (i + 1) + ': use S1–S20, D1–D20, T1–T20, 25, Bull, or Miss';
+    const [pts, isDbl, isTpl] = aimPoints(canon);
+
+    if (!opened) {
+      if (matchesInRule(inRule, pts, isDbl, isTpl)) {
+        opened = true;
+        rem -= pts;
+        darts.push({
+          label: canon,
+          points: pts,
+          isDouble: !!isDbl,
+          outcome: 'ok',
+          remainingAfter: rem,
+          suggested: '',
+        });
+        score += pts;
+      } else {
+        darts.push({
+          label: canon,
+          points: 0,
+          isDouble: !!isDbl,
+          outcome: 'no_score',
+          remainingAfter: rem,
+          suggested: '',
+        });
+      }
+      continue;
+    }
+
+    const newRem = rem - pts;
+    const deadLeave = (outRule === 'double' && newRem === 1)
+      || (outRule === 'triple' && (newRem === 1 || newRem === 2));
+    if (newRem === 0 && matchesOutRule(outRule, pts, isDbl, isTpl)) {
+      rem = 0;
+      nowCheckout = true;
+      score += pts;
+      darts.push({
+        label: canon,
+        points: pts,
+        isDouble: !!isDbl,
+        outcome: 'checkout',
+        remainingAfter: 0,
+        suggested: '',
+      });
+      continue;
+    }
+    if (newRem < 0 || deadLeave || (newRem === 0 && !matchesOutRule(outRule, pts, isDbl, isTpl))) {
+      busted = true;
+      darts.push({
+        label: canon,
+        points: pts,
+        isDouble: !!isDbl,
+        outcome: 'bust',
+        remainingAfter: remBefore,
+        suggested: '',
+      });
+      score = 0;
+      continue;
+    }
+
+    rem = newRem;
+    score += pts;
+    darts.push({
+      label: canon,
+      points: pts,
+      isDouble: !!isDbl,
+      outcome: 'ok',
+      remainingAfter: rem,
+      suggested: '',
+    });
+  }
+
+  if (forceBust) {
+    darts.length = 0;
+    darts.push({
+      label: 'Bust',
+      points: 0,
+      isDouble: false,
+      outcome: 'bust',
+      remainingAfter: remBefore,
+      suggested: '',
+    });
+    busted = true;
+    nowCheckout = false;
+    score = 0;
+    rem = remBefore;
+  }
+
+  if (!busted && !nowCheckout && !opened && match.doubleIn && score > 0)
+    return '301 DI: open score between 2 and 170';
+
+  pushUndo(match);
+  v.score = busted ? 0 : score;
+  v.busted = busted;
+  v.dartCount = Math.max(1, Math.min(3, darts.length || oldDc));
+  v.darts = darts;
+  if (nowCheckout) v.checkoutFrom = remBefore;
+  else delete v.checkoutFrom;
+  if (p.visitScores && p.visitScores.length > histIdx)
+    p.visitScores[histIdx] = v.score | 0;
+
+  if (wasCheckout && !nowCheckout)
+    p.checkoutHits = Math.max(0, (p.checkoutHits | 0) - 1);
+  else if (!wasCheckout && nowCheckout)
+    p.checkoutHits = (p.checkoutHits | 0) + 1;
+
+  recomputePlayerVisitAggregates(p);
+  syncPlayerRemainingFromHistory(match, playerIdx);
+
+  if (match.winner === null && nowCheckout) {
+    if (!isX01PlayOn(match)) {
+      applyLegWin(match, playerIdx);
+    } else {
+      const fo = ensureFinishOrder(match);
+      if (fo.indexOf(playerIdx) < 0) fo.push(playerIdx);
+      if (fo.length >= 2) {
+        for (let i = 0; i < playerCount(match); i++) {
+          if (fo.indexOf(i) < 0) fo.push(i);
+        }
+        applyLegWin(match, fo[0]);
+      }
+    }
+  }
+
+  match.message = p.name + ': visit ' + (histIdx + 1) + ' darts updated';
+  match.messageIsError = false;
+  return null;
+}
+
 function renderVisitListHtml(idx) {
   if (!match || !match.players[idx]) {
     return '<div class="empty">No match</div>';
@@ -4923,16 +5738,35 @@ function renderVisitListHtml(idx) {
         + '<div class="v-score' + cls + '">' + (bust && sc === 0 ? '0' : sc) + '</div>';
       if (editing) {
         const before = remBeforePlayerVisit(match, idx, row.idx);
-        html += '<div class="v-edit">'
-          + '<div class="v-edit-row">'
-          + '<input type="number" inputmode="numeric" min="0" max="180" step="1" '
-          + 'id="visitEditScore" value="' + (bust ? '' : sc) + '" '
-          + 'placeholder="0–' + Math.min(180, before.remBefore) + '" '
-          + 'aria-label="Edit visit score">'
-          + '<button type="button" class="bust-btn" data-visit-bust>Bust</button>'
-          + '<button type="button" class="primary" data-visit-save>Save</button>'
-          + '</div>'
-          + '<div class="err" id="visitEditErr"></div>'
+        const byDart = isVisitByDart(v);
+        html += '<div class="v-edit">';
+        if (byDart) {
+          const dc = Math.max(1, Math.min(3, visitRecDartCount(v)));
+          for (let di = 0; di < dc; di++) {
+            const dv = (v.darts && v.darts[di]) ? (v.darts[di].label || '') : '';
+            html += '<div class="v-edit-row">'
+              + '<input type="text" maxlength="6" '
+              + 'data-visit-dart-edit="' + di + '" data-visit-enter-save '
+              + 'value="' + dv + '" '
+              + 'placeholder="S20 / D20 / T20 / 25 / Bull / Miss" '
+              + 'aria-label="Edit dart ' + (di + 1) + '">'
+              + '</div>';
+          }
+          html += '<div class="v-edit-row">'
+            + '<button type="button" class="bust-btn" data-visit-bust>Bust</button>'
+            + '<button type="button" class="primary" data-visit-save>Save</button>'
+            + '</div>';
+        } else {
+          html += '<div class="v-edit-row">'
+            + '<input type="number" inputmode="numeric" min="0" max="180" step="1" '
+            + 'id="visitEditScore" data-visit-enter-save value="' + (bust ? '' : sc) + '" '
+            + 'placeholder="0–' + Math.min(180, before.remBefore) + '" '
+            + 'aria-label="Edit visit score">'
+            + '<button type="button" class="bust-btn" data-visit-bust>Bust</button>'
+            + '<button type="button" class="primary" data-visit-save>Save</button>'
+            + '</div>';
+        }
+        html += '<div class="err" id="visitEditErr"></div>'
           + '<button type="button" data-visit-cancel>Cancel</button>'
           + '</div>';
       }
@@ -5279,17 +6113,18 @@ function archiveFinishedMatch(m) {
   if (m.matchWinner == null) return null;
   const ts = new Date();
   const id = ts.toISOString();
-  const modeKey = (typeof currentModeKey !== 'undefined' && currentModeKey)
-    ? currentModeKey
-    : (m.game === 'cricket' ? 'cricket'
-      : (m.doubleIn ? '301di' : '501'));
+  const modeKey = (m.game === 'x01')
+    ? policyModeKeyForGame(m.startScore | 0, inRuleOf(m), outRuleOf(m))
+    : (m.game || 'x01');
   const rec = {
     id: id,
     ts: id,
     mode: modeKey,
-    game: m.game || 'x01',
+    game: gameKeyFromMatch(m),
     startScore: m.startScore,
     doubleIn: !!m.doubleIn,
+    inRule: inRuleOf(m),
+    outRule: outRuleOf(m),
     winner: m.winner,
     winnerName: m.players[m.winner].name,
     finishOrder: Array.isArray(m.finishOrder) ? m.finishOrder.slice() : [m.winner],
@@ -5362,9 +6197,20 @@ function formatIsoSeconds(ts) {
 function modeLabel(rec) {
   if (!rec) return '—';
   if (rec.game === 'cricket' || rec.mode === 'cricket') return 'Cricket';
-  if (rec.mode === '301di' || rec.doubleIn) return '301 DI';
-  if (rec.mode === '501') return '501';
-  return rec.mode || (rec.startScore ? String(rec.startScore) : 'Match');
+  if (rec.game === 'cricket_noscore' || rec.mode === 'cricket_noscore') return 'No Score Cricket';
+  if (rec.game === 'cricket_cutthroat' || rec.mode === 'cricket_cutthroat') return 'Cut Throat Cricket';
+  if (rec.game === 'countup' || rec.mode === 'countup') return 'Count Up';
+  if (rec.game === 'aroundclock' || rec.mode === 'aroundclock') return 'Around the Clock';
+  if (rec.game === 'shanghai' || rec.mode === 'shanghai') return 'Shanghai';
+  if (rec.game === 'halfit' || rec.mode === 'halfit') return 'Half It';
+  if (rec.game === 'bobs27' || rec.mode === 'bobs27') return "Bob's 27";
+  if (rec.game === 'jdc' || rec.mode === 'jdc') return 'JDC Challenge';
+  if (rec.game === 'singles' || rec.mode === 'singles') return 'Singles';
+  if (rec.game === 'doubles' || rec.mode === 'doubles') return 'Doubles';
+  const start = (rec.startScore | 0) || 501;
+  const inRule = normRule(rec.inRule || (rec.doubleIn ? 'double' : 'single'), 'single');
+  const outRule = normRule(rec.outRule, 'double');
+  return gameLabel(start, inRule, outRule);
 }
 
 function matchTitle(rec) {
@@ -5377,6 +6223,15 @@ function histMetric(side, rec) {
   if (!side || !side.me) return '—';
   if (rec.game === 'cricket' || rec.mode === 'cricket')
     return String(side.me.points != null ? side.me.points : '—') + ' pts';
+  if (rec.game === 'countup' || rec.mode === 'countup'
+      || rec.game === 'aroundclock' || rec.mode === 'aroundclock'
+      || rec.game === 'shanghai' || rec.mode === 'shanghai'
+      || rec.game === 'halfit' || rec.mode === 'halfit'
+      || rec.game === 'bobs27' || rec.mode === 'bobs27'
+      || rec.game === 'jdc' || rec.mode === 'jdc'
+      || rec.game === 'singles' || rec.mode === 'singles'
+      || rec.game === 'doubles' || rec.mode === 'doubles')
+    return String(side.me.pointsScored != null ? side.me.pointsScored : '—') + ' pts';
   if (side.me.avg3 == null) return '—';
   return Number(side.me.avg3).toFixed(1);
 }
@@ -7036,16 +7891,9 @@ function deleteSelectedPlayerFromModal() {
 }
 
 function buildModeToggle() {
+  // Play now starts from a single "New game" flow; mode chips stay hidden.
   elModeToggle.innerHTML = '';
-  if (DATA.modes.length < 2) { elModeToggle.style.display = 'none'; return; }
-  for (const m of DATA.modes) {
-    const b = document.createElement('button');
-    b.textContent = m.label;
-    b.dataset.key = m.key;
-    b.className = (m.key === currentModeKey) ? 'active' : '';
-    b.addEventListener('click', () => selectMode(m.key));
-    elModeToggle.appendChild(b);
-  }
+  elModeToggle.style.display = 'none';
 }
 
 function populateSigmas() {
@@ -7207,12 +8055,38 @@ let aimBoardVisible = false;
 let aimBoardSource = 'primary';
 /** While a match is live: past-leg / match-total stats stay collapsed until opened. */
 let statsHistoryOpen = false;
+let lineupNeeded = false;
+
+function syncMatchPrimaryButton() {
+  const btn = document.getElementById('btnMatch');
+  if (!btn) return;
+  const back = document.getElementById('btnMatchBack');
+  const showLineupStart = !matchUiActive && lineupNeeded;
+  btn.textContent = showLineupStart ? 'Start game' : 'New game';
+  if (back) back.classList.toggle('hidden', !showLineupStart);
+}
+
+function openBestOfModalLastStep() {
+  openBestOfModal();
+  newGameStep = 'bestof';
+  syncBestOfModal();
+}
+
+function setLineupNeeded(on) {
+  lineupNeeded = !!on;
+  const page = document.getElementById('pageScore');
+  if (page) page.classList.toggle('lineup-needed', lineupNeeded);
+  syncMatchPrimaryButton();
+}
 
 function setMatchUiActive(on) {
   const was = matchUiActive;
   matchUiActive = !!on;
   const page = document.getElementById('pageScore');
   if (page) page.classList.toggle('prematch', !matchUiActive);
+  if (!matchUiActive) setLineupNeeded(false);
+  else if (!was) setLineupNeeded(false);
+  else syncMatchPrimaryButton();
   if (!matchUiActive) {
     cancelBotThrow();
     aimBoardVisible = false;
@@ -7284,7 +8158,18 @@ function selectMode(key) {
     if (lineupPlayerCount !== 2 && lineupPlayerCount !== 3)
       lineupPlayerCount = 2;
     cricketPlayerCount = lineupPlayerCount;
-    match = newMatch(m.start_score, m.double_in, names(), wantGame);
+    if (wantGame === 'cricket') {
+      match = newMatch(0, false, names(), 'cricket', loadSavedBestOf(), 'single', 'double');
+    } else {
+      match = newMatch(
+        newGameDraft.startScore,
+        newGameDraft.inRule === 'double',
+        names(),
+        'x01',
+        loadSavedBestOf(),
+        newGameDraft.inRule,
+        newGameDraft.outRule);
+    }
     setMatchUiActive(false);
   }
   if (wantGame === 'cricket') clearBotsFromCricketLineup();
@@ -7419,13 +8304,13 @@ function setLineupPlayerCount(n) {
   syncPlayerSeatsChrome();
   cancelBotThrow();
   syncNames();
-  const m = mode();
-  const game = (m && m.game) || 'x01';
+  const game = (newGameDraft && NEW_GAME_TYPES.includes(newGameDraft.game))
+    ? newGameDraft.game
+    : 'x01';
   const bo = (match && match.bestOf) || loadSavedBestOf();
-  // Preserve undo of the previous match when changing seat count.
-  if (match) resetMatch(match, m.start_score, m.double_in, names(), game, bo);
-  else match = newMatch(m.start_score, m.double_in, names(), game, bo);
-  if (game === 'cricket') clearBotsFromCricketLineup();
+  match = buildMatchForDraft(names(), bo);
+  if (game === 'cricket' || game === 'cricket_noscore' || game === 'cricket_cutthroat')
+    clearBotsFromCricketLineup();
   syncBotSeatFromNames();
   visitDigits = '';
   buildPad();
@@ -7594,6 +8479,8 @@ function setScoreEntryMode(mode, opts) {
  *  Switch≤ of 2 (or less) disables auto-switch — stay on visit total. */
 function autoScoreEntryMode() {
   if (!match || match.game === 'cricket' || match.winner !== null) return null;
+  // Entry mode is shared in UI; do not let bot turns force human mode changes.
+  if (isBotTurn()) return null;
   const rem = match.players[match.current].remaining | 0;
   const thr = entryDartThresholdForSeat(match.current);
   if (thr <= 2) return 'visit';
@@ -7748,6 +8635,18 @@ function drawVisitDartLandingsOnPlayBoard() {
     ctx.lineWidth = 1.5;
     ctx.stroke();
   });
+  if (playBoardTapFlashDot
+      && Number.isFinite(playBoardTapFlashDot.x)
+      && Number.isFinite(playBoardTapFlashDot.y)) {
+    const [fx, fy] = px(playBoardTapFlashDot.x, playBoardTapFlashDot.y);
+    ctx.beginPath();
+    ctx.arc(fx, fy, Math.max(5, scale() * 2.8), 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fill();
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+  }
 }
 
 function onPlayBoardPointer(e) {
@@ -7855,8 +8754,15 @@ function commitLabel(label, opts) {
   if (isBotTurn() && !botThrowInFlight) return;
   syncNames();
   if (!botThrowInFlight) botPaused = false;
+  const hadOneDartLeft = !!(match && (match.dartsLeft | 0) === 1);
+  const tapOpt = opts || {};
+  const isBoardTap = Number.isFinite(tapOpt.x) && Number.isFinite(tapOpt.y);
+  const holdThirdTapDot = !!(isBoardTap && scoreEntryMode === 'dart'
+    && playBoardTapToScore && hadOneDartLeft);
+  let appliedThrow = false;
   try {
-    throwDart(match, scorekeeperLabel(label), opts || {});
+    throwDart(match, scorekeeperLabel(label), tapOpt);
+    appliedThrow = true;
   } catch (e) {
     match.message = String(e.message || e);
   }
@@ -7869,6 +8775,8 @@ function commitLabel(label, opts) {
   }
   pendingMult = 'S';
   updatePending();
+  if (appliedThrow && holdThirdTapDot)
+    flashPlayBoardTapDot(tapOpt.x, tapOpt.y, 500);
   render();
 }
 
@@ -8337,6 +9245,48 @@ function render() {
     return;
   }
 
+  if (match.game === 'countup') {
+    if (match.winner !== null) {
+      const overLabel = match.matchWinner != null ? 'Match over' : 'Leg over';
+      elInfo.innerHTML = '<div class="turn">' + overLabel + '</div>'
+        + '<div class="aim">' + match.message + '</div>';
+    } else {
+      const cur = match.players[match.current];
+      let html = '<div class="turn">' + cur.name + ' to throw</div>';
+      html += '<div class="aim">Count Up · highest total score wins</div>';
+      html += statusMessageHtml(match.message);
+      elInfo.innerHTML = html;
+    }
+    renderStats();
+    finishRenderBotHooks();
+    return;
+  }
+
+  if (match.game !== 'x01') {
+    if (match.winner !== null) {
+      const overLabel = match.matchWinner != null ? 'Match over' : 'Leg over';
+      elInfo.innerHTML = '<div class="turn">' + overLabel + '</div>'
+        + '<div class="aim">' + match.message + '</div>';
+    } else {
+      const cur = match.players[match.current];
+      let hint = 'Score by dart';
+      if (match.game === 'aroundclock') hint = 'Around the Clock · hit targets 1 to 20 then Bull';
+      else if (match.game === 'shanghai') hint = 'Shanghai · target advances each round';
+      else if (match.game === 'halfit') hint = 'Half It · miss the target and your score halves';
+      else if (match.game === 'bobs27') hint = "Bob's 27 · hit the target double or lose points";
+      else if (match.game === 'jdc') hint = 'JDC Challenge · doubles ladder to Bull';
+      else if (match.game === 'singles') hint = 'Singles · only single hits score';
+      else if (match.game === 'doubles') hint = 'Doubles · only doubles score';
+      let html = '<div class="turn">' + cur.name + ' to throw</div>';
+      html += '<div class="aim">' + hint + '</div>';
+      html += statusMessageHtml(match.message);
+      elInfo.innerHTML = html;
+    }
+    renderStats();
+    finishRenderBotHooks();
+    return;
+  }
+
   if (match.winner !== null) {
     const overLabel = match.matchWinner != null ? 'Match over' : 'Leg over';
     elInfo.innerHTML = '<div class="turn">' + overLabel + '</div>'
@@ -8633,8 +9583,18 @@ function openCheckoutAttemptsModal(score) {
   if (!ok) return;
   ok.addEventListener('click', () => {
     if (scoreEntryMode !== 'visit') return;
-    if (match && match.game === 'cricket') return;
+    if (!match) return;
     const n = visitDigits === '' ? 0 : parseInt(visitDigits, 10);
+    if (match.game === 'countup') {
+      commitVisitTotal(n, { dartCount: 3 });
+      return;
+    }
+    if (match.game !== 'x01') {
+      match.message = 'Visit total is unavailable for this game mode';
+      match.messageIsError = true;
+      render();
+      return;
+    }
     const leave = match ? (match.turnStart | 0) : 0;
     const isCheckout = n === leave && isCheckoutChance(leave);
     if (n === leave && leave > 0 && !isCheckout) {
@@ -8690,6 +9650,84 @@ document.getElementById('btnSwapSides').addEventListener('click', () => {
 const BEST_OF_CHOICES = [1, 3, 5, 7, 9, 11];
 let bestOfDraft = loadSavedBestOf();
 let bestOfLegsEnabled = false;
+let newGameStep = 'game'; // game -> rules (x01 only) -> bestof
+let newGameRulesTouched = false;
+const NEW_GAME_KEY = 'dartsNewGameV1';
+const NEW_GAME_SCORES = [301, 501, 701];
+const NEW_GAME_TYPES = [
+  'x01',
+  'cricket',
+  'cricket_noscore',
+  'cricket_cutthroat',
+  'countup',
+  'aroundclock',
+  'shanghai',
+  'halfit',
+  'bobs27',
+  'jdc',
+  'singles',
+  'doubles',
+];
+const NEW_GAME_RULES = [
+  { key: 'single', label: 'Single' },
+  { key: 'double', label: 'Double' },
+  { key: 'triple', label: 'Triple' },
+];
+
+function normRule(v, fallback) {
+  return (v === 'single' || v === 'double' || v === 'triple') ? v : fallback;
+}
+
+function shortRule(v) {
+  if (v === 'double') return 'D';
+  if (v === 'triple') return 'T';
+  return 'S';
+}
+
+function gameLabel(startScore, inRule, outRule) {
+  return startScore + ' ' + shortRule(inRule) + 'I/' + shortRule(outRule) + 'O';
+}
+
+function loadNewGameDraft() {
+  try {
+    const raw = localStorage.getItem(NEW_GAME_KEY);
+    if (!raw) return { game: 'x01', startScore: 501, inRule: 'single', outRule: 'double' };
+    const v = JSON.parse(raw);
+    const game = (v && NEW_GAME_TYPES.includes(v.game)) ? v.game : 'x01';
+    let start = parseInt(v && v.startScore, 10);
+    if (!NEW_GAME_SCORES.includes(start)) start = 501;
+    return {
+      game: game,
+      startScore: start,
+      inRule: normRule(v && v.inRule, 'single'),
+      outRule: normRule(v && v.outRule, 'double'),
+    };
+  } catch (_) {
+    return { game: 'x01', startScore: 501, inRule: 'single', outRule: 'double' };
+  }
+}
+
+function saveNewGameDraft(v) {
+  try { localStorage.setItem(NEW_GAME_KEY, JSON.stringify(v || {})); } catch (_) {}
+}
+
+let newGameDraft = loadNewGameDraft();
+
+function policyModeKeyForGame(startScore, inRule, outRule) {
+  if (startScore === 301 && inRule === 'double' && outRule === 'double') return '301di';
+  return '501';
+}
+
+function applyDefaultX01RulesIfUntouched() {
+  if (newGameDraft.game !== 'x01' || newGameRulesTouched) return;
+  if ((newGameDraft.startScore | 0) === 301) {
+    newGameDraft.inRule = 'double';
+    newGameDraft.outRule = 'double';
+  } else {
+    newGameDraft.inRule = 'single';
+    newGameDraft.outRule = 'double';
+  }
+}
 
 function bestOfSeatCount() {
   if (match) return playerCount(match);
@@ -8781,7 +9819,7 @@ function applyOpeningLegsScore(m, scores) {
   m.legStarter = starter;
   m.current = starter;
   m.dartsLeft = 3;
-  m.turnStart = m.game === 'cricket' ? 0 : m.startScore;
+  m.turnStart = m.game === 'x01' ? m.startScore : ((m.players[starter] && m.players[starter].remaining) | 0);
   m.visitDarts = [];
   m.visitPoints = 0;
   m.visitCheckoutCounted = false;
@@ -8794,6 +9832,119 @@ function applyOpeningLegsScore(m, scores) {
 }
 
 function syncBestOfModal() {
+  const stepHint = document.getElementById('newGameStepHint');
+  const gameRow = document.getElementById('newGameGameRow');
+  const rulesStep = document.getElementById('newGameRulesStep');
+  const bestOfStep = document.getElementById('newGameBestOfStep');
+  const actions = document.getElementById('bestOfActions');
+  const backBtn = document.getElementById('bestOfBack');
+  const startBtn = document.getElementById('bestOfStart');
+  const scorePicks = document.getElementById('newGameScorePicks');
+  const inPicks = document.getElementById('newGameInPicks');
+  const outPicks = document.getElementById('newGameOutPicks');
+  const inRow = document.getElementById('newGameInRow');
+  const outRow = document.getElementById('newGameOutRow');
+  const showX01Rules = newGameDraft.game === 'x01';
+  const atGame = newGameStep === 'game';
+  const atRules = newGameStep === 'rules';
+  const atBestOf = newGameStep === 'bestof';
+
+  if (gameRow) gameRow.classList.toggle('hidden', !atGame);
+  if (rulesStep) rulesStep.classList.toggle('hidden', !atRules);
+  if (bestOfStep) bestOfStep.classList.toggle('hidden', !atBestOf);
+  if (stepHint) {
+    if (atGame) stepHint.textContent = 'Step 1/3: Choose game.';
+    else if (atRules) stepHint.textContent = 'Step 2/3: Choose In/Out rules.';
+    else stepHint.textContent = 'Step 3/3: Choose best of legs.';
+  }
+  if (backBtn) backBtn.classList.toggle('hidden', atGame);
+  if (actions) actions.classList.toggle('triple', !atGame);
+  if (startBtn) {
+    if (atGame) startBtn.textContent = showX01Rules ? 'Next: In/Out' : 'Next: Best of';
+    else if (atRules) startBtn.textContent = 'Next: Best of';
+    else startBtn.textContent = 'Select game';
+  }
+
+  if (scorePicks) {
+    scorePicks.innerHTML = '';
+    for (const s of NEW_GAME_SCORES) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = String(s);
+      b.classList.toggle('active', showX01Rules && s === newGameDraft.startScore);
+      b.addEventListener('click', () => {
+        newGameDraft.game = 'x01';
+        newGameDraft.startScore = s;
+        if (s === 301) {
+          newGameDraft.inRule = 'double';
+          newGameDraft.outRule = 'double';
+        } else {
+          newGameDraft.inRule = 'single';
+          newGameDraft.outRule = 'double';
+        }
+        newGameRulesTouched = false;
+        syncBestOfModal();
+      });
+      scorePicks.appendChild(b);
+    }
+    const extraGames = [
+      ['cricket', 'Cricket'],
+      ['cricket_noscore', 'No Score Cricket'],
+      ['cricket_cutthroat', 'Cut Throat Cricket'],
+      ['countup', 'Count Up'],
+      ['aroundclock', 'Around the Clock'],
+      ['shanghai', 'Shanghai'],
+      ['halfit', 'Half It'],
+      ['bobs27', "Bob's 27"],
+      ['jdc', 'JDC Challenge'],
+      ['singles', 'Singles'],
+      ['doubles', 'Doubles'],
+    ];
+    for (const [key, label] of extraGames) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.classList.toggle('active', newGameDraft.game === key);
+      b.addEventListener('click', () => {
+        newGameDraft.game = key;
+        syncBestOfModal();
+      });
+      scorePicks.appendChild(b);
+    }
+  }
+  if (inRow) inRow.classList.toggle('hidden', !showX01Rules);
+  if (outRow) outRow.classList.toggle('hidden', !showX01Rules);
+  if (inPicks) {
+    inPicks.innerHTML = '';
+    for (const r of NEW_GAME_RULES) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = r.label;
+      b.classList.toggle('active', r.key === newGameDraft.inRule);
+      b.addEventListener('click', () => {
+        newGameDraft.inRule = r.key;
+        newGameRulesTouched = true;
+        syncBestOfModal();
+      });
+      inPicks.appendChild(b);
+    }
+  }
+  if (outPicks) {
+    outPicks.innerHTML = '';
+    for (const r of NEW_GAME_RULES) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = r.label;
+      b.classList.toggle('active', r.key === newGameDraft.outRule);
+      b.addEventListener('click', () => {
+        newGameDraft.outRule = r.key;
+        newGameRulesTouched = true;
+        syncBestOfModal();
+      });
+      outPicks.appendChild(b);
+    }
+  }
+
   const picks = document.getElementById('bestOfPicks');
   const first = document.getElementById('bestOfFirst');
   if (!picks) return;
@@ -8815,12 +9966,100 @@ function syncBestOfModal() {
   syncBestOfLegsRow(true);
 }
 
-function openBestOfModal() {
-  if (!lineupNamesReady()) {
-    refuseMatchStart('Select a player for each seat before starting a match');
+function advanceBestOfModalStep() {
+  if (newGameStep === 'game') {
+    newGameStep = (newGameDraft.game === 'x01') ? 'rules' : 'bestof';
+    syncBestOfModal();
     return;
   }
-  bestOfDraft = (match && match.bestOf) ? normalizeBestOf(match.bestOf) : loadSavedBestOf();
+  if (newGameStep === 'rules') {
+    newGameStep = 'bestof';
+    syncBestOfModal();
+    return;
+  }
+  selectGameFromModal();
+}
+
+function retreatBestOfModalStep() {
+  if (newGameStep === 'rules') {
+    newGameStep = 'game';
+    syncBestOfModal();
+    return;
+  }
+  if (newGameStep === 'bestof') {
+    newGameStep = (newGameDraft.game === 'x01') ? 'rules' : 'game';
+    syncBestOfModal();
+  }
+}
+
+function gameKeyFromMatch(m) {
+  if (!m) return 'x01';
+  if ((m.game || 'x01') === 'cricket') {
+    if (m.noScoreCricket) return 'cricket_noscore';
+    if (m.forceCutThroat) return 'cricket_cutthroat';
+    return 'cricket';
+  }
+  return m.game || 'x01';
+}
+
+function applyGameFlagsToMatch(m, gameKey) {
+  if (!m) return;
+  m.noScoreCricket = false;
+  m.forceCutThroat = false;
+  if (gameKey === 'cricket_noscore') m.noScoreCricket = true;
+  if (gameKey === 'cricket_cutthroat') m.forceCutThroat = true;
+}
+
+function buildMatchForDraft(namesArr, bo) {
+  const gk = NEW_GAME_TYPES.includes(newGameDraft.game) ? newGameDraft.game : 'x01';
+  if (gk === 'cricket_cutthroat' && lineupPlayerCount !== 3) {
+    lineupPlayerCount = 3;
+    cricketPlayerCount = 3;
+    syncPlayerSeatsChrome();
+  }
+  let m = null;
+  if (gk === 'x01') {
+    m = newMatch(
+      newGameDraft.startScore,
+      newGameDraft.inRule === 'double',
+      namesArr,
+      'x01',
+      bo,
+      newGameDraft.inRule,
+      newGameDraft.outRule);
+  } else if (gk === 'cricket' || gk === 'cricket_noscore' || gk === 'cricket_cutthroat') {
+    m = newMatch(0, false, namesArr, 'cricket', bo, 'single', 'double');
+    applyGameFlagsToMatch(m, gk);
+  } else {
+    m = newMatch(0, false, namesArr, gk, bo, 'single', 'double');
+  }
+  return m;
+}
+
+function openBestOfModal() {
+  newGameStep = 'game';
+  setLineupNeeded(false);
+  newGameRulesTouched = false;
+  if (match && (match.game || 'x01') === 'x01') {
+    newGameDraft = {
+      game: 'x01',
+      startScore: NEW_GAME_SCORES.includes(match.startScore | 0) ? (match.startScore | 0) : 501,
+      inRule: inRuleOf(match),
+      outRule: outRuleOf(match),
+    };
+    // Existing match rules are intentional; do not auto-rewrite on start.
+    newGameRulesTouched = true;
+  } else if (match) {
+    newGameDraft = {
+      game: gameKeyFromMatch(match),
+      startScore: 501,
+      inRule: 'single',
+      outRule: 'double',
+    };
+  } else {
+    newGameDraft = loadNewGameDraft();
+  }
+  bestOfDraft = (match && match.bestOf) ? normalizeBestOf(match.bestOf) : 3;
   const hasLegs = !!(match && match.players
     && match.players.some(p => (p.legsWon | 0) > 0));
   bestOfLegsEnabled = hasLegs;
@@ -8834,9 +10073,35 @@ function closeBestOfModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+function selectGameFromModal() {
+  const bo = normalizeBestOf(bestOfDraft);
+  saveBestOf(bo);
+  bestOfDraft = bo;
+  newGameDraft.game = NEW_GAME_TYPES.includes(newGameDraft.game) ? newGameDraft.game : 'x01';
+  newGameDraft.startScore = NEW_GAME_SCORES.includes(newGameDraft.startScore | 0)
+    ? (newGameDraft.startScore | 0) : 501;
+  applyDefaultX01RulesIfUntouched();
+  newGameDraft.inRule = normRule(newGameDraft.inRule, 'single');
+  newGameDraft.outRule = normRule(newGameDraft.outRule, 'double');
+  saveNewGameDraft(newGameDraft);
+  syncNames();
+  match = buildMatchForDraft(names(), bo);
+  setMatchUiActive(false);
+  visitDigits = '';
+  buildPad();
+  closeBestOfModal();
+  setLineupNeeded(true);
+  if (match) {
+    match.message = 'Game selected — pick players, then tap Start game';
+    match.messageIsError = false;
+  }
+  render();
+}
+
 function startMatchWithBestOf(bestOf) {
   if (!lineupNamesReady()) {
     closeBestOfModal();
+    setLineupNeeded(true);
     refuseMatchStart('Select a player for each seat before starting a match');
     return;
   }
@@ -8845,17 +10110,30 @@ function startMatchWithBestOf(bestOf) {
   syncNames();
   const bo = normalizeBestOf(bestOf);
   saveBestOf(bo);
-  const m = mode();
-  if (currentModeKey) {
-    delete parkedMatches[currentModeKey];
-    delete parkedUiActive[currentModeKey];
+  newGameDraft.game = NEW_GAME_TYPES.includes(newGameDraft.game) ? newGameDraft.game : 'x01';
+  newGameDraft.startScore = NEW_GAME_SCORES.includes(newGameDraft.startScore | 0)
+    ? (newGameDraft.startScore | 0) : 501;
+  applyDefaultX01RulesIfUntouched();
+  newGameDraft.inRule = normRule(newGameDraft.inRule, 'single');
+  newGameDraft.outRule = normRule(newGameDraft.outRule, 'double');
+  saveNewGameDraft(newGameDraft);
+  const prevModeKey = currentModeKey;
+  currentModeKey = (newGameDraft.game === 'x01')
+    ? policyModeKeyForGame(
+      newGameDraft.startScore,
+      newGameDraft.inRule,
+      newGameDraft.outRule)
+    : newGameDraft.game;
+  if (prevModeKey) {
+    delete parkedMatches[prevModeKey];
+    delete parkedUiActive[prevModeKey];
   }
   const legs = bestOfLegsEnabled ? readBestOfLegsDraft() : null;
-  resetMatch(match, m.start_score, m.double_in, names(), m.game || 'x01', bo);
+  match = buildMatchForDraft(names(), bo);
   if (legs && legs.some(v => (v | 0) > 0))
     applyOpeningLegsScore(match, legs);
-  if ((m.game || 'x01') === 'cricket') clearBotsFromCricketLineup();
   if (!lineupNamesReady()) {
+    setLineupNeeded(true);
     refuseMatchStart('Select a player for each seat before starting a match');
     setMatchUiActive(false);
     return;
@@ -8878,13 +10156,16 @@ function startMatchWithBestOf(bestOf) {
 
 document.getElementById('btnMatch').addEventListener('click', () => {
   cancelBotThrow();
+  if (!matchUiActive && lineupNeeded) {
+    startMatchWithBestOf(bestOfDraft);
+    return;
+  }
   // After a finished match, return to lineup first so starter order can be changed
   // before Best-of / Start (Bot no longer jumps straight into throwing).
   if (match && matchUiActive && match.matchWinner != null) {
     syncNames();
-    const m = mode();
     const bo = match.bestOf || loadSavedBestOf();
-    match = newMatch(m.start_score, m.double_in, names(), m.game || 'x01', bo);
+    match = buildMatchForDraft(names(), bo);
     botPaused = false;
     suppressAutoNextLeg = false;
     setMatchUiActive(false);
@@ -8896,13 +10177,21 @@ document.getElementById('btnMatch').addEventListener('click', () => {
   }
   openBestOfModal();
 });
+const elMatchBack = document.getElementById('btnMatchBack');
+if (elMatchBack) {
+  elMatchBack.addEventListener('click', () => {
+    if (!matchUiActive && lineupNeeded) openBestOfModalLastStep();
+  });
+}
 (function wireBestOfModal() {
   const modal = document.getElementById('bestOfModal');
   if (!modal) return;
   const cancel = document.getElementById('bestOfCancel');
+  const back = document.getElementById('bestOfBack');
   const start = document.getElementById('bestOfStart');
   const enable = document.getElementById('bestOfLegsEnable');
   if (cancel) cancel.addEventListener('click', closeBestOfModal);
+  if (back) back.addEventListener('click', retreatBestOfModalStep);
   if (enable) {
     enable.addEventListener('change', () => {
       bestOfLegsEnabled = !!enable.checked;
@@ -8911,8 +10200,7 @@ document.getElementById('btnMatch').addEventListener('click', () => {
   }
   if (start) {
     start.addEventListener('click', () => {
-      closeBestOfModal();
-      startMatchWithBestOf(bestOfDraft);
+      advanceBestOfModalStep();
     });
   }
   modal.addEventListener('click', (e) => {
@@ -9047,11 +10335,22 @@ for (const idx of [0, 1, 2]) {
       return;
     }
     if ((save || bust) && visitListPlayerIdx != null && visitListEditIdx != null) {
-      const inp = document.getElementById('visitEditScore');
-      const raw = inp ? inp.value : '';
-      const sc = raw === '' ? 0 : parseInt(raw, 10);
-      const err = editPastVisitTotal(
-        visitListPlayerIdx, visitListEditIdx, sc, !!bust);
+      const p = match && match.players && match.players[visitListPlayerIdx];
+      const v = p && p.visitHistory && p.visitHistory[visitListEditIdx];
+      const byDart = isVisitByDart(v);
+      let err = null;
+      if (byDart) {
+        const dartInputs = [...body.querySelectorAll('[data-visit-dart-edit]')];
+        const labels = dartInputs.map(inp => inp && inp.value);
+        err = editPastVisitDarts(
+          visitListPlayerIdx, visitListEditIdx, labels, !!bust);
+      } else {
+        const inp = document.getElementById('visitEditScore');
+        const raw = inp ? inp.value : '';
+        const sc = raw === '' ? 0 : parseInt(raw, 10);
+        err = editPastVisitTotal(
+          visitListPlayerIdx, visitListEditIdx, sc, !!bust);
+      }
       const errEl = document.getElementById('visitEditErr');
       if (err) {
         if (errEl) errEl.textContent = err;
@@ -9080,7 +10379,7 @@ for (const idx of [0, 1, 2]) {
   });
   body.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
-    if (e.target && e.target.id === 'visitEditScore') {
+    if (e.target && e.target.matches && e.target.matches('[data-visit-enter-save]')) {
       e.preventDefault();
       const btn = body.querySelector('[data-visit-save]');
       if (btn) btn.click();
@@ -9313,7 +10612,14 @@ let checkoutPreviewAims = [];
 
 buildModeToggle();
 populateSigmas();
-match = newMatch(mode().start_score, mode().double_in, names(), mode().game || 'x01');
+match = newMatch(
+  newGameDraft.startScore,
+  newGameDraft.inRule === 'double',
+  names(),
+  'x01',
+  loadSavedBestOf(),
+  newGameDraft.inRule,
+  newGameDraft.outRule);
 setMatchUiActive(false);
 syncBotSeatFromNames();
 buildPad();
@@ -10010,11 +11316,10 @@ function renderCheckoutTable() {
   const sigEl = document.getElementById('checkoutSigma');
   const extBtn = document.getElementById('checkoutExtended');
   if (!body) return;
-  let scoreHi = checkoutScoreLimit > 170 ? 200 : 170;
-  let isExtended = scoreHi > 170;
+  let isExtended = checkoutScoreLimit > 170;
   if (extBtn) {
     extBtn.classList.toggle('active', isExtended);
-    extBtn.textContent = 'Extended (≤200)';
+    extBtn.textContent = 'Extended';
     extBtn.style.display = '';
   }
   const minSigma = 1;
@@ -10033,7 +11338,6 @@ function renderCheckoutTable() {
   const shape = { sigma: sigma };
   const resolved = resolvePolicy(modeKey, shape);
   const snap = resolved.snap || snapPolicyShape(shape);
-  const key = modeKey + '|' + snap.sigma + '|' + checkoutDartFilter + '|' + scoreHi;
   if (resolved.status === 'loading' || (!resolved.policy && resolved.status !== 'missing')) {
     hideCheckoutAimPreview();
     body.innerHTML = '<tr><td colspan="5" class="et">Loading aim table for σ = '
@@ -10054,18 +11358,56 @@ function renderCheckoutTable() {
   }
   const policy = resolved.policy;
   const wantD = checkoutDartFilter === 'all' ? null : parseInt(checkoutDartFilter, 10);
-
+  const policyScoreMax = (() => {
+    let hi = 170;
+    for (const k of Object.keys(policy)) {
+      const c = k.indexOf(',');
+      if (c < 1) continue;
+      const s = parseInt(k.slice(0, c), 10);
+      if (Number.isFinite(s) && s > hi) hi = s;
+    }
+    return hi;
+  })();
+  function entrySig(e) {
+    if (!e || !e[0]) return '';
+    const a0 = String(e[0]);
+    const a1 = Number.isFinite(+e[1]) ? (+e[1]).toFixed(1) : '';
+    const a2 = Number.isFinite(+e[2]) ? (+e[2]).toFixed(1) : '';
+    return a0 + '|' + a1 + '|' + a2;
+  }
+  function stableTailStart(d) {
+    let topSig = '';
+    let top = -1;
+    for (let s = policyScoreMax; s >= 2; s--) {
+      const sig = entrySig(policy[s + ',' + d]);
+      if (sig) {
+        top = s;
+        topSig = sig;
+        break;
+      }
+    }
+    if (top < 2 || !topSig) return 170;
+    let start = top;
+    for (let s = top - 1; s >= 2; s--) {
+      if (entrySig(policy[s + ',' + d]) !== topSig) break;
+      start = s;
+    }
+    return Math.max(170, start);
+  }
+  const ds = wantD == null ? [3, 2, 1] : [wantD];
+  let dynamicHi = 170;
+  for (const d of ds)
+    dynamicHi = Math.max(dynamicHi, stableTailStart(d));
   function includeCheckoutRow(s, d, extendedMode) {
     if (wantD != null && d !== wantD) return false;
-    const hi = extendedMode ? 200 : 170;
+    const hi = extendedMode ? dynamicHi : 170;
     if (s < 2 || s > hi) return false;
     if (!extendedMode && d === 2 && s > 110) return false;
     if (!extendedMode && d === 1 && s > 50) return false;
     return true;
   }
-
   function hasExtendedDelta() {
-    for (let s = 2; s <= 200; s++) {
+    for (let s = 2; s <= dynamicHi; s++) {
       for (const d of [3, 2, 1]) {
         const entry = policy[s + ',' + d];
         if (!entry || !entry[0]) continue;
@@ -10075,19 +11417,18 @@ function renderCheckoutTable() {
     }
     return false;
   }
-
   const canExtend = hasExtendedDelta();
   if (!canExtend) {
     checkoutScoreLimit = 170;
-    scoreHi = 170;
     isExtended = false;
   }
+  const scoreHi = isExtended ? dynamicHi : 170;
   if (extBtn) {
     extBtn.classList.toggle('active', isExtended);
-    extBtn.textContent = 'Extended (≤200)';
+    extBtn.textContent = 'Extended';
     extBtn.style.display = canExtend ? '' : 'none';
   }
-
+  const key = modeKey + '|' + snap.sigma + '|' + checkoutDartFilter + '|' + scoreHi;
   const rows = [];
   for (let s = scoreHi; s >= 2; s--) {
     for (const d of [3, 2, 1]) {
@@ -10123,7 +11464,7 @@ function renderCheckoutTable() {
   checkoutLoadedKey = key;
   if (status) {
     let range = 'scores 2–170';
-    if (isExtended) range = 'scores 2–200 (extended)';
+    if (isExtended) range = 'scores 2–' + scoreHi + ' (extended, policy tail cutoff)';
     else if (wantD === 2) range = 'scores 2–110 (2 darts)';
     else if (wantD === 1) range = 'scores 2–50 (1 dart)';
     else if (wantD === 3) range = 'scores 2–170 (3 darts)';
@@ -10216,7 +11557,14 @@ function startDrillDouble() {
   const leaves = [40, 32, 24, 16];
   const leave = leaves[Math.floor(Math.random() * leaves.length)];
   if ((mode().game || 'x01') === 'cricket') switchGameMode('501');
-  match = newMatch(mode().start_score, mode().double_in, names(), 'x01');
+  match = newMatch(
+    newGameDraft.startScore,
+    newGameDraft.inRule === 'double',
+    names(),
+    'x01',
+    loadSavedBestOf(),
+    newGameDraft.inRule,
+    newGameDraft.outRule);
   match.players[0].remaining = leave;
   match.players[0].opened = true;
   match.current = 0;
@@ -10235,7 +11583,14 @@ function startDrillPath() {
   const starts = [170, 121, 100, 81, 60];
   const start = starts[Math.floor(Math.random() * starts.length)];
   if ((mode().game || 'x01') === 'cricket') switchGameMode('501');
-  match = newMatch(mode().start_score, mode().double_in, names(), 'x01');
+  match = newMatch(
+    newGameDraft.startScore,
+    newGameDraft.inRule === 'double',
+    names(),
+    'x01',
+    loadSavedBestOf(),
+    newGameDraft.inRule,
+    newGameDraft.outRule);
   match.players[0].remaining = start;
   match.players[0].opened = true;
   match.current = 0;
@@ -10252,7 +11607,7 @@ function startDrillCricket() {
   const fits = fitsForCoachName(name);
   if (fits.length) applySavedFitRecordToPlayer(fits[0], 0);
   switchGameMode('cricket');
-  match = newMatch(0, false, names(), 'cricket');
+  match = newMatch(0, false, names(), 'cricket', loadSavedBestOf(), 'single', 'double');
   clearBotsFromCricketLineup();
   match.message = 'Cricket drill — throw the coached aim (marks first).';
   setMatchUiActive(true);
@@ -10292,7 +11647,7 @@ function startDrillWarmup() {
     renderCheckoutTable();
   });
   bind('checkoutExtended', () => {
-    checkoutScoreLimit = checkoutScoreLimit > 170 ? 170 : 200;
+    checkoutScoreLimit = checkoutScoreLimit > 170 ? 170 : 999;
     if (coachTab === 'checkout') renderCheckoutTable();
   });
   const dartFilter = document.getElementById('checkoutDartFilter');
@@ -11908,6 +13263,6 @@ document.getElementById('proBannerUpgrade').addEventListener('click', openUpgrad
   updateAccountBar();
 })();
 </script>
-<script src="camera-scorer.js?v=0.1.315-beta-2026-08-22-dbb0dd8"></script>
+<script src="camera-scorer.js?v=0.1.316-beta-2026-08-22-f76d5fb"></script>
 </body>
 </html>
